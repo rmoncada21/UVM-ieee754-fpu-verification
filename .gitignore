@@ -1,0 +1,11 @@
+# archivos
+demo_*
+try_*
+ucli.key
+zfile_*
+# folders
+bin/
+images/
+sim/
+## quitar al finalizar el ambiente
+reportes_*/
