@@ -1,0 +1,241 @@
+= UVM IEEE 754 FPU Verification Environment
+:author:
+:doctype: article
+:toc: left
+:toc-title: Contenido
+:toclevels: 3
+:icons: font
+:source-highlighter: highlight.js
+:experimental:
+:imagesdir: docs/img
+:stem: latexmath
+
+// Badges
+image:https://img.shields.io/badge/UVM-1.2-blue?style=flat-square[UVM 1.2]
+image:https://img.shields.io/badge/IEEE-754--2008-green?style=flat-square[IEEE 754-2008]
+image:https://img.shields.io/badge/RISCV-RV32F-red?style=flat-square[RISC-V RV32F]
+image:https://img.shields.io/badge/FPU-ieee754-red?style=flat-square[RISC-V RV32F]
+image:https://img.shields.io/badge/SystemVerilog-IEEE_1800--2017-orange?style=flat-square[SystemVerilog]
+image:https://img.shields.io/badge/Status-Init-yellow?style=flat-square[Status]
+
+---
+
+== Descripción general
+
+Ambiente de verificación funcional implementado con la metodología *UVM 1.2* para el DUT `fp_alu`, una unidad aritmética de punto flotante de precisión simple diseñada bajo el estándar *IEEE 754-2008* y compatible con la extensión *RV32F* de la arquitectura RISC-V.
+
+[quote]
+____
+*Diseño e implementación de un ambiente de verificación funcional usando UVM para el DUT: FPU RISCV 32F bajo el estándar IEEE 754 para el procesador SIWA.*
+____
+
+El DUT (`fp_alu`) a verificar es completamente combinacional: no posee reloj ni reset. El ambiente UVM introduce un reloj a nivel de testbench para compatibilidad con el framework.
+
+
+El código fuente del DUT está disponible en:
+link:https://github.com/samuelca12/TFG-ALU-FP[enlace, window="_blank"]
+ 
+Dentro de este proyecto, los archivos RTL se ubican en `dut/`.
+
+---
+
+== Arquitectura del DUT
+
+[cols="1,3", options="header"]
+|===
+| Señal | Descripción
+
+| `op_code_i [2:0]`
+| Selección de operación (ver tabla de opcodes)
+
+| `fp_a_i [31:0]`
+| Operando A en formato IEEE 754 single-precision
+
+| `fp_b_i [31:0]`
+| Operando B en formato IEEE 754 single-precision
+
+| `fp_c_i [31:0]`
+| Operando C (usado en FMADD / FMSUB)
+
+| `r_mode_i [2:0]`
+| Modo de redondeo IEEE 754
+
+| `fp_result_o [31:0]`
+| Resultado de la operación aritmética
+
+| `overflow_o`
+| Bandera de overflow
+
+| `underflow_o`
+| Bandera de underflow
+
+| `cmp_result_o`
+| Resultado de operación de comparación (1 bit)
+
+| `invalid_o`
+| Bandera de resultado inválido (NaN / overflow / underflow)
+|===
+
+=== Mapa de opcodes
+
+[cols="1,1,3", options="header"]
+|===
+| `op_code_i` | Mnemónico | Operación
+
+| `3'd0` | `FADD`  | A + B
+| `3'd1` | `FSUB`  | A − B
+| `3'd2` | `FMUL`  | A × B
+| `3'd3` | `FMADD` | (A × B) + C
+| `3'd4` | `FMSUB` | (A × B) − C
+| `3'd5` | `FEQ`   | A == B → `cmp_result_o`
+| `3'd6` | `FLT`   | A < B  → `cmp_result_o`
+| `3'd7` | `FLE`   | A ≤ B  → `cmp_result_o`
+|===
+
+=== Modos de redondeo soportados
+
+[cols="1,1,3", options="header"]
+|===
+| `r_mode_i` | Código IEEE 754 | Descripción
+
+| `3'b000` | RNE | Round to Nearest, ties to Even
+| `3'b001` | RTZ | Round Toward Zero
+| `3'b010` | RDN | Round Down (toward −∞)
+| `3'b011` | RUP | Round Up (toward +∞)
+| `3'b100` | RMM | Round to Nearest, ties to Max Magnitude
+|===
+
+---
+
+== Estructura del ambiente UVM
+
+[source,text]
+----
+├── tb_components/                 ← ambiente UVM completo
+│   ├── interface/
+│   ├── packages/
+│   ├── sequences/
+│   ├── tests/
+│   ├── types/
+│   ├── uvm_components/
+├── testbench_top.sv
+----
+
+[cols="2,4", options="header"]
+|===
+| Componente | Responsabilidad
+
+| `fpu_if`
+| Interfaz SystemVerilog; contiene clocking blocks para driver y monitor. Reloj generado en el TB para compatibilidad UVM (DUT puramente combinacional).
+
+| `fpu_seq_item_c`
+| Transacción UVM con enums tipados para `op_code_e` y `rm_mode_e`, variables `_rand` con constraints.
+
+| `fpu_sequencer_c`
+| Árbitro estándar de secuencias UVM.
+
+| `fpu_driver_c`
+| Traduce `fpu_seq_item_c` a estímulos en la interfaz, respetando el modelo de gating del DUT.
+
+| `fpu_monitor_c`
+| Observa la interfaz y publica transacciones completas al scoreboard y al bloque de cobertura.
+
+| `fpu_scoreboard_c`
+| Modelo de referencia bit-exact via DPI-C (Berkeley SoftFloat). Verifica resultado e indicadores IEEE 754 de forma independiente. BUG-001 está anclado como regresión permanente.
+
+| `fpu_coverage_c`
+| Covergroups por operación, modo de redondeo, categoría de resultado y cruces de cobertura.
+
+| `fpu_virtual_sequencer_c`
+| Coordinación de secuencias complejas multi-operación.
+|===
+
+---
+
+== Bugs conocidos del DUT
+
+[cols="1,2,4", options="header"]
+|===
+| ID | Operación | Descripción
+
+| `BUG-001`
+| `FMUL` — subnormal × normal
+| El producto se trunca a cero sin activar la bandera `underflow_o`. Anclado como regresión permanente en el scoreboard.
+|===
+
+---
+
+
+== Estructura del repositorio
+
+[source]
+----
+├── coverage/                   # Scripts Python para análisis de cobertura
+├── documentacion/              # Documentación del TFG
+├── dut/                        # Código fuente del DUT (fp_alu y submódulos)
+│   ├── fp_alu.sv
+│   ├── fp_adder.sv
+│   ├── fp_*.sv
+│   └── ...
+├── ref_model_softfloat/        # Berkeley SoftFloat (modelo de referencia DPI-C)
+├── scripts/                    # Makefile / scripts de simulación
+├── tb_components/              # Ambiente UVM
+│   ├── interface/
+│   ├── packages/
+│   ├── sequences/
+│   ├── tests/
+│   ├── types/
+│   ├── uvm_components/
+├──.gitignore
+├──.gitmessage.txt
+├──.Makefile
+└── README.adoc
+----
+
+---
+
+== Referencia de código
+
+El proyecto sigue la convención de código SystemVerilog documentada en `docs/codigo_convencion.md`. Resumen de sufijos y prefijos:
+
+[cols="2,1,2,1", options="header"]
+|===
+| Elemento | Sufijo/Prefijo | Elemento | Sufijo/Prefijo
+
+| Enum type       | `_e`      | Input port      | `_i`
+| Struct type     | `_s`      | Output port     | `_o`
+| Class           | `_c`      | Wire interno    | `_w`
+| Interface       | `_if`     | Flip-flop       | `_r`
+| Package         | `_pkg`    | rand variable   | `_rand`
+| Constraint      | `cn_`     | randc variable  | `_randc`
+| Parameter       | `P_`      | Instancia RTL   | `u_`
+| Localparam      | `C_`      | Covergroup      | `cg_`
+| DPI import      | `dpi_`    | Assertion       | `a_`
+|===
+
+---
+
+== Herramientas y dependencias
+
+[cols="2,3", options="header"]
+|===
+| Herramienta | Rol
+
+| Synopsys VCS
+| Simulador SystemVerilog + UVM
+
+| Berkeley SoftFloat
+| Modelo de referencia bit-exact IEEE 754 (DPI-C)
+
+| Python n.x
+| Análisis/ Graficación
+
+| Makefile / Shell
+| Automatización de pruebas
+|===
+
+NOTE: GitHub
+
+---
+
+// == Créditos (Agregar al final)
