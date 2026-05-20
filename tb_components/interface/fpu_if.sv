@@ -19,6 +19,8 @@ interface fpu_if #(
 
     // Task: clock_gen
     // Genera el reloj principal del DUT con periodo fijo en 10 ciclos de reloj.
+    logic clk = 1'b0;
+    
     initial begin
         clk = 0;
         forever begin
