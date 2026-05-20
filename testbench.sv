@@ -5,7 +5,7 @@ module tb_top;
 
 
     // instancia del la interface de la fpu
-    fpu_if() bif();
+    fpu_if bif(); // bus interface b-if
 
     // instancia del dut y conexión con la interface
     fp_alu dut( 
@@ -19,16 +19,16 @@ module tb_top;
         .underflow_o  (bif.underflow_o),
         .cmp_result_o (bif.cmp_result_o),
         .invalid_o    (bif.invalid_o)
-    )
+    );
 
 
     initial begin
-        uvm_config_db#(virtual fpu_if)::set(
-            null,
-            "vif",
-            bif
+        uvm_config_db #(virtual fpu_if)::set(
+            null,  // punto de partida de la jerarquia -> null = uvm_root
+            "*",   // wildcard; para todos los componentes
+            "vif", // identifcador 
+            bif    // valor del identificador
         );
-
         
     end
 
