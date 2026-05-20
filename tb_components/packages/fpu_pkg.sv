@@ -1,5 +1,5 @@
 `ifndef FPU_PKG
-`ifedef FPU_PKG
+`define FPU_PKG
 
 package fpu_pkg;
 
