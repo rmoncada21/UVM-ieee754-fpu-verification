@@ -1,0 +1,3 @@
+[submodule "dut/ALU-FPU-ieee754"]
+	path = dut/ALU-FPU-ieee754
+	url = https://github.com/samuelca12/TFG-ALU-FP.git
