@@ -1,11 +1,12 @@
 `ifndef FPU_PKG
 `define FPU_PKG
 
-package fpu_pkg;
+    package fpu_pkg;
 
-    parameter p_addr_width = 3; // definir luego en el makefile
+        parameter p_addr_width = 3; // definir luego en el makefile
 
-endpackage
+    endpackage
 
+    import fpu_pkg::*;
 
 `endif
