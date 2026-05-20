@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 
-include scripts/.ansi.mk
+include scripts/.ansi_code.mk
 
 # Target: all
 #	make all, ejecuta todo el ambiente de pruebas
@@ -12,7 +12,7 @@ all:
 _mkdir_folders:
 	mkdir -p bin/ sim/ sim/logs sim/sim_out reportes-csv reportes_log
 
-testbench: _mkdir_folders _sim_mesh_base_test
+testbench: _mkdir_folders
 	vcs -Mupdate -full64 -sverilog -ntb_opts uvm-1.2 -timescale=1ns/1ps \
 	-f scripts/filelist.f \
 	-o sim/sim_out/testbench_sim \
