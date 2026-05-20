@@ -4,29 +4,35 @@
 +incdir+tb_components/packages
 
 # ============================================================================
- 
-# ---- Modulos de soporte / hoja ----
+# DUT - RTL de la FPU ieee 754
+# ============================================================================
+
+# ---- Modulos de Soporte ----
 dut/ALU-FPU-ieee754/fp_unpack/fp_unpack.sv
-dut/ALU-FPU-ieee754/Operaciones_comb/change_sign.sv
-dut/ALU-FPU-ieee754/Operaciones_comb/align_exponents.sv
-dut/ALU-FPU-ieee754/Operaciones_comb/add_sub_mantissas.sv
-dut/ALU-FPU-ieee754/Operaciones_comb/normalize_result.sv
-dut/ALU-FPU-ieee754/Operaciones_comb/round.sv
-dut/ALU-FPU-ieee754/fp_unpack/fp_pack.sv
- 
-# ---- Modulos de operacion ----
+dut/ALU-FPU-ieee754/Sumador_restador/change_sign.sv
+dut/ALU-FPU-ieee754/Sumador_restador/align_exponents.sv
+dut/ALU-FPU-ieee754/Sumador_restador/add_sub_mantissas.sv
+dut/ALU-FPU-ieee754/Sumador_restador/normalize_result.sv
+dut/ALU-FPU-ieee754/Sumador_restador/round.sv
+dut/ALU-FPU-ieee754/Sumador_restador/fp_pack.sv
+
+
+# ---- Modulos de Operacion ----
 dut/ALU-FPU-ieee754/Sumador_restador/fp_adder.sv
 dut/ALU-FPU-ieee754/Sumador_restador/fp_sub.sv
 dut/ALU-FPU-ieee754/multiplicador/fp_mul.sv
-dut/ALU-FPU-ieee754/Sumador_restador/fp_madd.sv
-dut/ALU-FPU-ieee754/Sumador_restador/fp_msub.sv
+dut/ALU-FPU-ieee754/Operaciones_comb/fp_madd.sv
+dut/ALU-FPU-ieee754/Operaciones_comb/fp_msub.sv
 dut/ALU-FPU-ieee754/Comparadores/fp_feq.sv
-dut/ALU-FPU-ieee754/Comparadores/fp_flt.sv
 dut/ALU-FPU-ieee754/Comparadores/fp_fle.sv
+dut/ALU-FPU-ieee754/Comparadores/fp_flt.sv
  
 # ---- Top del DUT ----
 dut/ALU-FPU-ieee754/ALU_FP/fp_alu.sv
 
+# ============================================================================
+# Testbench UVM
+# ============================================================================
 
 # Incluir packages
 tb_components/packages/fpu_pkg.sv
