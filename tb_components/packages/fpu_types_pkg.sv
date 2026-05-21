@@ -19,7 +19,7 @@
             FEQ = 3'd5;
             FLT = 3'd6;
             FLE = 3'd7;
-        } fpu_opcode_e;
+        } fpu_op_code_e;
 
         typedef enum logic [C_R_MODE-1:0]{
             RNE = 3'b000,
