@@ -11,14 +11,14 @@
         parameter p_addr_width = 3; // definir luego en el makefile
 
         typedef enum logic [C_OP_CODE_WIDTH-1:0]{
-            FADD = 3'd0;
-            FSUB = 3'd1;
-            FMUL = 3'd2;
-            FMADD = 3'd3;
-            FMSUB = 3'd4;
-            FEQ = 3'd5;
-            FLT = 3'd6;
-            FLE = 3'd7;
+            FADD = 3'd0,
+            FSUB = 3'd1,
+            FMUL = 3'd2,
+            FMADD = 3'd3,
+            FMSUB = 3'd4,
+            FEQ = 3'd5,
+            FLT = 3'd6,
+            FLE = 3'd7
         } fpu_op_code_e;
 
         typedef enum logic [C_R_MODE-1:0]{
@@ -31,6 +31,6 @@
 
     endpackage: fpu_types_pkg;
 
-    import fpu_pkg::*;
+    import fpu_types_pkg::*;
 
 `endif
