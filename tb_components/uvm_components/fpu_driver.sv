@@ -17,10 +17,8 @@ class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
 
 		if( !uvm_config_db#(virtual fpu_if)::get(this, "", "vif", bif) ) begin
 			`uvm_fatal( get_type_name(), 
-				"No se pudo obtener vif desde uvm_db_config" )
+				"Driver: No se pudo obtener vif desde uvm_db_config" )
 		end
-
-
 
 	endfunction: build_phase
 
@@ -52,8 +50,8 @@ class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
 
 	task drive_item(fpu_seq_item_c transaction);
 		@(posedge bif.clk);
-			bif.op_code_i <= transaction.op_code;
-			bif.r_mode_i <= transaction.r_mode;
+			bif.op_code_i <= transaction.op_code_i;
+			bif.r_mode_i <= transaction.r_mode_i;
 			bif.fp_a_i <= transaction.fp_a_i;
 			bif.fp_b_i <= transaction.fp_b_i;
 			bif.fp_c_i <= transaction.fp_c_i;

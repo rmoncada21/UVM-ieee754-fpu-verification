@@ -1,7 +1,7 @@
 class fpu_seq_item_c extends uvm_sequence_item;
 	// entradas 
-	rand fpu_op_code_e op_code;
-	rand fpu_r_mode_e r_mode;
+	rand fpu_op_code_e op_code_i;
+	rand fpu_r_mode_e r_mode_i;
 	rand logic [C_FP_WIDTH-1:0] fp_a_i;
 	rand logic [C_FP_WIDTH-1:0] fp_b_i;
 	rand logic [C_FP_WIDTH-1:0] fp_c_i;
@@ -17,8 +17,8 @@ class fpu_seq_item_c extends uvm_sequence_item;
 	// registro de las variables en UVM
 	`uvm_object_utils_begin(fpu_seq_item_c)
 		// entradas
-		`uvm_field_enum(fpu_op_code_e, op_code, UVM_ALL_ON)
-		`uvm_field_enum(fpu_r_mode_e, r_mode, 	UVM_ALL_ON)
+		`uvm_field_enum(fpu_op_code_e, op_code_i, UVM_ALL_ON)
+		`uvm_field_enum(fpu_r_mode_e, r_mode_i, 	UVM_ALL_ON)
 		`uvm_field_int(fp_a_i, 					UVM_ALL_ON | UVM_HEX)
 		`uvm_field_int(fp_b_i, 					UVM_ALL_ON | UVM_HEX)
 		`uvm_field_int(fp_c_i, 					UVM_ALL_ON | UVM_HEX)
