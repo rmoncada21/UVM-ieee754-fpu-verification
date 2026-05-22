@@ -1,5 +1,5 @@
 class fpu_monitor_c extends uvm_monitor;
-	`uvm_components_utils(fpu_monitor_c);
+	`uvm_component_utils(fpu_monitor_c);
 	virtual fpu_if bif;
 
 	// constructor
@@ -7,7 +7,7 @@ class fpu_monitor_c extends uvm_monitor;
 		super.new(name, parent);
 	endfunction : new
 
-	virtual function vois build_phase(uvm_phase phase);
+	virtual function void build_phase(uvm_phase phase);
 		super.build_phase(phase);
 
 		if( !uvm_config_db#(virtual fpu_if)::get(this, "", "vif", bif) ) begin
@@ -17,7 +17,7 @@ class fpu_monitor_c extends uvm_monitor;
 
 	endfunction
 
-	virtual task run_phase();
+	virtual task run_phase(uvm_phase phase);
 		fpu_seq_item_c transaction;
 
 		transaction = fpu_seq_item_c::type_id::create("transaction", this);
@@ -25,8 +25,8 @@ class fpu_monitor_c extends uvm_monitor;
 		forever begin
 			@(posedge bif.clk);
 				// rastrear las entradas
-				transaction.op_code_i = bif.op_code_i;
-				transaction.r_mode_i = bif.r_mode_i;
+				transaction.op_code_i = fpu_op_code_e'(bif.op_code_i);
+				transaction.r_mode_i = fpu_r_mode_e'(bif.r_mode_i);
 				transaction.fp_a_i = bif.fp_a_i;
 				transaction.fp_b_i = bif.fp_b_i;
 				transaction.fp_c_i = bif.fp_c_i;

@@ -9,6 +9,7 @@
 
 	    `include "tb_components/seq_item/fpu_seq_item.sv"
 	    `include "tb_components/uvm_components/fpu_driver.sv"
+	    `include "tb_components/uvm_components/fpu_monitor.sv"
 
 	endpackage
 	import fpu_env_pkg::*;

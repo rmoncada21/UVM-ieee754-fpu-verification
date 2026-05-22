@@ -7,9 +7,9 @@ class fpu_seq_item_c extends uvm_sequence_item;
 	rand logic [C_FP_WIDTH-1:0] fp_c_i;
 
 	// salidas
-	logic [C_FP_WIDTH-1:0] fpu_result_o;
+	logic [C_FP_WIDTH-1:0] fp_result_o;
 	logic cmp_result_o;
-	logic overflow_0;
+	logic overflow_o;
 	logic underflow_o;
 	logic invalid_o;
 
@@ -23,9 +23,9 @@ class fpu_seq_item_c extends uvm_sequence_item;
 		`uvm_field_int(fp_b_i, 					UVM_ALL_ON | UVM_HEX)
 		`uvm_field_int(fp_c_i, 					UVM_ALL_ON | UVM_HEX)
 		// salidas
-		`uvm_field_int(fpu_result_o, 			UVM_ALL_ON | UVM_HEX)
+		`uvm_field_int(fp_result_o, 			UVM_ALL_ON | UVM_HEX)
 		`uvm_field_int(cmp_result_o, 			UVM_ALL_ON)
-		`uvm_field_int(overflow_0,  			UVM_ALL_ON)
+		`uvm_field_int(overflow_o,  			UVM_ALL_ON)
 		`uvm_field_int(underflow_o,  			UVM_ALL_ON)
 		`uvm_field_int(invalid_o,  				UVM_ALL_ON)
 	`uvm_object_utils_end
