@@ -27,7 +27,7 @@ class fpu_agent_c extends;
 	virtual function connect_phase(uvm_phase phase);
 		super.connect_phase(phase);
 
-		// conectar puerto luego
+		// conectar puertos luego
 
 	endfunction: connect_phase
 
