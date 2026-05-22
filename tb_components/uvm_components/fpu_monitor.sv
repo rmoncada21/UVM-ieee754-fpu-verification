@@ -18,24 +18,24 @@ class fpu_monitor_c extends uvm_monitor;
 	endfunction
 
 	virtual task run_phase(uvm_phase phase);
-		fpu_seq_item_c transaction;
+		fpu_seq_item_c item;
 
-		transaction = fpu_seq_item_c::type_id::create("transaction", this);
+		item = fpu_seq_item_c::type_id::create("item", this);
 
 		forever begin
 			@(posedge bif.clk);
 				// rastrear las entradas
-				transaction.op_code_i = fpu_op_code_e'(bif.op_code_i);
-				transaction.r_mode_i = fpu_r_mode_e'(bif.r_mode_i);
-				transaction.fp_a_i = bif.fp_a_i;
-				transaction.fp_b_i = bif.fp_b_i;
-				transaction.fp_c_i = bif.fp_c_i;
+				item.op_code_i = fpu_op_code_e'(bif.op_code_i);
+				item.r_mode_i = fpu_r_mode_e'(bif.r_mode_i);
+				item.fp_a_i = bif.fp_a_i;
+				item.fp_b_i = bif.fp_b_i;
+				item.fp_c_i = bif.fp_c_i;
 				// rastrear las salidas
-				transaction.fp_result_o = bif.fp_result_o;
-				transaction.cmp_result_o = bif.cmp_result_o;
-				transaction.overflow_o = bif.overflow_o;
-				transaction.underflow_o = bif.underflow_o;
-				transaction.invalid_o = bif.invalid_o;
+				item.fp_result_o = bif.fp_result_o;
+				item.cmp_result_o = bif.cmp_result_o;
+				item.overflow_o = bif.overflow_o;
+				item.underflow_o = bif.underflow_o;
+				item.invalid_o = bif.invalid_o;
 
 				// agregar funcin para mostrar los resultados
 		end

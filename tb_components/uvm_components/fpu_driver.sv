@@ -28,19 +28,19 @@ class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
 	// 2. Llama drive_item().
 	// 3. Publica la transacción al scoreboard por drv_ap.
 	virtual task run_phase(uvm_phase phase);
-		fpu_seq_item_c transaction;
+		fpu_seq_item_c item;
 		
 		forever begin
-			seq_item_port.get_next_item(transaction);
+			seq_item_port.get_next_item(item);
 
 			// revisar integradad del paquete
-			if(transaction == null) begin
-				`uvm_error(get_type_name(), "Se recibio un transaction nulo") 
+			if(item == null) begin
+				`uvm_error(get_type_name(), "Se recibio un item nulo") 
 				seq_item_port.item_done();
 				continue;
 			end
 
-			drive_item(transaction);
+			drive_item(item);
 			seq_item_port.item_done();
 
 		end
@@ -48,13 +48,13 @@ class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
 	endtask: run_phase
 
 
-	task drive_item(fpu_seq_item_c transaction);
+	task drive_item(fpu_seq_item_c item);
 		@(posedge bif.clk);
-			bif.op_code_i <= transaction.op_code_i;
-			bif.r_mode_i <= transaction.r_mode_i;
-			bif.fp_a_i <= transaction.fp_a_i;
-			bif.fp_b_i <= transaction.fp_b_i;
-			bif.fp_c_i <= transaction.fp_c_i;
+			bif.op_code_i <= item.op_code_i;
+			bif.r_mode_i <= item.r_mode_i;
+			bif.fp_a_i <= item.fp_a_i;
+			bif.fp_b_i <= item.fp_b_i;
+			bif.fp_c_i <= item.fp_c_i;
 	endtask: drive_item
 
 endclass: fpu_driver_c
