@@ -1,16 +1,16 @@
 class fpu_env_c  extends uvm_env;
 	`uvm_component_utils(fpu_env_c)
 	fpu_agent_c fpu_agent;
-	// instanciar el scoreboard cuando este
+	fpu_scoreboard_c fpu_scoreboard;
 
+	// QUITAR / aun sin uso
 	virtual fpu_if bif;
-
-	// instanciar el scoreboard cuando este hecho
 
 	// constructor
 	function new(string name="fpu_env_c", uvm_component parent);
 		super.new(name, parent);
 	endfunction: new
+	
 	// ------------------------------------------------------------
 	// Function: build_phase
 	// Instancia: agente, configura el vif y crea el scoreboard.
@@ -20,6 +20,7 @@ class fpu_env_c  extends uvm_env;
 
 		fpu_agent = fpu_agent_c::type_id::create("fpu_agent", this);
 		// scoreboard
+		fpu_scoreboard = fpu_scoreboard_c::type_id::create("fpu_scoreboard", this);
 		// coverage
 
 	endfunction: build_phase
