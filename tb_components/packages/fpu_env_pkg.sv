@@ -11,7 +11,7 @@
 	    `include "tb_components/uvm_components/fpu_driver.sv"
 	    `include "tb_components/uvm_components/fpu_monitor.sv"
 	    `include "tb_components/uvm_components/fpu_agent.sv"
-	    // `include "tb_components/uvm_components/fpu_scoreboard.sv"
+	    `include "tb_components/uvm_components/fpu_scoreboard.sv"
 	    `include "tb_components/uvm_components/fpu_env.sv"
 
 
