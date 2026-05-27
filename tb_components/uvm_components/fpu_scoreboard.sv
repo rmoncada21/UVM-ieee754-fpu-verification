@@ -1,7 +1,7 @@
 class fpu_scoreboard_c extends uvm_scoreboard;
 	`uvm_component_utils(fpu_scoreboard_c);
 	
-	// tlm receptor; recibe desde *_port (monitor)
+	// uvm tlm receptor; recibe desde *_port (monitor)
 	uvm_analysis_imp #(fpu_seq_item_c, fpu_scoreboard_c) tlm_mon_aimp;
 
 	function new(string name="fpu_scoreboard_c", uvm_component parent);

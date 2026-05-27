@@ -2,7 +2,7 @@ class fpu_monitor_c extends uvm_monitor;
 	`uvm_component_utils(fpu_monitor_c);
 	virtual fpu_if bif;
 
-	// TLM emisor 
+	// uvm TLM emisor 
 	uvm_analysis_port #(fpu_seq_item_c) tlm_mon_ap; // monitor analysis port = mon_ap
 
 
