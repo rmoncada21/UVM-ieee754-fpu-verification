@@ -29,6 +29,8 @@ module tb_top;
             "vif", // identifcador 
             bif    // valor del identificador
         );
+        test_dpic(8);
+        $finish;
         
     end
 

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int main(){
-	printf("GOLDEN MODEL from C FILE main");
-	return 0;
+void test_dpic(int num){
+	printf("DPI-C TEST from golden model -  num: %i \n", num);
+	return;
 }

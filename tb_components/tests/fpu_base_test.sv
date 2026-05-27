@@ -1,5 +1,5 @@
 class fpu_base_test_c extends uvm_test;
-	`uvm_components_utils(fpu_base_test_c);
+	`uvm_component_utils(fpu_base_test_c);
 
 	// instanciar ambiente
 	fpu_env_c fpu_env;
@@ -10,7 +10,7 @@ class fpu_base_test_c extends uvm_test;
 
 	virtual function void build_phase(uvm_phase phase);
 		super.build_phase(phase);
-		fpu_env = fpu_env_c::type_id::create(fpu_env, this);
+		fpu_env = fpu_env_c::type_id::create("fpu_env", this);
 		// mostrar mensajes de creado
 	endfunction: build_phase
 
@@ -21,8 +21,8 @@ class fpu_base_test_c extends uvm_test;
 	virtual task run_phase(uvm_phase phase);
 		phase.raise_objection(this);
 		`uvm_info("BASE_TEST", 
-			"No EJECUTA SECUENCIAS, 
-			UVM_LOW");
+			"No EJECUTA SECUENCIAS",
+			UVM_LOW);
 		phase.drop_objection(this);
 	endtask
 

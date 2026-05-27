@@ -5,6 +5,17 @@ SHELL := /bin/bash
 
 include scripts/.ansi_code.mk
 
+# Flags C  críticos para semántica IEEE 754
+CC        := gcc
+CFLAGS    := -O2 -frounding-math -fno-unsafe-math-optimizations
+REF_MODEL := golden_model/golden_model.c
+REF_OBJ   := sim/golden_model.o
+
+# -- Compilar el modelo de referencia C --------------------------------------
+$(REF_OBJ): $(REF_MODEL) | _mkdir_folders
+	$(CC) $(CFLAGS) -c $< -o $@
+
+
 # Target: all
 #	make all, ejecuta todo el ambiente de pruebas
 all:
@@ -15,6 +26,8 @@ _mkdir_folders:
 testbench: _mkdir_folders
 	vcs -Mupdate -full64 -sverilog -ntb_opts uvm-1.2 -timescale=1ns/1ps \
 	-f scripts/filelist.f \
+	$(REF_OBJ) \
+	-CFLAGS "$(CFLAGS)" \
 	-o sim/sim_out/testbench_sim \
 	-l sim/logs/compile.log \
 	-Mdir=bin +define+NO_MSG_ANSI_FORMAT \
