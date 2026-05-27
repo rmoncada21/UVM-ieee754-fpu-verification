@@ -2,9 +2,14 @@ class fpu_monitor_c extends uvm_monitor;
 	`uvm_component_utils(fpu_monitor_c);
 	virtual fpu_if bif;
 
+	// TLM emisor 
+	uvm_analysis_port #(fpu_seq_item_c) tlm_mon_ap; // monitor analysis port = mon_ap
+
+
 	// constructor
 	function new(string name="fpu_monitor_c", uvm_component parent);
 		super.new(name, parent);
+		tlm_mon_ap = new("tlm_mon_ap", this);
 	endfunction : new
 
 	virtual function void build_phase(uvm_phase phase);
@@ -22,7 +27,7 @@ class fpu_monitor_c extends uvm_monitor;
 
 		item = fpu_seq_item_c::type_id::create("item", this);
 
-		forever begin
+		forever begin : forever_loop
 			@(posedge bif.clk);
 				// rastrear las entradas
 				item.op_code_i = fpu_op_code_e'(bif.op_code_i);
@@ -36,9 +41,9 @@ class fpu_monitor_c extends uvm_monitor;
 				item.overflow_o = bif.overflow_o;
 				item.underflow_o = bif.underflow_o;
 				item.invalid_o = bif.invalid_o;
-
+				tlm_mon_ap.write(item);
 				// agregar funcin para mostrar los resultados
-		end
+		end: forever_loop
 
 	endtask: run_phase
 

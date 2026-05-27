@@ -1,5 +1,6 @@
 class fpu_env_c  extends uvm_env;
 	`uvm_component_utils(fpu_env_c)
+	
 	fpu_agent_c fpu_agent;
 	fpu_scoreboard_c fpu_scoreboard;
 
@@ -17,7 +18,6 @@ class fpu_env_c  extends uvm_env;
 	// ------------------------------------------------------------
 	virtual function void build_phase(uvm_phase phase);
 		super.build_phase(phase);
-
 		fpu_agent = fpu_agent_c::type_id::create("fpu_agent", this);
 		// scoreboard
 		fpu_scoreboard = fpu_scoreboard_c::type_id::create("fpu_scoreboard", this);
@@ -28,7 +28,7 @@ class fpu_env_c  extends uvm_env;
 	// connect phase, agent, driver, monitor
 	virtual function void connect_phase(uvm_phase phase);
 		super.connect_phase(phase);
-
+		fpu_agent.fpu_monitor.tlm_mon_ap.connect(fpu_scoreboard.tlm_mon_aimp);
 	endfunction: connect_phase
 
 

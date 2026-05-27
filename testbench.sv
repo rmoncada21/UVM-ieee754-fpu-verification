@@ -29,9 +29,12 @@ module tb_top;
             "vif", // identifcador 
             bif    // valor del identificador
         );
+        // Prueba simpl de DPIC
         test_dpic(8);
-        $finish;
         
+        // iniciar los test
+        // run_test();
+        $finish;
     end
 
 endmodule
