@@ -25,7 +25,7 @@ class fpu_env_c  extends uvm_env;
 
 	endfunction: build_phase
 
-	// connect phase, agent, driver, monitor
+	// connect phase, agent, driver, monitor 
 	virtual function void connect_phase(uvm_phase phase);
 		super.connect_phase(phase);
 		fpu_agent.fpu_monitor.tlm_mon_ap.connect(fpu_scoreboard.tlm_mon_aimp);
