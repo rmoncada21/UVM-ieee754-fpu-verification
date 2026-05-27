@@ -8,11 +8,14 @@
 	    // packages
 	    `include "tb_components/packages/msg_macros.svh"
 
+	    // seq item
+	    `include "tb_components/seq_item/fpu_seq_item.sv"
+
 	    // sequences
-	    // `include "tb_components/sequences/fpu_base_sequences.sv"
+	    `include "tb_components/sequences/fpu_base_sequences.sv"
 
 	    // uvm component
-	    `include "tb_components/seq_item/fpu_seq_item.sv"
+	    // `include "tb_components/seq_item/fpu_seq_item.sv"
 	    `include "tb_components/uvm_components/fpu_driver.sv"
 	    `include "tb_components/uvm_components/fpu_monitor.sv"
 	    `include "tb_components/uvm_components/fpu_agent.sv"
