@@ -11,15 +11,7 @@
 #   docs      → documentación: TFG, comentarios, README, diagramas
 #   chore     → tareas de mantenimiento: Makefile, scripts, .gitignore
 #   style     → formato de código sin cambio semántico
-#   env       → cambios al ambiente completo (env, pkg, virtual sequencer)
-#   agent     → cambios al agente UVM (agent, driver, monitor, sequencer)
-#   sb        → cambios al scoreboard o modelo de referencia
-#   if        → cambios a la interfaz SystemVerilog (fpu_if)
-#   item      → cambios al seq_item (fpu_seq_item_c)
-#   seq       → cambios a secuencias o tests
 #   cov       → cambios a covergroups o análisis de cobertura
-#   dut       → cambios al diseño bajo prueba (fpu_design_*)
-#   cfg       → cambios a configuración o parámetros del ambiente
 #
 # ALCANCES COMUNES
 # ─────────────────────────────────────────────────────────────────────────────
