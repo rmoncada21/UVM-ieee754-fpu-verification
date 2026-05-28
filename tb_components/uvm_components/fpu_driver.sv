@@ -17,9 +17,10 @@ class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
 
 		if( !uvm_config_db#(virtual fpu_if)::get(this, "", "vif", bif) ) begin
 			`uvm_fatal( get_type_name(), 
-				"Driver: No se pudo obtener vif desde uvm_db_config" )
+				"FPU_DRIVER: No pudo obtener vif desde uvm_config_db" )
 		end
 
+		// crear puerto TLM de necesitarlo ¿dirver->scoreboard?
 	endfunction: build_phase
 
 	// Task: run_phase
