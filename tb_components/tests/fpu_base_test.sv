@@ -51,7 +51,7 @@ class fpu_base_test_c extends uvm_test;
 				"FPU_ENV creado desde fpu_base_test",
 				UVM_LOW);
 
-		`CUSTOM
+		// `CUSTOM
 
 	endfunction: build_phase
 
