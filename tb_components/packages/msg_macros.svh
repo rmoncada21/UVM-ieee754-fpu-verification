@@ -1,3 +1,4 @@
+// Language: SystemVerilog
 `ifndef MSG_MACROS_SVH
 `define MSG_MACROS_SVH
 
@@ -10,59 +11,74 @@
 //  Usar +define+NO_MSG_ANSI_FORMAT para desactivar colores
 //------------------------------------------------------
 
-    `ifndef NO_MSG_ANSI_FORMAT
-        // Colores habilitados (por defecto)
-        `define RESET       "\033[0m"
-        `define RED         "\033[31m" // mensajes de error
-        `define GREEN       "\033[32m" // driver - monitor
-        `define YELLOW      "\033[33m" // mensajes de warning
-        `define BLUE        "\033[34m" // agente
-        `define MAGENTA     "\033[35m" // scoreboard - checker 
-        `define CYAN        "\033[36m" // env
-        `define BOLD        "\033[1m"  // test
-    
-        // Colores bold
-        `define BOLD_RED     "\033[1;31m"
-        `define BOLD_GREEN   "\033[1;32m"
-        `define BOLD_YELLOW  "\033[1;33m"
-        `define BOLD_BLUE    "\033[1;34m"
-        `define BOLD_MAGENTA "\033[1;35m"
-        `define BOLD_CYAN    "\033[1;36m"
-    `else // Sin color (modo log limpio) - pone todos en reset
-        `define RESET       "\033[0m"
-        `define RED         "\033[0m"
-        `define GREEN       "\033[0m"
-        `define YELLOW      "\033[0m"
-        `define BLUE        "\033[0m"
-        `define MAGENTA     "\033[0m"
-        `define CYAN        "\033[0m"
-        `define BOLD        "\033[0m"
+`ifndef NO_MSG_ANSI_FORMAT
+    // Colores habilitados (por defecto)
+    `define RESET       "\033[0m"
+    `define RED         "\033[31m" // mensajes de error
+    `define GREEN       "\033[32m" // pass / éxito
+    `define YELLOW      "\033[33m" // mensajes de warning
+    `define BLUE        "\033[34m" // hito de fase
+    `define MAGENTA     "\033[35m" // scoreboard - checker
+    `define CYAN        "\033[36m" // hito de test / env
+    `define BOLD        "\033[1m"  // énfasis
 
-        `define BOLD_RED     "\033[0m"
-        `define BOLD_GREEN   "\033[0m"
-        `define BOLD_YELLOW  "\033[0m"
-        `define BOLD_BLUE    "\033[0m"
-        `define BOLD_MAGENTA "\033[0m"
-        `define BOLD_CYAN    "\033[0m"
-    `endif
-    
+    `define BOLD_RED     "\033[1;31m"
+    `define BOLD_GREEN   "\033[1;32m"
+    `define BOLD_YELLOW  "\033[1;33m"
+    `define BOLD_BLUE    "\033[1;34m"
+    `define BOLD_MAGENTA "\033[1;35m"
+    `define BOLD_CYAN    "\033[1;36m"
+`else // Sin color (modo log limpio) - todos vacíos
+    `define RESET       ""
+    `define RED         ""
+    `define GREEN       ""
+    `define YELLOW      ""
+    `define BLUE        ""
+    `define MAGENTA     ""
+    `define CYAN        ""
+    `define BOLD        ""
+
+    `define BOLD_RED     ""
+    `define BOLD_GREEN   ""
+    `define BOLD_YELLOW  ""
+    `define BOLD_BLUE    ""
+    `define BOLD_MAGENTA ""
+    `define BOLD_CYAN    ""
+`endif
+
     //------------------------------------------------------
-    //  MACROS DE MENSAJE
+    //  MACROS DE MENSAJE (fuera del ifndef de color)
     //------------------------------------------------------
-    
-    // `define INFO(msg)    $display({`CYAN,   "[INFO]  ", msg, `RESET});
-    `define CUSTOM_MSG(msg)    $display({`BOLD,    "[MSG]  ", msg, `RESET});
+
+    `define CUSTOM_MSG(msg)     $display({`BOLD,   "[MSG]   ", msg, `RESET});
     `define CUSTOM_WARN(msg)    $display({`YELLOW, "[WARN]  ", msg, `RESET});
     `define CUSTOM_ERROR(msg)   $display({`RED,    "[ERROR] ", msg, `RESET});
-    
+
+    //------------------------------------------------------
+    //  MACROS DE VEREDICTO (lo que importa en el log)
+    //------------------------------------------------------
+
+    `define CUSTOM_PASS(msg)    $display({`BOLD_GREEN, "[PASS]  ", msg, `RESET});
+    `define CUSTOM_FAIL(msg)    $display({`BOLD_RED,   "[FAIL]  ", msg, `RESET});
+
     //------------------------------------------------------
     //  MACRO DE BLOQUE FORMATEADO
+    //  env_block : nombre del componente, ej. "FPU_ENV"
+    //  msg       : mensaje
+    //  macro_color : color ANSI, ej. `CYAN
+    //  El padding se aplica al texto antes del color para no
+    //  desalinear columnas con caracteres ANSI invisibles.
     //------------------------------------------------------
 
     `define CUSTOM_INFO(env_block, msg, macro_color) \
-        begin \
-          string block; \
-          block = {"[", env_block, "]"}; \
-          $display({"T=%-6t", macro_color, "%-14s", `RESET, "%s"}, $time, block, msg); \
-        end 
+        begin : custom_info_blk \
+            string block_s; \
+            block_s = $sformatf("%-14s", {"[", env_block , "] "}); \
+            $display({"T=%-6t", macro_color, "%s", `RESET, "%s"}, $time, block_s, msg); \
+        end
+
+        // INFO con color y verbosidad explícita
+    `define INFO_COLOR(id, msg, color, verb) \
+            `uvm_info(id, {color, msg, `RESET}, verb)
+
 `endif // MSG_MACROS_SVH

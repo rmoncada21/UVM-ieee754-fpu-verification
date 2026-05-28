@@ -15,6 +15,11 @@ REF_OBJ   := sim/golden_model.o
 $(REF_OBJ): $(REF_MODEL) | _mkdir_folders
 	$(CC) $(CFLAGS) -c $< -o $@
 
+MSG_FORMAT := +define+NO_MSG_ANSI_FORMAT
+ifeq ($(ANSI),1)
+    MSG_FORMAT :=
+endif
+
 
 # Target: all
 #	make all, ejecuta todo el ambiente de pruebas
@@ -30,7 +35,7 @@ testbench: _mkdir_folders
 	-CFLAGS "$(CFLAGS)" \
 	-o sim/sim_out/testbench_sim \
 	-l sim/logs/compile.log \
-	-Mdir=bin +define+NO_MSG_ANSI_FORMAT \
+	-Mdir=bin $(MSG_FORMAT) \
 	-kdb -debug_acc+all -debug_region+cell+encrypt \
 	+lint=TFIPC-L -cm line+tgl+cond+fsm+branch+assert 
 	@mv -f vc_hdrs.h .fsm.sch.verilog.xml sim 2>/dev/null || true

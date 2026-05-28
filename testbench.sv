@@ -33,6 +33,12 @@ module tb_top;
         test_dpic(8);
         
         // iniciar los test
+        `CUSTOM_INFO("TOP TESTBENCH",
+                    "test antes de run_test()",
+                    `CYAN);
+
+        
+        `INFO_COLOR("test","MENSAJE" ,`CYAN, UVM_LOW);
         // run_test();
         $finish;
     end
