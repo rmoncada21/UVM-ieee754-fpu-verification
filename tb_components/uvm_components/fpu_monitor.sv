@@ -9,7 +9,7 @@ class fpu_monitor_c extends uvm_monitor;
 	// constructor
 	function new(string name="fpu_monitor_c", uvm_component parent);
 		super.new(name, parent);
-		tlm_mon_ap = new("tlm_mon_ap", this);
+		// tlm_mon_ap = new("tlm_mon_ap", this);
 	endfunction : new
 
 	virtual function void build_phase(uvm_phase phase);
@@ -17,8 +17,15 @@ class fpu_monitor_c extends uvm_monitor;
 
 		if( !uvm_config_db#(virtual fpu_if)::get(this, "", "vif", bif) ) begin
 			`uvm_fatal( get_type_name(), 
-				"Monitor: No se pudo obtener vif desde uvm_db_config" )
+				"FPU_MONITOR: No pudo obtener vif desde uvm_config_db" )
 		end
+
+		// crear el puerto tlm
+		tlm_mon_ap = new("tlm_mon_ap",this);
+
+		`uvm_info(get_type_name(),
+			"tlm_mon_ap creado",
+			UVM_LOW);
 
 	endfunction
 
