@@ -13,6 +13,7 @@
 	    `include "tb_components/seq_item/fpu_seq_item.sv"
 
 	    // sequences
+	    `include "tb_components/sequences/fpu_sequencer.sv"
 	    `include "tb_components/sequences/fpu_base_sequences.sv"
 
 	    // uvm component
