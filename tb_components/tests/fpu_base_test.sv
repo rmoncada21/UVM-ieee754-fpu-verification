@@ -51,7 +51,8 @@ class fpu_base_test_c extends uvm_test;
 				"FPU_ENV creado desde fpu_base_test",
 				UVM_LOW);
 
-		// `CUSTOM
+		uvm_config_db#(uvm_active_passive_enum)::set(
+			this, "fpu_env.fpu_agent", "is_active", UVM_ACTIVE);
 
 	endfunction: build_phase
 
