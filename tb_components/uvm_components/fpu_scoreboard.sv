@@ -1,7 +1,6 @@
 class fpu_scoreboard_c extends uvm_scoreboard;
 	`uvm_component_utils(fpu_scoreboard_c);
 	
-	// uvm tlm receptor; recibe desde *_port (monitor)
 	// uvm_tlm_analysis_fifo ¿?
 	uvm_analysis_imp #(fpu_seq_item_c, fpu_scoreboard_c) tlm_scb_aimp;
 
@@ -16,8 +15,8 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 		tlm_scb_aimp = new("tlm_scb_aimp", this);
 
 		`uvm_info(get_type_name(),
-			"tlm_mon_ap creado",
-			UVM_LOW);
+				"TLM: uvm_analysis_imp: tlm_scb_aimp creado desde fpu_screboard",
+				UVM_LOW);
 	endfunction :  build_phase;
 
 	virtual function void report_phase(uvm_phase phase);

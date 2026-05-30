@@ -4,7 +4,7 @@ class fpu_agent_c extends uvm_agent;
 	fpu_monitor_c fpu_monitor;
 	fpu_sequencer_c fpu_sequencer;
 	fpu_driver_c fpu_driver;
-	
+
 	virtual fpu_if bif;
 
 	// puertos
@@ -34,10 +34,10 @@ class fpu_agent_c extends uvm_agent;
 				fpu_driver = fpu_driver_c::type_id::create("fpu_driver", this);
 		end
 
-			// agent_seq = uvm_sequencer#(fpu_seq_item_c)::type_id::create("agent_seq", this);
+		// agent_seq = uvm_sequencer#(fpu_seq_item_c)::type_id::create("agent_seq", this);
 
-		`uvm_info("FPU_AGENT",
-				"FPU_DRIVER & FPU_MONITOR creados desde fpu_agent",
+		`uvm_info(get_type_name(),
+				"FPU_SEQUENCER, FPU_DRIVER & FPU_MONITOR creados desde fpu_agent",
 				UVM_LOW);
 
 	endfunction: build_phase

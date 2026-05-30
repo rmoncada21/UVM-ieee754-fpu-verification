@@ -4,7 +4,7 @@ class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
 	// handler de la interfas con Dut
 	virtual fpu_if bif; // bus interface
 
-	// comunicacion con el scoreboard
+	// puerto de comunicacion con el scoreboard de necesitarlo
 
 	// constructor
 	function new(string name="fpu_driver_c", uvm_component parent);
@@ -21,6 +21,11 @@ class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
 		end
 
 		// crear puerto TLM de necesitarlo ¿dirver->scoreboard?
+
+		// `uvm_info(get_type_name(),
+		// 		"TLM: uvm_analysis_port creado desde fpu_driver",
+		// 		UVM_LOW);
+
 	endfunction: build_phase
 
 	// Task: run_phase

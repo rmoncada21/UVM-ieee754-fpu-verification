@@ -23,7 +23,7 @@ class fpu_env_c  extends uvm_env;
 		fpu_scoreboard = fpu_scoreboard_c::type_id::create("fpu_scoreboard", this);
 		// coverage
 
-		`uvm_info("FPU_ENV",
+		`uvm_info(get_type_name(),
 				"FPU_AGENT & FPU_SCOREBOARD creados desde fpu_env",
 				UVM_LOW);
 
