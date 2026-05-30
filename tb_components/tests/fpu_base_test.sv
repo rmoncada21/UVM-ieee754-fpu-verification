@@ -47,7 +47,7 @@ class fpu_base_test_c extends uvm_test;
 		// creacin del ambiente
 		fpu_env = fpu_env_c::type_id::create("fpu_env", this);
 		
-		`uvm_info("FPU_BASE_TEST",
+		`uvm_info(get_type_name(),
 				"FPU_ENV creado desde fpu_base_test",
 				UVM_LOW);
 
