@@ -32,7 +32,11 @@ class fpu_env_c  extends uvm_env;
 	// connect phase, agent, driver, monitor 
 	virtual function void connect_phase(uvm_phase phase);
 		super.connect_phase(phase);
-		fpu_agent.fpu_monitor.tlm_mon_ap.connect(fpu_scoreboard.tlm_scb_aimp);
+		// conexion por medio del puerto del agente
+		fpu_agent.item_collected_port.connect(fpu_scoreboard.tlm_scb_aimp);
+		// conexion directa del monitor al agente - mala pratica
+		// fpu_agent.fpu_monitor.tlm_mon_ap.connect(fpu_scoreboard.tlm_scb_aimp);
+		
 		// TODO: agregar conexion con el coverage
 	endfunction: connect_phase
 

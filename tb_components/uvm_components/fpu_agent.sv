@@ -8,6 +8,7 @@ class fpu_agent_c extends uvm_agent;
 	virtual fpu_if bif;
 
 	// puertos
+	uvm_analysis_port #(fpu_seq_item_c) item_collected_port;
 
 	// ¿sequencer?
 	// uvm_sequencer#(fpu_seq_item_c) agent_seq;
@@ -23,6 +24,9 @@ class fpu_agent_c extends uvm_agent;
 		
 		// monitor siempre se crea ya sea el agente activo o pasivo		
 		fpu_monitor = fpu_monitor_c::type_id::create("fpu_monitor", this);
+
+		// puerto del agente
+		item_collected_port = new("item_collected_port", this);
 
 		// get_is_active() es por defecto UVM_ACTIVE
 		if(get_is_active() == UVM_ACTIVE) begin
@@ -43,7 +47,8 @@ class fpu_agent_c extends uvm_agent;
 		super.connect_phase(phase);
 
 		// suscribers
-		// fpu_monitor.tlm_mon_aimp.connect();
+		// exponer el puerto del agente al ambiente
+		fpu_monitor.tlm_mon_ap.connect(item_collected_port);
 
 		// conectar sequencer con el driver
 		if(get_is_active() == UVM_ACTIVE) begin
