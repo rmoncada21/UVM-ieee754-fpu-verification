@@ -1,14 +1,10 @@
 # Target: prerrequisites
 # command to build Target
 
-SHELL := /bin/bash
 include scripts/.ansi_code.mk
+# include sim/sim_make.mk
 
-# Flags C  críticos para semántica IEEE 754
-CC        := gcc
-CFLAGS    := -O2 -frounding-math -fno-unsafe-math-optimizations
-REF_MODEL := golden_model/golden_model.c
-REF_OBJ   := sim/golden_model.o
+SHELL := /bin/bash
 
 # Flags VCS
 VCS 	  := vcs
@@ -24,34 +20,53 @@ LINT      := TFIPC-L
 COVERAGE  := line+tgl+cond+fsm+branch+assert 
 CM_LOG    := logs/cov/cm.log
 
+# Flags C  críticos para semántica IEEE 754
+CC        := gcc
+CFLAGS    := -O2 -frounding-math -fno-unsafe-math-optimizations
+GOLD_MODEL:= golden_model
+GOLD_OBJ  := $(GOLD_MODEL:=.o)
+# REF_MODEL := golden_model/golden_model.c
+# REF_OBJ   := sim/golden_model.o
+
 # Flags Macros 
 # make testbench ANSI=1 para mostrar el mensaje con formato ANSI
 MSG_FORMAT := $(if $(filter 1,$(ANSI)),+define+MSG_ANSI_FORMAT)
 RECURSIVE  := $(if $(filter 1, $(R)),-R)
 
+# Otros
+SIM        := sim
+LOGS_SIM   := logs/sim
+LOGS_TESTS := logs/tests
+LOGS_COV   := logs/cov
+REPORT_CSV := reportes_csv
+
 # Variables
-SEED := 
+SEED := auto
+
+# Exporta variables al sim_make
+export LOGS_SIM LOGS_TESTS VERBOSITY SEED
 
 # Targets
-all: $(REF_OBJ) testbench
+all: $(GOLD_MODEL) testbench
 
 # mkdir -p bin/ sim/ sim/logs sim/sim_out reportes-csv reportes_log_compile
+# mkdir -p bin/ sim/ logs/cov logs/sim logs/tests
 _mkdir_folders:
-	mkdir -p bin/ sim/ logs/cov logs/sim logs/tests
+	mkdir -p $(MDIR) $(SIM) $(LOGS_SIM) $(LOGS_COV) $(LOGS_TESTS)
 
 _cp_sim_makefile:
 	mkdir -p sim/
 	cp -f scripts/sim_make.mk sim/
 
 _test: _cp_sim_makefile
-	make -C sim -f sim_make.mk _test_target
+	$(MAKE) -C sim -f sim_make.mk _test_target
 
 # ---------------------------------------------
 # -- Compilar el top testbench
 testbench: _mkdir_folders
 	$(VCS) $(SVFLAGS) -timescale=$(TIMESCALE) \
 	-f $(FILELIST) \
-	$(REF_OBJ) "$(CFLAGS)" \
+	$(SIM)/$(GOLD_OBJ) $(CFLAGS) \
 	-o $(EXE_SIM) -l $(LOG_TB) \
 	-Mdir=$(MDIR) $(MSG_FORMAT) \
 	$(DFLAGS) \
@@ -66,24 +81,24 @@ testbench: _mkdir_folders
 # -C sim-> cambia el working directory a sim
 
 testbench_sim: _cp_sim_makefile
-	make -C sim -f sim_make.mk _testbench_sim
+	$(MAKE) -C $(SIM) -f sim_make.mk _testbench_sim
 
-sim_fpu_base_test: _cp_sim_makefile
-	make -C sim -f sim_make.mk _sim_fpu_base_test
+run_fpu_base_test: _cp_sim_makefile
+	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_base_test
 
 # ---------------------------------------------
 # -- Compilar el modelo de referencia C
-ref_model: $(REF_MODEL) | _mkdir_folders
-	$(CC) $(CFLAGS) -c $< -o $@
+$(GOLD_MODEL): _mkdir_folders
+	$(CC) $(CFLAGS) -c $@/$(@).c -o $(SIM)/$(@).o
 
-$(REF_OBJ): $(REF_MODEL) | _mkdir_folders
-	$(CC) $(CFLAGS) -c $< -o $@
+# $(REF_OBJ): $(REF_MODEL) | _mkdir_folders
+# 	$(CC) $(CFLAGS) -c $< -o $@
 
 # ---------------------------------------------
 # limpiar archivos
 clean:
 	rm -f ucli.key
-	rm -rf bin/ sim/
+	rm -rf $(MDIR) $(SIM)
 
 clean_all: clean
 	rm -rf logs/ reportes_csv/
@@ -96,6 +111,7 @@ help:
 
 .PHONY: all _mkdir_folders _cp_sim_makefile _test \
 		testbench testbench_sim \
-		sim_fpu_base_test \
+		run_fpu_base_test \
+		$(GOLD_MODEL) \
 		clean clean_all \
 		help \
