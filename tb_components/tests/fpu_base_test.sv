@@ -86,7 +86,7 @@ class fpu_base_test_c extends uvm_test;
 
 	virtual task run_phase(uvm_phase phase);
 		phase.raise_objection(this);
-		`uvm_info("this.get_type_name()", 
+		`uvm_info(this.get_type_name(), 
 			"No EJECUTA SECUENCIAS",
 			UVM_LOW);
 		phase.drop_objection(this);
