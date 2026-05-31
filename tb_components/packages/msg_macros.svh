@@ -8,10 +8,11 @@
 /// para mejorar la visualización del log en consola.
 //------------------------------------------------------
 //  CONFIGURACIÓN DE COLOR
-//  Usar +define+NO_MSG_ANSI_FORMAT para desactivar colores
+//  Usar +define+NO_MSG_ANSI_FORMAT en el comando de compilacion 
+//  para desactivar colores
 //------------------------------------------------------
 
-`ifndef NO_MSG_ANSI_FORMAT
+`ifdef MSG_ANSI_FORMAT
     // Colores habilitados (por defecto)
     `define RESET       "\033[0m"
     `define RED         "\033[31m" // mensajes de error

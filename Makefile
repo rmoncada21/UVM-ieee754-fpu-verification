@@ -2,7 +2,6 @@
 # command to build Target
 
 SHELL := /bin/bash
-
 include scripts/.ansi_code.mk
 
 # Flags C  críticos para semántica IEEE 754
@@ -11,18 +10,11 @@ CFLAGS    := -O2 -frounding-math -fno-unsafe-math-optimizations
 REF_MODEL := golden_model/golden_model.c
 REF_OBJ   := sim/golden_model.o
 
-# -- Compilar el modelo de referencia C --------------------------------------
-$(REF_OBJ): $(REF_MODEL) | _mkdir_folders
-	$(CC) $(CFLAGS) -c $< -o $@
+# Flags Macros 
+# make testbench ANSI=1 para mostrar el mensaje con formato ANSI
+MSG_FORMAT := $(if $(filter 1,$(ANSI)),+define+MSG_ANSI_FORMAT)
 
-MSG_FORMAT := +define+NO_MSG_ANSI_FORMAT
-ifeq ($(ANSI),1)
-    MSG_FORMAT :=
-endif
-
-
-# Target: all
-#	make all, ejecuta todo el ambiente de pruebas
+# Targets
 all:
 
 _mkdir_folders:
@@ -41,6 +33,12 @@ testbench: _mkdir_folders
 	+lint=TFIPC-L -cm line+tgl+cond+fsm+branch+assert 
 	@mv -f vc_hdrs.h .fsm.sch.verilog.xml sim 2>/dev/null || true
 
+# -- Compilar el modelo de referencia C --------------------------------------
+ref_model: $(REF_MODEL) | _mkdir_folders
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(REF_MODEL): _mkdir_folders
+	$(CC) $(CFLAGS) 
 
 clean:
 	rm -f ucli.key
