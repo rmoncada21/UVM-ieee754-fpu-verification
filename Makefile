@@ -43,7 +43,7 @@ REPORT_CSV := reportes_csv
 # Variables
 SEED := auto
 
-# Exporta variables al sim_make
+# Exporta variables para que sim_make.mk las vea
 export LOGS_SIM LOGS_TESTS VERBOSITY SEED
 
 # Targets
