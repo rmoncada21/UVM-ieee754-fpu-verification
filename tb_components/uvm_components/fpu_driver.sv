@@ -16,7 +16,7 @@ class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
 		super.build_phase(phase);
 
 		if( !uvm_config_db#(virtual fpu_if)::get(this, "", "vif", bif) ) begin
-			`uvm_fatal( get_type_name(), 
+			`uvm_fatal(this.get_type_name(), 
 				"FPU_DRIVER: No pudo obtener vif desde uvm_config_db" )
 		end
 
@@ -41,7 +41,7 @@ class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
 
 			// revisar integradad del paquete
 			if(item == null) begin
-				`uvm_error(get_type_name(), "Se recibio un item nulo") 
+				`uvm_error(this.get_type_name(), "Se recibio un item nulo") 
 				seq_item_port.item_done();
 				continue;
 			end

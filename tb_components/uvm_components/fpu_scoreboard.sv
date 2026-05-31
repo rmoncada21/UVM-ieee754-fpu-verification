@@ -14,7 +14,7 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 		
 		tlm_scb_aimp = new("tlm_scb_aimp", this);
 
-		`uvm_info(get_type_name(),
+		`uvm_info(this.get_type_name(),
 				"TLM: uvm_analysis_imp: tlm_scb_aimp creado desde fpu_screboard",
 				UVM_LOW);
 	endfunction :  build_phase;

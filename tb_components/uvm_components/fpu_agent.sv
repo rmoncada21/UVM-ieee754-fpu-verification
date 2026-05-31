@@ -29,14 +29,14 @@ class fpu_agent_c extends uvm_agent;
 		item_collected_port = new("item_collected_port", this);
 
 		// get_is_active() es por defecto UVM_ACTIVE
-		if(get_is_active() == UVM_ACTIVE) begin
+		if(this.get_is_active() == UVM_ACTIVE) begin
 				fpu_sequencer = fpu_sequencer_c::type_id::create("fpu_sequencer", this);
 				fpu_driver = fpu_driver_c::type_id::create("fpu_driver", this);
 		end
 
 		// agent_seq = uvm_sequencer#(fpu_seq_item_c)::type_id::create("agent_seq", this);
 
-		`uvm_info(get_type_name(),
+		`uvm_info(this.get_type_name(),
 				"FPU_SEQUENCER, FPU_DRIVER & FPU_MONITOR creados desde fpu_agent",
 				UVM_LOW);
 
@@ -51,7 +51,7 @@ class fpu_agent_c extends uvm_agent;
 		fpu_monitor.tlm_mon_ap.connect(item_collected_port);
 
 		// conectar sequencer con el driver
-		if(get_is_active() == UVM_ACTIVE) begin
+		if(this.get_is_active() == UVM_ACTIVE) begin
 			fpu_driver.seq_item_port.connect(fpu_sequencer.seq_item_export);
 		end
 
