@@ -6,6 +6,7 @@ zfile_*
 # folders
 bin/
 images/
+logs/
 sim/
 ## quitar al finalizar el ambiente
 reportes_*/
