@@ -8,26 +8,6 @@ class fpu_base_test_c extends uvm_test;
 		super.new(name, parent);
 	endfunction;
 
-	/* Imprimir banners, mostrar configuración aplicada al run.
-	como por ejemplos, mostrar seed del test 
-	configurar verbosity, setear timeouts, activar debug
-	ajustes gloables de ejecucion */
-
-	function void start_of_simulation_phase(uvm_phase phase);
-    super.start_of_simulation_phase(phase);
-
-    // imprime todo por debajo de UVM_HIGH 
-    	uvm_top.set_report_verbosity_level(UVM_HIGH);
-    	// uvm_top.print_topology();
-    $display({`BOLD_CYAN,
-          "\n+------------------------------------------+\n",
-          "¦   FPU RV32F  VFCI                    ¦\n",
-          "¦   Test: %-34s¦\n", get_type_name(),
-          "+------------------------------------------+",
-          `RESET});
-	endfunction
-
-
 	/* build phase
 	instanciar los hijos del componente via factory de UVM */
 	virtual function void build_phase(uvm_phase phase);
@@ -78,15 +58,35 @@ class fpu_base_test_c extends uvm_test;
         uvm_top.print_topology();
     endfunction : end_of_elaboration_phase
 
+    /* Imprimir banners, mostrar configuración aplicada al run.
+	como por ejemplos, mostrar seed del test 
+	configurar verbosity, setear timeouts, activar debug
+	ajustes gloables de ejecucion */
+    virtual function void start_of_simulation_phase(uvm_phase phase);
+    	super.start_of_simulation_phase(phase);
+    	
+    	// Mostrar banner
+    	`CUSTOM_MSG("============================================================")
+    	`CUSTOM_MSG("  FPM RV32F  ·  Ambiente UVM de verificación funcional")
+	    `CUSTOM_MSG("  DUT: fp_alu  ·  IEEE 754-2008 binary32")
+	    `CUSTOM_MSG("============================================================")
 
-    // virtual function void start_of_simulation_phase(uvm_phase phase);
-
-	// endfunction : start_of_simulation_phase
+	    `CUSTOM_INFO("FPU_TEST",
+	                 $sformatf("Test     : %s", get_type_name()),
+	                 `BOLD)
+	    `CUSTOM_INFO("FPU_TEST",
+	                 $sformatf("Semilla  : %0h", $get_initial_random_seed()),
+	                 `BOLD)
+	    `CUSTOM_INFO("FPU_TEST",
+	                 $sformatf("Timeout  : %0t", uvm_top.phase_timeout),
+	                 `BOLD)
+	    `CUSTOM_MSG("============================================================")
+	endfunction : start_of_simulation_phase
 
 
 	virtual task run_phase(uvm_phase phase);
 		phase.raise_objection(this);
-		`uvm_info("BASE_TEST", 
+		`uvm_info("this.get_type_name()", 
 			"No EJECUTA SECUENCIAS",
 			UVM_LOW);
 		phase.drop_objection(this);

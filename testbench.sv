@@ -38,7 +38,7 @@ module tb_top;
                     `CYAN);
 
         
-        `INFO_COLOR("test","MENSAJE" ,`CYAN, UVM_LOW);
+        // `INFO_COLOR("test","MENSAJE" ,`CYAN, UVM_LOW);
         // run_test();
         run_test("fpu_base_test_c");
         $finish;

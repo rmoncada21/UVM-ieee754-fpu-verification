@@ -50,9 +50,13 @@
     //  MACROS DE MENSAJE (fuera del ifndef de color)
     //------------------------------------------------------
 
-    `define CUSTOM_MSG(msg)     $display({`BOLD,   "[MSG]   ", msg, `RESET});
-    `define CUSTOM_WARN(msg)    $display({`YELLOW, "[WARN]  ", msg, `RESET});
-    `define CUSTOM_ERROR(msg)   $display({`RED,    "[ERROR] ", msg, `RESET});
+    /*Dejan un bloque de espacio libre entre el margen y el mensaje*/
+    // `define CUSTOM_MSG(msg)     $display({`BOLD,   "[MSG]   ", msg, `RESET});
+    // `define CUSTOM_WARN(msg)    $display({`YELLOW, "[WARN]  ", msg, `RESET});
+    // `define CUSTOM_ERROR(msg)   $display({`RED,    "[ERROR] ", msg, `RESET});
+    `define CUSTOM_MSG(msg)   $display("%s[MSG]   %s%s", `BOLD, msg, `RESET);
+    `define CUSTOM_WARN(msg)  $display("%s[WARN]  %s%s", `YELLOW, msg, `RESET);
+    `define CUSTOM_ERROR(msg) $display("%s[ERROR] %s%s", `RED, msg, `RESET);
 
     //------------------------------------------------------
     //  MACROS DE VEREDICTO (lo que importa en el log)
@@ -70,15 +74,13 @@
     //  desalinear columnas con caracteres ANSI invisibles.
     //------------------------------------------------------
 
+    // `define CUSTOM_INFO(env_block, msg, macro_color) \
+    //     begin : custom_info_blk \
+    //         string block_s; \
+    //         block_s = $sformatf("%-14s", {"[", env_block , "] "}); \
+    //         $display({"T=%-6t", macro_color, "%s", `RESET, "%s"}, $time, block_s, msg); \
+    //     end
     `define CUSTOM_INFO(env_block, msg, macro_color) \
-        begin : custom_info_blk \
-            string block_s; \
-            block_s = $sformatf("%-14s", {"[", env_block , "] "}); \
-            $display({"T=%-6t", macro_color, "%s", `RESET, "%s"}, $time, block_s, msg); \
-        end
-
-        // INFO con color y verbosidad explícita
-    `define INFO_COLOR(id, msg, color, verb) \
-            `uvm_info(id, {color, msg, `RESET}, verb)
+        $display({"T=%-6t", macro_color, "%s", `RESET, "%s"}, $time, $sformatf("%-14s", {"[", env_block, "]"}), msg);
 
 `endif // MSG_MACROS_SVH
