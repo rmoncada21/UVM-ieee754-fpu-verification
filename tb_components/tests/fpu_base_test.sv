@@ -67,8 +67,8 @@ class fpu_base_test_c extends uvm_test;
     	
     	// Mostrar banner
     	`CUSTOM_MSG("============================================================")
-    	`CUSTOM_MSG("  FPM RV32F  ·  Ambiente UVM de verificación funcional")
-	    `CUSTOM_MSG("  DUT: fp_alu  ·  IEEE 754-2008 binary32")
+    	`CUSTOM_MSG("  FPU RV32F  ·  Ambiente UVM de verificación funcional")
+	    `CUSTOM_MSG("  DUT: fpu_alu  ·  IEEE 754-2008 binary32")
 	    `CUSTOM_MSG("============================================================")
 
 	    `CUSTOM_INFO("FPU_TEST",
