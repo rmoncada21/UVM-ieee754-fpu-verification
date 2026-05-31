@@ -37,6 +37,7 @@ testbench: _mkdir_folders
 	-l sim/logs/compile.log \
 	-Mdir=bin $(MSG_FORMAT) \
 	-kdb -debug_acc+all -debug_region+cell+encrypt \
+	+UVM_VERBOSITY=UVM_HIGH \
 	+lint=TFIPC-L -cm line+tgl+cond+fsm+branch+assert 
 	@mv -f vc_hdrs.h .fsm.sch.verilog.xml sim 2>/dev/null || true
 
