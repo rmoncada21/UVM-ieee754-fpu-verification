@@ -27,7 +27,15 @@ class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
 			end
 			this.finish_item(req);
 		end
-
 	endtask: body
+
+	// Prototipos de generdores
+	extern protected function logic [31:0] gen_cero(bit signo = 1'b0);
+	extern protected function logic [31:0] gen_subnormal(bit signo = 1'b0);
+	extern protected function logic [31:0] gen_normal(bit signo = 1'b0);
+	extern protected function logic [31:0] gen_inf(bit signo = 1'b0);
+	extern protected function logic [31:0] gen_qnan(bit signo = 1'b0);
+	extern protected function logic [31:0] gen_snan(bit signo = 1'b0);
 	
 endclass: fpu_base_sequence_c
+
