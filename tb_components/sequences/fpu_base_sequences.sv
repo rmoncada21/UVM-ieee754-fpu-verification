@@ -90,13 +90,14 @@ function logic [31:0] fpu_base_sequence_c::gen_qnan(bit signo = 1'b0);
 	return{signo, exponent, mantissa, payload};
 endfunction: gen_qnan
 
+// signaling not a number
 // sNaN: exponentes todos en unos, bit alto de mantisa en 0, resto disinto de cero
 function logic [31:0] fpu_base_sequence_c::gen_snan(bit signo = 1'b0);
 	logic [7:0] exponent;
 	logic mantissa;
 	logic [21:0] payload;
 	exponent = 8'hFF;
-	mantissa = 1'b1;
+	mantissa = 1'b0;
 	payload = 22'($urandom_range(22'h3F_FFFF,22'd1));
 
 	return{signo, exponent, mantissa, payload};
