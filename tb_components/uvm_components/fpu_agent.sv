@@ -37,7 +37,7 @@ class fpu_agent_c extends uvm_agent;
 		// agent_seq = uvm_sequencer#(fpu_seq_item_c)::type_id::create("agent_seq", this);
 
 		`uvm_info(this.get_type_name(),
-				"FPU_SEQUENCER, FPU_DRIVER & FPU_MONITOR creados desde fpu_agent",
+				"Sequencer, Driver & Monitor creados",
 				UVM_LOW);
 
 	endfunction: build_phase
