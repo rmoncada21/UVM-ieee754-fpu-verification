@@ -17,7 +17,7 @@ class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
 
 		if( !uvm_config_db#(virtual fpu_if)::get(this, "", "vif", bif) ) begin
 			`uvm_fatal(this.get_type_name(), 
-				"FPU_DRIVER: No pudo obtener vif desde uvm_config_db" )
+				"FPU_DRIVER: No pudo obtener vif desde uvm_config_db")
 		end
 
 		// crear puerto TLM de necesitarlo ¿dirver->scoreboard?
@@ -27,6 +27,13 @@ class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
 		// 		UVM_LOW);
 
 	endfunction: build_phase
+
+	virtual function void start_of_simulation_phase(uvm_phase phase);
+		super.start_of_simulation_phase(phase);
+		`uvm_info(this.get_type_name(),
+			"Driver esperando items del sequencer",
+			UVM_LOW)
+	endfunction: start_of_simulation_phase
 
 	// Task: run_phase
 	// Lazo principal del driver:
