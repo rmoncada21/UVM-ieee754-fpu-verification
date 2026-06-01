@@ -49,7 +49,7 @@ SEED := auto
 export LOGS_SIM LOGS_TESTS VERBOSITY SEED TIMEOUT
 
 # Targets
-all: $(GOLD_MODEL) testbench
+all: clean_all $(GOLD_MODEL) testbench
 
 # mkdir -p bin/ sim/ sim/logs sim/sim_out reportes-csv reportes_log_compile
 # mkdir -p bin/ sim/ logs/cov logs/sim logs/tests
