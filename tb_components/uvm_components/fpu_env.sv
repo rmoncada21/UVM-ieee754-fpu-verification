@@ -23,9 +23,9 @@ class fpu_env_c  extends uvm_env;
 		fpu_scoreboard = fpu_scoreboard_c::type_id::create("fpu_scoreboard", this);
 		// coverage
 
-		`uvm_info(get_type_name(),
-				"FPU_AGENT & FPU_SCOREBOARD creados desde fpu_env",
-				UVM_LOW);
+		`uvm_info(this.get_type_name(),
+				"Agent & Scoreboard creados",
+				UVM_LOW)
 
 	endfunction: build_phase
 
@@ -41,6 +41,12 @@ class fpu_env_c  extends uvm_env;
 		// fpu_agent.item_collected_port.connect(fpu_cov."NOMBRE_PUERTO");
 	endfunction: connect_phase
 
+	virtual function void start_of_simulation_phase(uvm_phase phase);
+		super.start_of_simulation_phase(phase);
+		`uvm_info(this.get_type_name(),
+			"Enviroment listo, puertos TLM cableados",
+			UVM_LOW)
 
+	endfunction: start_of_simulation_phase
 
 endclass: fpu_env_c
