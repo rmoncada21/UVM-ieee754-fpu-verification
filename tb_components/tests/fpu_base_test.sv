@@ -13,7 +13,7 @@ class fpu_base_test_c extends uvm_test;
 	virtual function void build_phase(uvm_phase phase);
 		super.build_phase(phase);
 		
-		// creacin del ambiente
+		// creacion del ambiente
 		fpu_env = fpu_env_c::type_id::create("fpu_env", this);
 		
 		`uvm_info(this.get_type_name(),
@@ -84,13 +84,25 @@ class fpu_base_test_c extends uvm_test;
 	    `CUSTOM_MSG("============================================================")
 	endfunction : start_of_simulation_phase
 
-
+	// inicio de la simulacion
 	virtual task run_phase(uvm_phase phase);
+		fpu_base_sequence_c base_sequence;
+		
 		phase.raise_objection(this);
-		`uvm_info(this.get_type_name(), 
-			"No EJECUTA SECUENCIAS",
-			UVM_LOW);
-		phase.drop_objection(this);
-	endtask
+			base_sequence = fpu_base_sequence_c::type_id::create("base_sequence");
+			base_sequence.start(fpu_env.fpu_agent.fpu_sequencer);
+		phase.drop_objection(this, "fpu_base_test_c: estimulo completo");
+
+		// `uvm_info(this.get_type_name(), 
+		// 	"No EJECUTA SECUENCIAS",
+		// 	UVM_LOW);
+		// phase.drop_objection(this);
+	endtask: run_phase
+
+	// TODO : implementar report_phase
+	// virtual function void report_phase(uvm_phase phase);
+	// 	uvm_report_server report_server;
+	// 	super.report_phase(phase);
+	// endfunction: report_phase
 
 endclass
