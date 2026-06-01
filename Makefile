@@ -32,6 +32,8 @@ GOLD_OBJ  := $(GOLD_MODEL:=.o)
 # make testbench ANSI=1 para mostrar el mensaje con formato ANSI
 MSG_FORMAT := $(if $(filter 1,$(ANSI)),+define+MSG_ANSI_FORMAT)
 RECURSIVE  := $(if $(filter 1, $(R)),-R)
+# YES: timeout dentro del ambiente sobreescribe este plusargs, 5000000=5ms
+TIMEOUT=5000000,YES
 
 # Otros
 SIM        := sim
@@ -44,7 +46,7 @@ REPORT_CSV := reportes_csv
 SEED := auto
 
 # Exporta variables para que sim_make.mk las vea
-export LOGS_SIM LOGS_TESTS VERBOSITY SEED
+export LOGS_SIM LOGS_TESTS VERBOSITY SEED TIMEOUT
 
 # Targets
 all: $(GOLD_MODEL) testbench
@@ -101,7 +103,7 @@ clean:
 	rm -rf $(MDIR) $(SIM)
 
 clean_all: clean
-	rm -rf logs/ reportes_csv/
+	rm -rf logs/ $(REPORT_CSV)
 
 # ---------------------------------------------
 # Target: help

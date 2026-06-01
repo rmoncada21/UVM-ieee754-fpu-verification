@@ -64,7 +64,8 @@ class fpu_base_test_c extends uvm_test;
 	ajustes gloables de ejecucion */
     virtual function void start_of_simulation_phase(uvm_phase phase);
     	super.start_of_simulation_phase(phase);
-    	
+    	$timeformat(0, 6, " s", 12);
+    	// uvm_top.phase_timeout = 10s;
     	// Mostrar banner
     	`CUSTOM_MSG("============================================================")
     	`CUSTOM_MSG("  FPU RV32F  ·  Ambiente UVM de verificación funcional")
