@@ -24,8 +24,8 @@ class fpu_monitor_c extends uvm_monitor;
 		tlm_mon_ap = new("tlm_mon_ap",this);
 
 		`uvm_info(this.get_type_name(),
-			"tlm_mon_ap creado desde fpu_monitor",
-			UVM_LOW);
+			"tlm_mon_ap creado",
+			UVM_LOW)
 
 	endfunction
 
