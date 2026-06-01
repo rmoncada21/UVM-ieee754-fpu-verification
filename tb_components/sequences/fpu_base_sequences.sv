@@ -44,7 +44,9 @@ endclass: fpu_base_sequence_c
 function logic [31:0] fpu_base_sequence_c::gen_cero(bit signo = 1'b0);
 	logic [7:0] exponent;
 	logic [22:0] mantissa;
-	
+	exponent = 	8'h00;
+	mantissa = 23''h00_000;
+
 	return {signo, exponent, mantissa};
 endfunction: gen_cero
 
