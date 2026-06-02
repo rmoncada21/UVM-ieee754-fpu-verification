@@ -91,6 +91,9 @@ testbench_sim: _cp_sim_makefile
 run_fpu_base_test: _cp_sim_makefile
 	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_base_test
 
+run_fpu_test_arith_normal: _cp_sim_makefile
+	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_arith_normal
+
 # ---------------------------------------------
 # -- Compilar el modelo de referencia C
 $(GOLD_MODEL): _mkdir_folders
