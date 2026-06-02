@@ -1,5 +1,5 @@
 class fpu_monitor_c extends uvm_monitor;
-	`uvm_component_utils(fpu_monitor_c);
+	`uvm_component_utils(fpu_monitor_c)
 	virtual fpu_if bif;
 
 	// uvm TLM emisor 

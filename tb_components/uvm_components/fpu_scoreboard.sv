@@ -1,5 +1,5 @@
 class fpu_scoreboard_c extends uvm_scoreboard;
-	`uvm_component_utils(fpu_scoreboard_c);
+	`uvm_component_utils(fpu_scoreboard_c)
 	
 	// uvm_tlm_analysis_fifo ¿?
 	uvm_analysis_imp #(fpu_seq_item_c, fpu_scoreboard_c) tlm_scb_aimp;
@@ -27,12 +27,17 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 
 	endfunction : start_of_simulation_phase
 
+	// TODO: hacer report phase
 	virtual function void report_phase(uvm_phase phase);
-			super.report_phase(phase);
+		super.report_phase(phase);
 	endfunction : report_phase
 
 
+	// TODO: implementar funcion write
 	virtual task write(fpu_seq_item_c item);
+		`uvm_info(this.get_type_name(),
+			" - ",
+			UVM_LOW);
 	endtask
 
 endclass: fpu_scoreboard_c

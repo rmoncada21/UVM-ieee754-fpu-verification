@@ -1,5 +1,5 @@
 class fpu_driver_c extends uvm_driver #(fpu_seq_item_c);
-	`uvm_component_utils(fpu_driver_c);
+	`uvm_component_utils(fpu_driver_c)
 
 	// handler de la interfas con Dut
 	virtual fpu_if bif; // bus interface
