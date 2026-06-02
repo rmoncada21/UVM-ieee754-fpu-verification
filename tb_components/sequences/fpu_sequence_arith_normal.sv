@@ -1,4 +1,4 @@
-class fpu_sequence_arith_normal_c extends fpu_base_test_c;
+class fpu_sequence_arith_normal_c extends fpu_base_sequence_c;
     `uvm_object_utils(fpu_sequence_arith_normal_c)
 
     function new(string name="fpu_sequence_arith_normal_c");
