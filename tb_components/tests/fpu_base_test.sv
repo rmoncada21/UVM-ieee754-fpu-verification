@@ -88,7 +88,7 @@ class fpu_base_test_c extends uvm_test;
 	virtual task run_phase(uvm_phase phase);
 		fpu_base_sequence_c base_sequence;
 		
-		phase.raise_objection(this);
+		phase.raise_objection(this, "fpu_base_test_c: estimulo enviado");
 			base_sequence = fpu_base_sequence_c::type_id::create("base_sequence");
 			base_sequence.start(fpu_env.fpu_agent.fpu_sequencer);
 		phase.drop_objection(this, "fpu_base_test_c: estimulo completo");
