@@ -40,6 +40,7 @@ SIM        := sim
 LOGS_SIM   := logs/sim
 LOGS_TESTS := logs/tests
 LOGS_COV   := logs/cov
+WARNINGS   := logs/warnings
 REPORT_CSV := reportes_csv
 
 # Variables
@@ -49,7 +50,7 @@ SEED := auto
 export LOGS_SIM LOGS_TESTS VERBOSITY SEED TIMEOUT
 
 # Targets
-all: clean_all $(GOLD_MODEL) testbench
+all: clean_all $(GOLD_MODEL) testbench _grep_warnings
 
 # mkdir -p bin/ sim/ sim/logs sim/sim_out reportes-csv reportes_log_compile
 # mkdir -p bin/ sim/ logs/cov logs/sim logs/tests
@@ -63,16 +64,18 @@ _cp_sim_makefile:
 _test: _cp_sim_makefile
 	$(MAKE) -C sim -f sim_make.mk _test_target
 
+_grep_warnings:
+	grep -i -C 10 "warning" $(LOG_TB) > $(WARNINGS).log
+
 # ---------------------------------------------
 # -- Compilar el top testbench
 testbench: _mkdir_folders
 	$(VCS) $(SVFLAGS) -timescale=$(TIMESCALE) \
 	-f $(FILELIST) \
-	$(SIM)/$(GOLD_OBJ) $(CFLAGS) \
+	$(SIM)/$(GOLD_OBJ) \
 	-o $(EXE_SIM) -l $(LOG_TB) \
 	-Mdir=$(MDIR) $(MSG_FORMAT) \
 	$(DFLAGS) \
-	+UVM_VERBOSITY=$(VERBOSITY) \
 	+lint=$(LINT) \
 	-cm $(COVERAGE) -cm_log $(CM_LOG) \
 	$(RECURSIVE)
