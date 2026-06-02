@@ -1,5 +1,5 @@
 class fpu_base_test_c extends uvm_test;
-	`uvm_component_utils(fpu_base_test_c);
+	`uvm_component_utils(fpu_base_test_c)
 
 	// handler/puntero al ambiente
 	fpu_env_c fpu_env;

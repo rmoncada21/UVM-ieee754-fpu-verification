@@ -1,5 +1,5 @@
 class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
-	`uvm_object_utils(fpu_base_sequence_c);
+	`uvm_object_utils(fpu_base_sequence_c)
 
 	rand int num_items;
 
@@ -12,13 +12,14 @@ class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
 		super.new(name);
 	endfunction : new
 
+	// boy()
 	virtual task body();
 		`uvm_info(this.get_type_name(),
 			$sformatf("body aleatorio: %0d items", num_items),
 			UVM_LOW)
 		
 		repeat(num_items) begin
-			this.req = fpu_seq_item_c::type_id::create();
+			this.req = fpu_seq_item_c::type_id::create("req");
 			// se mandan item al sequencer
 			this.start_item(req);
 			if(!req.randomize()) begin
@@ -29,7 +30,7 @@ class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
 		end
 	endtask: body
 
-	// Prototipos de generdores
+	// Prototipos de generdores de operandos IEEE 754
 	// 0: positivo - 1: negativo
 	extern protected function logic [31:0] gen_cero(bit signo = 1'b0);
 	extern protected function logic [31:0] gen_subnormal(bit signo = 1'b0);
@@ -45,7 +46,7 @@ function logic [31:0] fpu_base_sequence_c::gen_cero(bit signo = 1'b0);
 	logic [7:0] exponent;
 	logic [22:0] mantissa;
 	exponent = 	8'h00;
-	mantissa = 23''h00_000;
+	mantissa = 23'h00_000;
 
 	return {signo, exponent, mantissa};
 endfunction: gen_cero
