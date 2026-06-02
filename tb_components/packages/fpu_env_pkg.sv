@@ -15,6 +15,7 @@
 	    // sequences
 	    `include "tb_components/sequences/fpu_sequencer.sv"
 	    `include "tb_components/sequences/fpu_base_sequences.sv"
+	    `include "tb_components/sequences/fpu_sequence_arith_normal.sv"
 
 	    // uvm component
 	    // `include "tb_components/seq_item/fpu_seq_item.sv"
@@ -26,6 +27,7 @@
 
 	    // tests
 	    `include "tb_components/tests/fpu_base_test.sv"
+	    `include "tb_components/tests/fpu_test_arith_normal.sv"
 
 
 	endpackage
