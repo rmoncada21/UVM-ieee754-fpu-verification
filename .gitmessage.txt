@@ -23,6 +23,7 @@
 #   fpu_agnt     → agente
 #   fpu_scb      → scoreboard
 #   fpu_cov      → covergroup / cobertura
+#   fpu_ref      → modelo de referencia / golden model (DPI-C)
 #   fpu_env      → ambiente
 #   fpu_seq      → secuencia
 #   fpu_test     → test
@@ -38,6 +39,8 @@
 #   feat(fpu_if): agregar señales de rounding mode y op_code a la interfaz
 #   feat(fpu_item): definir enums de opcode y rounding mode en seq_item
 #   feat(fpu_scb): implementar modelo de referencia bit-exacto con softfloat
+#   feat(fpu_ref): implementar golden_fmadd con fmaf para semantica fusionada
+#   test(fpu_ref): validar modelo de referencia contra vectores IEEE 754
 #   fix(fpu_drv): corregir manejo de señal combinacional sin clocking block
 #   test(fpu_seq): agregar secuencia de regresión para bug BUG-001 subnormal
 #   docs(docs): redactar sección de arquitectura del ambiente UVM en TFG
