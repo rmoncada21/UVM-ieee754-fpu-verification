@@ -23,10 +23,10 @@ CM_LOG    := logs/cov/cm.log
 # Flags C  críticos para semántica IEEE 754
 CC        := gcc
 CFLAGS    := -O2 -frounding-math -fno-unsafe-math-optimizations
-GOLD_MODEL:= golden_model
-GOLD_OBJ  := $(GOLD_MODEL:=.o)
-# REF_MODEL := golden_model/golden_model.c
-# REF_OBJ   := sim/golden_model.o
+REF_MODEL := reference_model
+REF_OBJ   := $(REF_MODEL:=.o)
+# REF_MODEL := reference_model/reference_model.c
+# REF_OBJ   := sim/reference_model.o
 
 # Flags Macros 
 # make testbench ANSI=1 para mostrar el mensaje con formato ANSI
@@ -50,7 +50,7 @@ SEED := auto
 export LOGS_SIM LOGS_TESTS VERBOSITY SEED TIMEOUT
 
 # Targets
-all: clean_all $(GOLD_MODEL) testbench _grep_warnings
+all: clean_all $(REF_MODEL) testbench _grep_warnings
 
 # mkdir -p bin/ sim/ sim/logs sim/sim_out reportes-csv reportes_log_compile
 # mkdir -p bin/ sim/ logs/cov logs/sim logs/tests
@@ -72,7 +72,7 @@ _grep_warnings:
 testbench: _mkdir_folders
 	$(VCS) $(SVFLAGS) -timescale=$(TIMESCALE) \
 	-f $(FILELIST) \
-	$(SIM)/$(GOLD_OBJ) \
+	$(SIM)/$(REF_OBJ) \
 	-o $(EXE_SIM) -l $(LOG_TB) \
 	-Mdir=$(MDIR) $(MSG_FORMAT) \
 	$(DFLAGS) \
@@ -96,7 +96,7 @@ run_fpu_test_arith_normal: _cp_sim_makefile
 
 # ---------------------------------------------
 # -- Compilar el modelo de referencia C
-$(GOLD_MODEL): _mkdir_folders
+$(REF_MODEL): _mkdir_folders
 	$(CC) $(CFLAGS) -c $@/$(@).c -o $(SIM)/$(@).o
 
 # $(REF_OBJ): $(REF_MODEL) | _mkdir_folders
@@ -120,6 +120,6 @@ help:
 .PHONY: all _mkdir_folders _cp_sim_makefile _test \
 		testbench testbench_sim \
 		run_fpu_base_test \
-		$(GOLD_MODEL) \
+		$(REF_MODEL) \
 		clean clean_all \
 		help \
