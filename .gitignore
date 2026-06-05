@@ -1,6 +1,7 @@
 # archivos
 demo_*
-softfloat.a
+*.o
+*.a
 try_*
 ucli.key
 zfile_*
@@ -9,5 +10,6 @@ bin/
 images/
 logs/
 sim/
+zfolder/
 ## quitar al finalizar el ambiente
 reportes_*/

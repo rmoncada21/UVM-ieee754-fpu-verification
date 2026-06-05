@@ -68,6 +68,7 @@ _grep_warnings:
 	grep -i -C 10 "warning" $(LOG_TB) > $(WARNINGS).log
 
 # ---------------------------------------------
+# Camino B -> Mejor usar Camino A para compilar (ver si vcs compila con flgas C)
 # -- Compilar el top testbench
 testbench: _mkdir_folders
 	$(VCS) $(SVFLAGS) -timescale=$(TIMESCALE) \
