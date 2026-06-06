@@ -1,7 +1,7 @@
 # archivos
-demo_*
-*.o
 *.a
+*.o
+demo_*
 try_*
 ucli.key
 zfile_*
@@ -10,6 +10,6 @@ bin/
 images/
 logs/
 sim/
-zfolder/
+zfolder_*/
 ## quitar al finalizar el ambiente
 reportes_*/
