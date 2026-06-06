@@ -3,9 +3,9 @@
 #include "reference_model.h"
 
 int main(void) {
-    printf("Prueba simple para testear funcionamiento \n");
-    unsigned int  r;
+    printf("Prueba simple para probar integración\n");
     
+    unsigned int  r;
     unsigned char f;
 
     /* FADD 1.0 + 2.0, RNE  -> 3.0 = 0x40400000 */
