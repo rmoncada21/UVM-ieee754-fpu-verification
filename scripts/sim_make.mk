@@ -21,7 +21,7 @@ _sim_fpu_test_arith_normal:
 	+UVM_VERBOSITY=$(VERBOSITY) \
 	+ntb_random_seed_automatic \
 	-l ../$(LOGS_SIM)/$(@:_sim_%=%).log \
-	| tee ../$(LOGS_TESTS)/$(@:_sim_%=%)_$(shell date +%d_%H%__MS_).log \
+	| tee ../$(LOGS_TESTS)/$(@:_sim_%=%)_$(shell date +%d_%H_%M_%S).log
 
 
 # 	_sim_fpu_NOMBRE_test:
@@ -30,4 +30,4 @@ _sim_fpu_test_arith_normal:
 # 	+UVM_VERBOSITY=$(VERBOSITY) \
 # 	+ntb_random_seed_automatic \
 # 	-l ../$(LOGS_SIM)/$(@:_sim_%=%).log \
-# 	| tee ../$(LOGS_TESTS)/$(@:_sim_%=%)_$(shell date +%d_%H%__MS_).log \
+# 	| tee ../$(LOGS_TESTS)/$(@:_sim_%=%)_$(shell date +%d_%H_%M_%S).log
