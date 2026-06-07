@@ -11,13 +11,13 @@ void test_dpic(int num){
 
 // códigos de operacion
 enum {
-    OP_FADD  = 0, 
-	OP_FSUB  = 1, 
-	OP_FMUL  = 2, 
+    OP_FADD  = 0,
+	OP_FSUB  = 1,
+	OP_FMUL  = 2,
 	OP_FMADD = 3,
-    OP_FMSUB = 4, 
-	OP_FEQ   = 5, 
-	OP_FLT   = 6, 
+    OP_FMSUB = 4,
+	OP_FEQ   = 5,
+	OP_FLT   = 6,
 	OP_FLE   = 7
 };
 
@@ -57,31 +57,43 @@ void dpi_fpu_reference (
 
 	// TODO: // implementar gating del dut
 	switch(op_code_i){
-        case OP_FADD: //  opcode suma
+         //  opcode suma
+        case OP_FADD:
             softfloat_roundingMode = map_round_mode(r_mode_i);
             softfloat_exceptionFlags = 0;
             result = f32_add(fp_a, fp_b);
             flag   = softfloat_exceptionFlags;
             break;
-
+        
+        // opcode de resta
         case OP_FSUB:
+            softfloat_roundingMode = map_round_mode(r_mode_i);
+            softfloat_exceptionFlags = 0;
+            result = f32_sub(fp_a, fp_b);
+            flag   = softfloat_exceptionFlags;
             break;
-
+        
+        //  opcode multiplicación
         case OP_FMUL:
             break;
-
+        
+        //  opcode operacion combinada, suma, multiplicación
         case OP_FMADD:
             break;
-
+        
+        //  opcode operacion combinada, resta, multiplicación
         case OP_FMSUB:
             break;
 
+        //  opcode operacion comparación de igualdad
         case OP_FEQ:
             break;
-
+        
+        //  opcode operacion comparación de menor que
         case OP_FLT:
             break;
 
+        //  opcode operacion comparación de mayor que
         case OP_FLE:
             break;
 
