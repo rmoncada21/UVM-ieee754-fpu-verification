@@ -20,17 +20,12 @@
  *               (NO el fflags IEEE crudo de SoftFloat; ver dpi_fpu_reference.c)
  *--------------------------------------------------------------------------------------*/
 void dpi_fpu_reference(
-                       unsigned int   op_code,
-                       unsigned int   a_bits,
-                       unsigned int   b_bits,
-                       unsigned int   c_bits,
-                       unsigned int   rm,
-                       unsigned int  *r_bits,
-                       unsigned char *flags);
+    unsigned int   op_code,
+    unsigned int   a_bits,
+    unsigned int   b_bits,
+    unsigned int   c_bits,
+    unsigned int   rm,
+    unsigned int  *r_bits,
+    unsigned char *flags);
 
 #endif
-
-// se usa en:
-// test_driver.c, prueba simple para probar con testfloat
-// tf_replayA.c   prueba mas compleja 
-// tf_replayB.c   prueba aun mas compleja 
