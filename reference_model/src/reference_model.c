@@ -75,6 +75,10 @@ void dpi_fpu_reference (
         
         //  opcode multiplicación
         case OP_FMUL:
+            softfloat_roundingMode = map_round_mode(r_mode_i);
+            softfloat_exceptionFlags = 0;
+            result = f32_mul(fp_a, fp_b);
+            flag   = softfloat_exceptionFlags;
             break;
         
         //  opcode operacion combinada, suma, multiplicación
