@@ -26,6 +26,7 @@ void dpi_fpu_reference(
     unsigned int   c_bits,
     unsigned int   rm,
     unsigned int  *r_bits,
-    unsigned char *flags);
+    unsigned char *flags
+);
 
 #endif
