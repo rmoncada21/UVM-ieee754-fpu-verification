@@ -11,5 +11,6 @@ images/
 logs/
 sim/
 zfolder_*/
+vectors/
 ## quitar al finalizar el ambiente
 reportes_*/
