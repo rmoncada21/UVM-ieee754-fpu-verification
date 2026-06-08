@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 // librería de berkeley
+#include "../include/reference_model.h"
 #include "../../third_party/berkeley-softfloat-3/source/include/softfloat.h"
 
 
@@ -10,16 +11,16 @@ void test_dpic(int num){
 }
 
 // códigos de operacion
-enum {
-    OP_FADD  = 0,
-	OP_FSUB  = 1,
-	OP_FMUL  = 2,
-	OP_FMADD = 3,
-    OP_FMSUB = 4,
-	OP_FEQ   = 5,
-	OP_FLT   = 6,
-	OP_FLE   = 7
-};
+// enum {
+//     OP_FADD  = 0,
+// 	OP_FSUB  = 1,
+// 	OP_FMUL  = 2,
+// 	OP_FMADD = 3,
+//     OP_FMSUB = 4,
+// 	OP_FEQ   = 5,
+// 	OP_FLT   = 6,
+// 	OP_FLE   = 7
+// };
 
 static uint_fast8_t map_round_mode(uint32_t round_mode){
     switch (round_mode) {
@@ -85,7 +86,7 @@ void dpi_fpu_reference (
             break;
         
         //  opcode operacion combinada, suma, multiplicación
-        case OP_FMADD:
+        case OP_FMADD: {
             uint_fast8_t _flag_mul, _flag_add;
             softfloat_roundingMode = softfloat_round_near_even;
             softfloat_exceptionFlags = 0;
@@ -97,9 +98,9 @@ void dpi_fpu_reference (
             _flag_add = softfloat_exceptionFlags;
             flag = (uint_fast8_t)(_flag_mul | _flag_add);
             break;
-        
+        }
         //  opcode operacion combinada, resta, multiplicación
-        case OP_FMSUB:
+        case OP_FMSUB: {
             uint_fast8_t _flag_mul, _flag_sub;
             softfloat_roundingMode = softfloat_round_near_even;
             softfloat_exceptionFlags = 0;
@@ -109,9 +110,9 @@ void dpi_fpu_reference (
             softfloat_exceptionFlags = 0;
             result = f32_sub(_fp_ab, fp_c);
             _flag_sub = softfloat_exceptionFlags;
-            flag = (uint_fast8_t)(_flag_mul | _flag_sub);
+            flag = (uint_fast8_t)( _flag_mul | _flag_sub);
             break;
-
+        }
         //  opcode operacion comparación de igualdad
         case OP_FEQ:
             softfloat_exceptionFlags = 0;
@@ -139,6 +140,6 @@ void dpi_fpu_reference (
 			break;
 	}
     *fp_result_o = (unsigned int)result.v;
-    *flags_o     = (unsigned int)(flag & 0x1F);
+    *flags_o     = (unsigned char)(flag & 0x1F);
 	return;
 }

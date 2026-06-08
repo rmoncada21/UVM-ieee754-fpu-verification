@@ -19,7 +19,20 @@
  *     flags   : banderas de excepcion segun la semantica operativa del DUT
  *               (NO el fflags IEEE crudo de SoftFloat; ver dpi_fpu_reference.c)
  *--------------------------------------------------------------------------------------*/
-void dpi_fpu_reference(
+
+ // códigos de operacion
+enum OPCODES {
+    OP_FADD  = 0,
+	OP_FSUB  = 1,
+	OP_FMUL  = 2,
+	OP_FMADD = 3,
+    OP_FMSUB = 4,
+	OP_FEQ   = 5,
+	OP_FLT   = 6,
+	OP_FLE   = 7
+};
+
+ void dpi_fpu_reference(
     // entradas
     unsigned int   op_code,
     unsigned int   fp_a_bits,
