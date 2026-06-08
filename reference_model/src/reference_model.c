@@ -34,11 +34,13 @@ static uint_fast8_t map_round_mode(uint32_t round_mode){
 }
 
 void dpi_fpu_reference (
+    // entradas
     unsigned int   op_code_i,
     unsigned int   fp_a_i,
     unsigned int   fp_b_i,
     unsigned int   fp_c_i,
     unsigned int   r_mode_i,
+    // salidas
     unsigned int  *fp_result_o,
     unsigned char *flags_o ) {
     
@@ -99,6 +101,9 @@ void dpi_fpu_reference (
         
         //  opcode operacion comparación de menor que
         case OP_FLT:
+            softfloat_exceptionFlags = 0;
+            result.v = f32_lt(fp_a, fp_b) ? 1u : 0u;
+            flag     = 0;
             break;
 
         //  opcode operacion comparación de mayor que
