@@ -138,5 +138,7 @@ void dpi_fpu_reference (
 			flag = 0;
 			break;
 	}
+    *fp_result_o = (unsigned int)result.v;
+    *flags_o     = (unsigned int)(flag & 0x1F);
 	return;
 }
