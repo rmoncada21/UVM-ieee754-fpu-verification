@@ -20,12 +20,14 @@
  *               (NO el fflags IEEE crudo de SoftFloat; ver dpi_fpu_reference.c)
  *--------------------------------------------------------------------------------------*/
 void dpi_fpu_reference(
+    // entradas
     unsigned int   op_code,
-    unsigned int   a_bits,
-    unsigned int   b_bits,
-    unsigned int   c_bits,
-    unsigned int   rm,
-    unsigned int  *r_bits,
+    unsigned int   fp_a_bits,
+    unsigned int   fp_b_bits,
+    unsigned int   fp_c_bits,
+    unsigned int   round_mode,
+    // salidas
+    unsigned int  *result_bits,
     unsigned char *flags
 );
 
