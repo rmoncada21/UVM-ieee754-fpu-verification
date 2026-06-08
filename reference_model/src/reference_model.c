@@ -45,7 +45,7 @@ void dpi_fpu_reference (
     unsigned char *flags_o ) {
     
     // typedef struct { uint32_t v; } float32_t;
-	float32_t    fp_a, fp_b, fp_c, fp_r_mode;
+	float32_t    fp_a, fp_b, fp_c, _fp_ab;
     float32_t    result; // resultado y comparación
     uint_fast8_t flag = 0; // flags
 
@@ -86,6 +86,16 @@ void dpi_fpu_reference (
         
         //  opcode operacion combinada, suma, multiplicación
         case OP_FMADD:
+            uint_fast8_t _flag_mul, _flag_add;
+            softfloat_roundingMode = softfloat_round_near_even;
+            softfloat_exceptionFlags = 0;
+            _fp_ab = f32_mul(fp_a, fp_b);
+            _flag_mul = softfloat_exceptionFlags;
+            softfloat_roundingMode = map_round_mode(r_mode_i);
+            softfloat_exceptionFlags = 0;
+            result = f32_add(_fp_ab, fp_c);
+            _flag_add = softfloat_exceptionFlags;
+            flag = (uint_fast8_t)(_flag_mul | _flag_add);
             break;
         
         //  opcode operacion combinada, resta, multiplicación
