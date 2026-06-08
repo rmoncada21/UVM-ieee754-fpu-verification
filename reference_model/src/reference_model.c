@@ -100,6 +100,16 @@ void dpi_fpu_reference (
         
         //  opcode operacion combinada, resta, multiplicación
         case OP_FMSUB:
+            uint_fast8_t _flag_mul, _flag_sub;
+            softfloat_roundingMode = softfloat_round_near_even;
+            softfloat_exceptionFlags = 0;
+            _fp_ab = f32_mul(fp_a, fp_b);
+            _flag_mul = softfloat_exceptionFlags;
+            softfloat_roundingMode = map_round_mode(r_mode_i);
+            softfloat_exceptionFlags = 0;
+            result = f32_sub(_fp_ab, fp_c);
+            _flag_sub = softfloat_exceptionFlags;
+            flag = (uint_fast8_t)(_flag_mul | _flag_sub);
             break;
 
         //  opcode operacion comparación de igualdad
