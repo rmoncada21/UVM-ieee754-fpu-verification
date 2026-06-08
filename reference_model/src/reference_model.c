@@ -41,9 +41,10 @@ void dpi_fpu_reference (
     unsigned int   r_mode_i,
     unsigned int  *fp_result_o,
     unsigned char *flags_o ) {
-
+    
+    // typedef struct { uint32_t v; } float32_t;
 	float32_t    fp_a, fp_b, fp_c, fp_r_mode;
-    float32_t    result;
+    float32_t    result; // resultado y comparación
     uint_fast8_t flag = 0; // flags
 
     // v = uint32_t ; typedef struct { uint32_t v; } float32_t;
@@ -91,6 +92,9 @@ void dpi_fpu_reference (
 
         //  opcode operacion comparación de igualdad
         case OP_FEQ:
+            softfloat_exceptionFlags = 0;
+            result.v = f32_eq(fp_a, fp_b) ? 1u : 0u;
+            flag     = 0;
             break;
         
         //  opcode operacion comparación de menor que
