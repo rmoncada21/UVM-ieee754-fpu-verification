@@ -24,11 +24,11 @@ BIN       = bin
 SRC       = src
 LOGS      = logs
 BUILD     = build
-VECTORS   = vectores
+VECTORS   = vectors
 STAND     = standalone_tests
 # # STAND_BIN = standalone_tests/bin
 
-# Variables del reference
+# Variables del reference/softfloat
 REF_MODEL ?= reference_model
 REF_C     := $(SRC)/$(REF_MODEL).c
 REF_OBJ   := $(BUILD)/$(REF_MODEL:=.o)
@@ -39,10 +39,11 @@ DRIVER    := $(SRC)/simple_driver.c
 TF_REPLAY      = tf_replay
 TF_REPLAY_C    = $(STAND)/$(TF_REPLAY:=.c)
 TF_REPLAY_EXE  = $(BIN)/$(TF_REPLAY:=_exe)
-
+TF_TOOLS       = testfloat testfloat_gen testfloat_ver testsoftfloat timesoftfloat
+TF_ROUNDS_MODE = -rnear_even
 # export SF_LIBRARY_A
 
-#############################################################################
+####################################################################################
 # Targets
 all: clean_all all_berkeley_softfloat all_berkeley_testfloat
 
@@ -57,7 +58,7 @@ _echo_vars:
 	@echo "variable:REF_EXE:   $(REF_EXE) "
 	@echo "variable:DRIVER:    $(DRIVER) "
 
-###################################################################
+####################################################################################
 all_berkeley_softfloat: build_berkeley_softfloat $(REF_MODEL:=_object) \
 	$(REF_MODEL:=_driver) $(REF_MODEL:=_exe)
 
@@ -83,7 +84,7 @@ $(REF_MODEL:=_driver):
 $(REF_MODEL:=_exe):
 	./$(REF_EXE) | tee $(LOGS)/$(@:_sim_%=%)_$(shell date +%d_%H%__MS_).log
 
-###################################################################
+####################################################################################
 # parte para berkeley testfloat
 all_berkeley_testfloat: build_berkeley_testfloat testfloat_gen \
 						testfloat_replay testfloat_check 
@@ -108,42 +109,53 @@ testfloat_replay: $(REF_OBJ)
 		$(INCLUDES) -o $(TF_REPLAY_EXE)
 # Auditar reference_model contra testfloat mediante un piep
 # usa tf_gen | tf_ver
-testfloat_check:
+testfloat_check: $(TF_REPLAY_EXE)
 	for op in $(TF_OPS); do \
 		echo "auditando $$op "; \
 		$(TF_GEN) -rnear_even $$op | $(TF_REPLAY_EXE) $$op \
-		| $(TF_VER) -rnear_even $$op | tee -a $(LOGS)/$(@)_$(shell date +%d_%H_%M_%S).log; \
+		| $(TF_VER) -rnear_even $$op \
+		| tee -a $(LOGS)/$(@)_$(shell date +%d_%H_%M_%S).log; \
 	done
 
-###################################################################
+####################################################################################
+# Reglas de analisis dinámico de código: 
+# valgrind  : memcheck, helgrind, 
+# sanitizers: addres, memory, thread, undefined
+# 		clang -g -Wall -Wextra -fsanitize=address $(APPNAME).c -o $(APPNAME)_asan
+####################################################################################
+# Análisis estático de código con linter
+####################################################################################
+clean: clean_bin clean_logs
+clean_bin:
+	rm -rf $(BIN) 
+clean_logs:
+	rm -rf $(LOGS)/*
 
-clean:
-	rm -rf $(BIN) $(BUILD) $(LOGS)
-
+clean_build: clean_build_reference clean_softfloat_build clean_testfloat_build
+clean_build_reference:
+	rm -rf $(BUILD)
 clean_softfloat_build:
 	rm -rf $(SF_BUILD)/*.o $(SF_BUILD)/*.a
-
 clean_testfloat_build:
-	rm -rf $(VECTORS)/*.tf 
+	rm -rf $(VECTORS)/*.tf
+	rm -rf $(TF_BUILD)/*.o $(TF_BUILD)/*.a
+	for tool in $(TF_TOOLS); do \
+		rm -rf $(TF_BUILD)/$$tool; \
+	done
 
-clean_all: clean clean_softfloat_build
+clean_all: clean clean_build
 
 help:
 	echo "TODO HELP FUNCTION"
-.PHONY: all \
-		_mkdir_folders \
-		_echo_vars \
+
+.PHONY: all _mkdir_folders _echo_vars \
 		all_berkeley_softfloat \
 		build_berkeley_softfloat \
 		$(REF_MODEL:=_object) \
 		$(REF_DRIVER) \
 		$(REF_MODEL:=_exe) \
 		build_berkeley_testfloat \
-		testfloat_gen \
-		testfloat_replay \
-		testfloat_check \
-		clean \
-		clean_softfloat_build \
-		clean_testfloat_build \
-		clean_all \
+		testfloat_gen testfloat_replay testfloat_check \
+		clean clean_bin  clean_logs clean_build clean_build_reference \
+		clean_softfloat_build clean_testfloat_build clean_all \
 		help
