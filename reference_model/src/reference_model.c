@@ -108,6 +108,9 @@ void dpi_fpu_reference (
 
         //  opcode operacion comparación de mayor que
         case OP_FLE:
+            softfloat_exceptionFlags = 0;
+            result.v = f32_le(fp_a, fp_b) ? 1u : 0u;
+            flag     = 0;
             break;
 
         default:
