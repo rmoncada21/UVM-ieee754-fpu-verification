@@ -1,112 +1,159 @@
 # usar "make -f make_ref_soft.mk" si se encuentra dentro del directorio de golde_model/
 
 #############################################################################
-# Variables para softfloat
+# Folders
+REF_BIN       = bin
+REF_SRC       = src
+REF_INC       = include
+REF_LOGS      = logs
+REF_BUILD     = build
+REF_VECTORS   = vectors
+REF_STAND     = standalone_tests
+# STAND_BIN = standalone_tests/bin
+
+#----------------------------
+# Variables para berkeley SOFTFLOAT
 SOFTFLOAT_DIR ?= ../third_party/berkeley-softfloat-3
 SF_BUILD      := $(SOFTFLOAT_DIR)/build/Linux-x86_64-GCC
 SF_LIBRARY_A  := $(SF_BUILD)/softfloat.a
 SF_INCLUDE    := $(SOFTFLOAT_DIR)/source/include
 
-# Variables para testfloat
+#----------------------------
+# Variables para berkeley TESTFLOAT
 TESTFLOAT_DIR ?= ../third_party/berkeley-testfloat-3
 TF_BUILD      := $(TESTFLOAT_DIR)/build/Linux-x86_64-GCC
 TF_GEN        := $(TF_BUILD)/testfloat_gen
 TF_VER        := $(TF_BUILD)/testfloat_ver
 TF_OPS        := f32_add f32_sub f32_mul f32_eq f32_lt f32_le
+TF_TOOLS       = testfloat testfloat_gen testfloat_ver testsoftfloat timesoftfloat
+TF_ROUNDS_MODE = -rnear_even -rnear_maxMag -rminMag -rmin -rmax -rodd
 
-# Compilador - probar luego con clang
-CC       := gcc
-CFLAGS   := -O2 -frounding-math -fno-unsafe-math-optimizations
-INCLUDES := -Iinclude -I$(SF_INCLUDE)
+#----------------------------
+# Compilador local
+CC         := gcc
+CFLAGS     := -O2 -frounding-math -fno-unsafe-math-optimizations
+CFSYNTAX   := -fsyntax-only
+INCLUDES   := -Iinclude -I$(SF_INCLUDE)
+# para revisar sintaxis
+CSOURCES    = $(wildcard $(REF_SRC)/*.c)
+CTEST       = $(wildcard $(REF_STAND)/*.c)
+HFILES      = $(wildcard $(REF_INC)/*.h)
+CFILES      = $(CSOURCES) $(CTEST) $(HFILES)
 
-# Folders
-BIN       = bin
-SRC       = src
-LOGS      = logs
-BUILD     = build
-VECTORS   = vectors
-STAND     = standalone_tests
-# # STAND_BIN = standalone_tests/bin
+# AGREGAR SANITIZERS con clang
 
-# Variables del reference/softfloat
+#----------------------------
+# Variables del modelo de referencia con softfloat
 REF_MODEL ?= reference_model
-REF_C     := $(SRC)/$(REF_MODEL).c
-REF_OBJ   := $(BUILD)/$(REF_MODEL:=.o)
-REF_EXE   := $(BIN)/$(REF_MODEL:=_exe)
-DRIVER    := $(SRC)/simple_driver.c
+REF_C     := $(REF_SRC)/$(REF_MODEL:=.c)
+REF_OBJ   := $(REF_BUILD)/$(REF_MODEL:=.o)
+REF_EXE   := $(REF_BIN)/$(REF_MODEL:=_exe)
+
+#----------------------------
+# runner
+# cambiar nombre a runner_testfloat
+RUNNER_FILE ?= tf_runner
+RUNNER_C    := $(REF_SRC)/$(RUNNER_FILE:=.c)
+RUNNER_EXE  := $(REF_BIN)/$(RUNNER_FILE:=_exe)
+
+#----------------------------
+# Archivos para inyectar datos desde el mismo archivo "main"
+# TODO: Cambiar nombre a driver_floats
+DRIVER_FILE    ?= simple_driver
+REF_DRIVER_C   := $(REF_STAND)/$(DRIVER_FILE:=.c)
+REF_DRIVER_EXE := $(REF_BIN)/$(DRIVER_FILE:=_exe)
 
 # Variables del testfloat replay
-TF_REPLAY      = tf_replay
-TF_REPLAY_C    = $(STAND)/$(TF_REPLAY:=.c)
-TF_REPLAY_EXE  = $(BIN)/$(TF_REPLAY:=_exe)
-TF_TOOLS       = testfloat testfloat_gen testfloat_ver testsoftfloat timesoftfloat
-TF_ROUNDS_MODE = -rnear_even
-# export SF_LIBRARY_A
+# Archivos para inyectar datos mediante pipe con testfloat tools
+# cabiar nombre a replayer
+TF_REPLAY      ?= tf_replay  replayer_testfloat
+TF_REPLAY_C    := $(REF_STAND)/$(TF_REPLAY:=.c)
+TF_REPLAY_EXE  := $(REF_BIN)/$(TF_REPLAY:=_exe)
+
+# Variables para estudio con valgrind
+BIN_EXE    := $(wildcard $(REF_BIN)/*_exe)
+VAL_TOOLS  := memcheck helgrind
 
 ####################################################################################
+#################### Target universales
 # Targets
-all: clean_all all_berkeley_softfloat all_berkeley_testfloat
+all:
 
 _mkdir_folders:
-	mkdir -p $(BIN) $(BUILD) $(LOGS) $(VECTORS)
+	mkdir -p $(REF_BIN) $(REF_BUILD) $(REF_LOGS) $(REF_VECTORS)
 
-# Prueba de nombre de variables
-_echo_vars:
-	@echo "variable:REF_MODEL: $(REF_MODEL) "
-	@echo "variable:REF_C:     $(REF_C) "
-	@echo "variable:REF_OBJ:   $(REF_OBJ) "
-	@echo "variable:REF_EXE:   $(REF_EXE) "
-	@echo "variable:DRIVER:    $(DRIVER) "
+# revisar solo syntaxis
+# make src/nombre_archivo.c_syntax
+# make standalone_tests/nombre_archivo.c_syntax
+$(CFILES:=_syntax):
+	$(CC) $(CFLAGS) $(CFSYNTAX) $(@:_syntax=)
 
 ####################################################################################
-all_berkeley_softfloat: build_berkeley_softfloat $(REF_MODEL:=_object) \
-	$(REF_MODEL:=_driver) $(REF_MODEL:=_exe)
+#################### Target: build de librerías
+build_all: build_berkeley_softfloat build_berkeley_testfloat $(REF_OBJ)
 
-# construir la libreria con especializacion RISC-V, 
-# esto genera softfloat.a como librería estática
-# -> ../third_party/berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
+# construir la librerias berkeley con especializacion RISC-V, 
+# genera softfloat.a como librería estática -> ../third_party/berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
 build_berkeley_softfloat:
 	$(MAKE) -C $(SF_BUILD) SPECIALIZE_TYPE=RISCV
-
-#----------------------------
-# crear objeto reference_model.o
-# reference_model_object
-$(REF_MODEL:=_object): _mkdir_folders
-	$(CC) $(CFLAGS) -c $(REF_C) -I$(SF_INCLUDE) -o $(REF_OBJ)
-
-#----------------------------
-# enlaza objeto y compila prueba simple
-$(REF_MODEL:=_driver):
-	$(CC) $(CFLAGS) $(DRIVER) $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $(REF_EXE)
-
-#----------------------------
-# compila, corre prueba simple y enviar log
-$(REF_MODEL:=_exe):
-	./$(REF_EXE) | tee $(LOGS)/$(@:_sim_%=%)_$(shell date +%d_%H%__MS_).log
-
-####################################################################################
-# parte para berkeley testfloat
-all_berkeley_testfloat: build_berkeley_testfloat testfloat_gen \
-						testfloat_replay testfloat_check 
 
 build_berkeley_testfloat: | $(SF_LIBRARY_A)
 	$(MAKE) -C $(TF_BUILD) SPECIALIZE_TYPE=RISCV
 
+# crear objeto reference_model.o
+$(REF_OBJ): _mkdir_folders
+	$(CC) $(CFLAGS) -c $(REF_C) -I$(SF_INCLUDE) -o $@
+
+####################################################################################
+#################### Target: 
+all_runner:
+
+$(RUNNER_EXE): $(RUNNER_C) 
+	$(CC) $(CFLAGS) $< $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+
+run_runner: $()
+	$(TF_GEN) -rnear_even f32_mul | ./$(RUNNER_EXE) mul 0 | $(TF_VER) -rnear_even f32_mul
+
+
+testfloat_gen_vectors:
+	for op in $(TF_OPS); do \
+		echo ">> $(REF_VECTORS)/$$op.tf"; \
+		$(TF_GEN) -rnear_even $$op > $(REF_VECTORS)/$$op.tf; \
+	done
+####################################################################################
+#################### Target: compilación e integración simple driver
+all_driver: test_driver test_driver_run 
+
+#----------------------------
+# enlaza objeto y compila simple_driver
+test_driver: $(REF_DRIVER_C) $(REF_OBJ)
+	$(CC) $(CFLAGS) $< $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $(REF_BIN)/$(notdir $(<:.c=_exe))
+
+test_driver_run: $(REF_DRIVER_C)
+	./$(REF_BIN)/$(notdir $(<:.c=_exe)) | tee $(REF_LOGS)/$(notdir $(<:.c=_exe))_$(shell date +%d_%H_%M_%S).log
+
+####################################################################################
+#################### Target: compilación e integración tf_replay
+all_replayer: testfloat_gen testfloat_replay_compile testfloat_check
+
 #----------------------------
 # Generar vectores con tf_gen en vectors/, uno por op
 # gen_vectors/ guardar/respaldar vectores
-testfloat_gen: _mkdir_folders
+# TODO: BORRAR/CAMBIAR
+testfloat_gen:
 	for op in $(TF_OPS); do \
-		echo ">> $(VECTORS)/$$op.tf"; \
-		$(TF_GEN) -rnear_even $$op > $(VECTORS)/$$op.tf; \
+		echo ">> $(REF_VECTORS)/$$op.tf"; \
+		$(TF_GEN) -rnear_even $$op > $(REF_VECTORS)/$$op.tf; \
 	done
 
 #----------------------------
-# Compilar tf_replayer (reusa reference_model.o ya producido antes)
+# Compilar tf_replayer (usa reference_model.o ya producido antes)
 # produce el ejecutable standalone_tests/bin/tf_replay
-testfloat_replay: $(REF_OBJ)
+testfloat_replay_compile: $(REF_OBJ)
 	$(CC) $(CFLAGS) $(TF_REPLAY_C) $(REF_OBJ) $(SF_LIBRARY_A) \
 		$(INCLUDES) -o $(TF_REPLAY_EXE)
+
+#----------------------------
 # Auditar reference_model contra testfloat mediante un piep
 # usa tf_gen | tf_ver
 testfloat_check: $(TF_REPLAY_EXE)
@@ -114,48 +161,80 @@ testfloat_check: $(TF_REPLAY_EXE)
 		echo "auditando $$op "; \
 		$(TF_GEN) -rnear_even $$op | $(TF_REPLAY_EXE) $$op \
 		| $(TF_VER) -rnear_even $$op \
-		| tee -a $(LOGS)/$(@)_$(shell date +%d_%H_%M_%S).log; \
+		| tee -a $(REF_LOGS)/$(@)_$(shell date +%d_%H_%M_%S).log; \
 	done
 
+
 ####################################################################################
-# Reglas de analisis dinámico de código: 
-# valgrind  : memcheck, helgrind, 
+# Reglas de análisis dinámico de código: 
+# valgrind  : memcheck, helgrind
 # sanitizers: addres, memory, thread, undefined
 # 		clang -g -Wall -Wextra -fsanitize=address $(APPNAME).c -o $(APPNAME)_asan
 ####################################################################################
-# Análisis estático de código con linter
-####################################################################################
-clean: clean_bin clean_logs
-clean_bin:
-	rm -rf $(BIN) 
-clean_logs:
-	rm -rf $(LOGS)/*
+#################### Target: Análisis estático de código con linter
+all_valgrind: $(TODO:=_memcheck) $(TODO:=_massif) $(TODO:=_callgrind)
 
-clean_build: clean_build_reference clean_softfloat_build clean_testfloat_build
+$(TODO:=_memcheck):
+	@echo ""
+	valgrind --tool=memcheck \
+		--log-file=$(REF_LOGS)/$(notdir $@)_$(shell date +%d_%H_%M_%S).log \
+		./$(@:_memcheck=) f32_add \
+		| $(TF_VER) -rnear_even f32_add
+# 		| tee -a $(REF_LOGS)/$(notdir $@)_$(shell date +%d_%H_%M_%S).log
+
+$(TODO:=_massif):
+	@echo ""
+	valgrind --tool=massif \
+		--massif-out-file=$(REF_LOGS)/$(notdir $@)_$(shell date +%d_%H_%M_%S).log \
+		./$(@:_massif=) f32_add \
+		| $(TF_VER) -rnear_evenf32_add 
+# 		| tee -a $(REF_LOGS)/$(notdir $@)_$(shell date +%d_%H_%M_%S).log
+
+$(TODO:=_callgrind):
+	@echo ""
+	valgrind --tool=callgrind \
+		--callgrind-out-file=$(REF_LOGS)/$(notdir $@)_$(shell date +%d_%H_%M_%S).log \
+		./$(@:_callgrind=) f32_add \
+		| $(TF_VER) -rnear_even f32_add
+
+
+####################################################################################
+#################### Target: de limpieza
+clean_all: clean clean_berkeley
+# clean local, borra archivo locales al modelo de referencia
+clean: clean_bin clean_logs clean_build_reference
+
+clean_bin:
+	rm -rf $(REF_BIN) 
+clean_logs:
+	rm -rf $(REF_LOGS)
 clean_build_reference:
-	rm -rf $(BUILD)
-clean_softfloat_build:
+	rm -rf $(REF_BUILD)
+
+clean_berkeley: clean_berkeley_softfloat clean_berkeley_testfloat
+clean_berkeley_softfloat:
 	rm -rf $(SF_BUILD)/*.o $(SF_BUILD)/*.a
-clean_testfloat_build:
-	rm -rf $(VECTORS)/*.tf
+clean_berkeley_testfloat:
+	rm -rf $(REF_VECTORS)/*.tf
 	rm -rf $(TF_BUILD)/*.o $(TF_BUILD)/*.a
 	for tool in $(TF_TOOLS); do \
 		rm -rf $(TF_BUILD)/$$tool; \
 	done
 
-clean_all: clean clean_build
-
+####################################################################################
 help:
 	echo "TODO HELP FUNCTION"
 
 .PHONY: all _mkdir_folders _echo_vars \
-		all_berkeley_softfloat \
-		build_berkeley_softfloat \
-		$(REF_MODEL:=_object) \
-		$(REF_DRIVER) \
-		$(REF_MODEL:=_exe) \
+		build_all \
 		build_berkeley_testfloat \
+		build_berkeley_softfloat \
+		testd_river \
+		$(REF_OBJ) \
+		$(CFILES:=_syntax) \
+		$(CTEST:=_compile) \
+		$(BIN_EXE:=_run) \
 		testfloat_gen testfloat_replay testfloat_check \
 		clean clean_bin  clean_logs clean_build clean_build_reference \
-		clean_softfloat_build clean_testfloat_build clean_all \
+		clean_berkeley_softfloat clean_berkeley_testfloat clean_all \
 		help
