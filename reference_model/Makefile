@@ -34,8 +34,6 @@ TF_VER        := $(TF_BUILD)/testfloat_ver
 TF_SOFTFLOAT  := $(TF_BUILD)/testsoftfloat
 TF_TIME       := $(TF_BUILD)/timesoftfloat
 TF_TOOLS       = $(notdir $(TF_TEST)) $(notdir $(TF_GEN)) $(notdir $(TF_VER)) $(notdir $(TF_SOFTFLOAT)) $(notdir $(TF_TIME))
-mostar:
-	echo "$(TF_TOOLS)"
 TF_OPS        := f32_add f32_sub f32_mul f32_eq f32_lt f32_le
 TF_ROUNDS_MODE = -rnear_even -rnear_maxMag -rminMag -rmin -rmax -rodd
 
