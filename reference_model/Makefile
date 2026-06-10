@@ -14,22 +14,28 @@ REF_STAND     = standalone_tests
 # STAND_BIN = standalone_tests/bin
 
 #----------------------------
+FORMAT_TYPE   = RISCV # variable para soft/testfloat
+# Linux-ARM-VFPv2-GCC Linux-386-GCC Linux-x86_64-GCC Win32-MinGW
+FORMAT_PC     = Linux-386-GCC
+#----------------------------
 # Variables para berkeley SOFTFLOAT
 SOFTFLOAT_DIR ?= ../third_party/berkeley-softfloat-3
-SF_BUILD      := $(SOFTFLOAT_DIR)/build/Linux-x86_64-GCC
+SF_BUILD      := $(SOFTFLOAT_DIR)/build/$(FORMAT_PC)
 SF_LIBRARY_A  := $(SF_BUILD)/softfloat.a
 SF_INCLUDE    := $(SOFTFLOAT_DIR)/source/include
 
 #----------------------------
 # Variables para berkeley TESTFLOAT
 TESTFLOAT_DIR ?= ../third_party/berkeley-testfloat-3
-TF_BUILD      := $(TESTFLOAT_DIR)/build/Linux-x86_64-GCC
+TF_BUILD      := $(TESTFLOAT_DIR)/build/$(FORMAT_PC)
 TF_TEST       := $(TF_BUILD)/testfloat
 TF_GEN        := $(TF_BUILD)/testfloat_gen
 TF_VER        := $(TF_BUILD)/testfloat_ver
 TF_SOFTFLOAT  := $(TF_BUILD)/testsoftfloat
 TF_TIME       := $(TF_BUILD)/timesoftfloat
-TF_TOOLS       = $(TF_TEST) $(TF_GEN) $(TF_VER) $(TF_SOFTFLOAT) $(TF_TIME)
+TF_TOOLS       = $(notdir $(TF_TEST)) $(notdir $(TF_GEN)) $(notdir $(TF_VER)) $(notdir $(TF_SOFTFLOAT)) $(notdir $(TF_TIME))
+mostar:
+	echo "$(TF_TOOLS)"
 TF_OPS        := f32_add f32_sub f32_mul f32_eq f32_lt f32_le
 TF_ROUNDS_MODE = -rnear_even -rnear_maxMag -rminMag -rmin -rmax -rodd
 
@@ -99,15 +105,18 @@ build_all: build_berkeley_softfloat build_berkeley_testfloat $(REF_OBJ)
 # construir la librerias berkeley con especializacion RISC-V, 
 # genera softfloat.a como librería estática -> ../third_party/berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
 build_berkeley_softfloat:
-	$(MAKE) -C $(SF_BUILD) SPECIALIZE_TYPE=RISCV
+	$(MAKE) -C $(SF_BUILD) SPECIALIZE_TYPE=$(FORMAT_TYPE)
 
 build_berkeley_testfloat: | $(SF_LIBRARY_A)
-	$(MAKE) -C $(TF_BUILD) SPECIALIZE_TYPE=RISCV
+	$(MAKE) -C $(TF_BUILD) SPECIALIZE_TYPE=$(FORMAT_TYPE)
 
 # crear objeto reference_model.o
 $(REF_OBJ): _mkdir_folders
 	$(CC) $(CFLAGS) -c $(REF_C) -I$(SF_INCLUDE) -o $@
 
+# testear softfloat vs testfloat de berkeley
+test_build_berkeleys_libraries:
+	$(TF_SOFTFLOAT) -level 2 f32_sub
 #---------------------------- herramientas
 # construir vectores. 
 # TODO: crear mas vectores con otro modo de redondeo
@@ -115,7 +124,7 @@ $(REF_OBJ): _mkdir_folders
 # $(TF_GEN) -rnear_even $$op > $(REF_VECTORS)/$$op.tf;
 build_testfloat_vectors: _mkdir_folders
 	@for op in $(TF_OPS); do \
-		echo ">> $(REF_VECTORS)/$$op.tf"; \
+		echo ">> $(REF_VECTORS)/$$op*.tf"; \
 		for mode in $(TF_ROUNDS_MODE); do \
 			echo "$${op}_$${mode/-/}"; \
 			$(TF_GEN) $$mode $$op > $(REF_VECTORS)/$${op}_$${mode/-/}.tf; \
@@ -129,10 +138,6 @@ mostrar_nombres_vectors:
 				echo "$${op}_$${mode/-/}"; \
 			done \
 	done
-
-# testear softfloat vs testfloat de berkeley
-test_build_berkeleys_libraries:
-	$(TF_SOFTFLOAT) -level 1 f32_sub
 
 ####################################################################################
 #################### Target: compila y ejecutar validación cruzada
@@ -249,10 +254,10 @@ clean_berkeley_softfloat:
 	rm -rf $(SF_BUILD)/*.o $(SF_BUILD)/*.a
 clean_berkeley_testfloat:
 	rm -rf $(REF_VECTORS)/*.tf
-	TF_TIME      -rf $(REF_timesoftfloat
 	rm -rf $(TF_BUILD)/*.o $(TF_BUILD)/*.a
-	for tool in $(TF_TOOLS); do \
+	@for tool in $(TF_TOOLS); do \
 		rm -rf $(TF_BUILD)/$$tool; \
+		echo "rm -rf $(TF_BUILD)/$$tool"; \
 	done
 
 ####################################################################################
