@@ -14,20 +14,23 @@ REF_STAND     = standalone_tests
 # STAND_BIN = standalone_tests/bin
 
 #----------------------------
-FORMAT_TYPE   = RISCV # variable para soft/testfloat
-# Linux-ARM-VFPv2-GCC Linux-386-GCC Linux-x86_64-GCC Win32-MinGW
-FORMAT_PC     = Linux-386-GCC
+# variables generales para soft/testfloat
+ARCH_TARGET       = RISCV
+# Opciones: Linux-ARM-VFPv2-GCC Linux-386-GCC Linux-x86_64-GCC Win32-MinGW
+# Ambas deben coincidir para una correcta integración y compilación
+PLATFORM_SOFT     = Linux-x86_64-GCC
+PLATFORM_TEST     = Linux-x86_64-GCC
 #----------------------------
 # Variables para berkeley SOFTFLOAT
 SOFTFLOAT_DIR ?= ../third_party/berkeley-softfloat-3
-SF_BUILD      := $(SOFTFLOAT_DIR)/build/$(FORMAT_PC)
+SF_BUILD      := $(SOFTFLOAT_DIR)/build/$(PLATFORM_SOFT)
 SF_LIBRARY_A  := $(SF_BUILD)/softfloat.a
 SF_INCLUDE    := $(SOFTFLOAT_DIR)/source/include
 
 #----------------------------
 # Variables para berkeley TESTFLOAT
 TESTFLOAT_DIR ?= ../third_party/berkeley-testfloat-3
-TF_BUILD      := $(TESTFLOAT_DIR)/build/$(FORMAT_PC)
+TF_BUILD      := $(TESTFLOAT_DIR)/build/$(PLATFORM_TEST)
 TF_TEST       := $(TF_BUILD)/testfloat
 TF_GEN        := $(TF_BUILD)/testfloat_gen
 TF_VER        := $(TF_BUILD)/testfloat_ver
@@ -59,18 +62,19 @@ REF_OBJ   := $(REF_BUILD)/$(REF_MODEL:=.o)
 REF_EXE   := $(REF_BIN)/$(REF_MODEL:=_exe)
 
 #----------------------------
-# runner
-# Nombre original tf_runner
-RUNNER_FILE ?= runner_testfloat
-RUNNER_C    := $(REF_SRC)/$(RUNNER_FILE:=.c)
-RUNNER_EXE  := $(REF_BIN)/$(RUNNER_FILE:=_exe)
-
-#----------------------------
 # Archivos para inyectar datos desde el mismo archivo "main"
 DRIVER_FILE    ?= simple_driver
 REF_DRIVER_C   := $(REF_STAND)/$(DRIVER_FILE:=.c)
 REF_DRIVER_EXE := $(REF_BIN)/$(DRIVER_FILE:=_exe)
 
+#----------------------------
+# runner
+# Nombre original tf_runner
+RUNNER_FILE ?= runner_testfloat
+RUNNER_C    := $(REF_STAND)/$(RUNNER_FILE:=.c)
+RUNNER_EXE  := $(REF_BIN)/$(RUNNER_FILE:=_exe)
+
+#----------------------------
 # Variables del testfloat replay
 # Archivos para inyectar datos mediante pipe con testfloat tools
 # nombre_original tf_replay  
@@ -84,7 +88,7 @@ VAL_TOOLS  := memcheck helgrind
 
 ####################################################################################
 #################### Target universales
-all:
+all: build_all
 
 _mkdir_folders:
 	mkdir -p $(REF_BIN) $(REF_BUILD) $(REF_LOGS) $(REF_VECTORS)
@@ -103,20 +107,29 @@ build_all: build_berkeley_softfloat build_berkeley_testfloat $(REF_OBJ)
 # construir la librerias berkeley con especializacion RISC-V, 
 # genera softfloat.a como librería estática -> ../third_party/berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
 build_berkeley_softfloat:
-	$(MAKE) -C $(SF_BUILD) SPECIALIZE_TYPE=$(FORMAT_TYPE)
+	$(MAKE) -C $(SF_BUILD) SPECIALIZE_TYPE=$(ARCH_TARGET)
 
+# Ambas deben coincidir para una correcta integración y compilación
 build_berkeley_testfloat: | $(SF_LIBRARY_A)
-	$(MAKE) -C $(TF_BUILD) SPECIALIZE_TYPE=$(FORMAT_TYPE)
+	$(MAKE) -C $(TF_BUILD) SPECIALIZE_TYPE=$(ARCH_TARGET)
 
+# Ambas deben coincidir para una correcta integración y compilación
 # crear objeto reference_model.o
 $(REF_OBJ): _mkdir_folders
 	$(CC) $(CFLAGS) -c $(REF_C) -I$(SF_INCLUDE) -o $@
 
+#---------------------------- herramientas de uso testfloat ----------------------------#
+
+# Uso de testsoftfloat
 # testear softfloat vs testfloat de berkeley
+# opciones: -all2 -all1 f32_add f32_sub ...
+# TODO: hacer fora para probar las operaciones del reference model
+# Compara el softfloat.a generado contra slowfloat (FP íntegro de berkeley)
 test_build_berkeleys_libraries:
-	$(TF_SOFTFLOAT) -level 2 f32_sub
-#---------------------------- herramientas
-# construir vectores. 
+	$(TF_SOFTFLOAT) -level 1 -all1 \
+		2>&1 | tee $(REF_LOGS)/$(notdir $(TF_SOFTFLOAT))_$(shell date +%d_%H_%M_%S).log \
+
+# construir vectores.
 # TODO: crear mas vectores con otro modo de redondeo
 # cambiar nombre con respecto a la operación y modo de redondeo
 # $(TF_GEN) -rnear_even $$op > $(REF_VECTORS)/$$op.tf;
@@ -129,23 +142,35 @@ build_testfloat_vectors: _mkdir_folders
 		done \
 	done
 
-mostrar_nombres_vectors:
-	for op in $(TF_OPS); do \
-		echo ">> $(REF_VECTORS)/$$op.tf"; \
-			for mode in $(TF_ROUNDS_MODE); do \
-				echo "$${op}_$${mode/-/}"; \
-			done \
-	done
+# mostrar_nombres_vectors:
+# 	for op in $(TF_OPS); do \
+# 		echo ">> $(REF_VECTORS)/$$op.tf"; \
+# 			for mode in $(TF_ROUNDS_MODE); do \
+# 				echo "$${op}_$${mode/-/}"; \
+# 			done \
+# 	done
 
 ####################################################################################
-#################### Target: compila y ejecutar validación cruzada
+#################### Target: compilación e integración simple driver
+all_driver: driver_compile driver_run
+
+#----------------------------
+# enlaza objeto y compila simple_driver
+driver_compile: $(REF_DRIVER_C) $(REF_OBJ)
+	$(CC) $(CFLAGS) $< $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $(REF_DRIVER_EXE)
+
+driver_run: $(REF_DRIVER_C)
+	./$(REF_DRIVER_EXE) | tee $(REF_LOGS)/$(notdir $(REF_DRIVER_EXE))_$(shell date +%d_%H_%M_%S).log
+
+####################################################################################
+#################### Target: compilar y ejecutar validación cruzada
 all_runner:
 
-$(RUNNER_EXE): $(RUNNER_C) 
-	$(CC) $(CFLAGS) $< $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+runner_compile: $(RUNNER_C)
+	$(CC) $(CFLAGS) $< $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $(RUNNER_EXE)
 
-# probar solo con un redonde y operacion por el momento 
-run_runner: testfloat_gen_vectors
+# probar solo con un redondeo y operacion por el momento
+runner_run: testfloat_gen_vectors
 	$(TF_GEN) -rnear_even f32_mul | ./$(RUNNER_EXE) mul 0 | $(TF_VER) -rnear_even f32_mul
 
 testfloat_gen_vectors:
@@ -153,18 +178,6 @@ testfloat_gen_vectors:
 		echo ">> $(REF_VECTORS)/$$op.tf"; \
 		$(TF_GEN) -rnear_even $$op > $(REF_VECTORS)/$$op.tf; \
 	done
-
-####################################################################################
-#################### Target: compilación e integración simple driver
-all_driver: test_driver test_driver_run 
-
-#----------------------------
-# enlaza objeto y compila simple_driver
-test_driver: $(REF_DRIVER_C) $(REF_OBJ)
-	$(CC) $(CFLAGS) $< $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $(REF_BIN)/$(notdir $(<:.c=_exe))
-
-test_driver_run: $(REF_DRIVER_C)
-	./$(REF_BIN)/$(notdir $(<:.c=_exe)) | tee $(REF_LOGS)/$(notdir $(<:.c=_exe))_$(shell date +%d_%H_%M_%S).log
 
 ####################################################################################
 #################### Target: compilación e integración tf_replay
@@ -236,7 +249,7 @@ $(TODO:=_callgrind):
 #################### Target: de limpieza
 clean_all: clean clean_berkeley
 # clean local, borra archivo locales al modelo de referencia
-clean: clean_bin clean_logs clean_vectors clean_build_reference
+clean: clean_bin clean_logs clean_vectors
 
 clean_bin:
 	rm -rf $(REF_BIN) 
