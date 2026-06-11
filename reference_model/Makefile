@@ -96,7 +96,10 @@ CTEST       = $(wildcard $(REF_STAND)/*.c)
 HFILES      = $(wildcard $(REF_INC)/*.h)
 CFILES      = $(CSOURCES) $(CTEST) $(HFILES)
 
-# AGREGAR SANITIZERS con clang
+# TODO: AGREGAR Valgrind tools
+VALGRIND_TOOLS = memcheck massif callgrind
+
+# TODO: AGREGAR SANITIZERS con clang
 
 #----------------------------
 # Variables del modelo de referencia con softfloat
@@ -221,7 +224,7 @@ driver_compile: $(REF_DRIVER_EXE)
 
 #--------------------------
 driver_run: $(REF_DRIVER_EXE) | $(LOGS_DRIVER)
-	./$(REF_DRIVER_EXE) | tee $(LOGS_DRIVER)_$(FECHA).log
+	./$(REF_DRIVER_EXE) | tee $(LOGS_DRIVER)/$@_$(FECHA).log
 
 # N3 ###################################################################################
 #################### Target: compilar y ejecutar validación cruzada
@@ -322,7 +325,36 @@ replayer_sweep: $(TF_REPLAY_EXE) | $(REF_CSV)
 # 		clang -g -Wall -Wextra -fsanitize=address $(APPNAME).c -o $(APPNAME)_asan
 ####################################################################################
 #################### Target: Análisis estático de código con linter
-all_valgrind: $(TODO:=_memcheck) $(TODO:=_massif) $(TODO:=_callgrind)
+all_valgrind: all_valgrind_driver all_valgrind_replayer all_valgrind_runner
+
+#--------------------------
+all_valgrind_driver: driver_memcheck driver_massif driver_callgrind
+
+driver_memcheck: $(REF_DRIVER_EXE) | $(LOGS_VALGRIND)
+	@echo ""
+	valgrind --tool=memcheck \
+		./$< \
+		| tee $(LOGS_VALGRIND)/$@_$(FECHA).log
+
+
+driver_massif: $(REF_DRIVER_EXE) | $(LOGS_VALGRIND)
+	@echo ""
+	valgrind --tool=massif \
+		./$< \
+		| tee $(LOGS_VALGRIND)/$@_$(FECHA).log
+
+driver_callgrind: $(REF_DRIVER_EXE) | $(LOGS_VALGRIND)
+	@echo ""
+	valgrind --tool=callgrind \
+		./$< \
+		| tee $(LOGS_VALGRIND)/$@_$(FECHA).log
+
+#--------------------------
+all_valgrind_replayer:
+
+#--------------------------
+all_valgrind_runner:
+
 
 $(TODO:=_memcheck):
 	@echo ""
@@ -346,6 +378,7 @@ $(TODO:=_callgrind):
 		--callgrind-out-file=$(REF_LOGS)/$(notdir $@)_$(FECHA).log \
 		./$(@:_callgrind=) f32_add \
 		| $(TF_VER) -rnear_even f32_add
+
 
 
 ####################################################################################
