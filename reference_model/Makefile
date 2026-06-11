@@ -163,7 +163,7 @@ build_berkeley_testfloat:
 $(REF_OBJ): | $(REF_BUILD)
 	$(CC) $(CFLAGS) -c $(REF_C) -I$(SF_INCLUDE) -o $@
 
-####################################################################################
+# N1 ###################################################################################
 #################### Target:  Nivel N1
 #-------------------------- herramientas de uso testfloat --------------------------#
 
@@ -208,34 +208,54 @@ build_testfloat_vectors: | $(REF_VECTORS) $(LOGS_VECTORS)
 # 			done \
 # 	done
 
-####################################################################################
+# N2 ###################################################################################
 #################### Target: compilación e integración simple driver
 all_driver: driver_compile driver_run
 
 #----------------------------
 # enlaza objeto y compila simple_driver
-driver_compile: $(REF_DRIVER_C) $(REF_OBJ)
-	$(CC) $(CFLAGS) $< $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $(REF_DRIVER_EXE)
+$(REF_DRIVER_EXE): $(REF_DRIVER_C) $(REF_OBJ) | $(REF_BIN)
+	$(CC) $(CFLAGS) $(REF_DRIVER_C) $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+
+driver_compile: $(REF_DRIVER_EXE)
+
 #--------------------------
-driver_run: $(REF_DRIVER_C)
-	./$(REF_DRIVER_EXE) | tee $(REF_LOGS)/$(notdir $(REF_DRIVER_EXE))_$(FECHA).log
+driver_run: $(REF_DRIVER_EXE) | $(LOGS_DRIVER)
+	./$(REF_DRIVER_EXE) | tee $(LOGS_DRIVER)_$(FECHA).log
 
 ####################################################################################
 #################### Target: compilar y ejecutar validación cruzada
-all_runner:
+all_runner: runner_compile runner_matrix
 
-runner_compile: $(RUNNER_C)
-	$(CC) $(CFLAGS) $< $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $(RUNNER_EXE)
+#--------------------------
+
+$(RUNNER_EXE): $(RUNNER_C) | $(REF_BIN)
+	$(CC) $(CFLAGS) $(RUNNER_C) $(SF_LIBRARY_A) -I$(SF_INCLUDE) -o $@
+
+runner_compile: $(RUNNER_EXE)
 
 # probar solo con un redondeo y operacion por el momento
-runner_run:
-	$(TF_GEN) -rnear_even f32_mul | ./$(RUNNER_EXE) mul 0 | $(TF_VER) -rnear_even f32_mul
+runner_run: $(RUNNER_EXE) | $(LOGS_RUNNER)
+	$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) -rnear_even f32_mul \
+	  | ./$(RUNNER_EXE) mul rne 2>&1 \
+	  | tee $(LOGS_RUNNER)/runner_mul_rne_$(FECHA).log
 
-
-
-
-
-
+runner_matrix: $(RUNNER_EXE) | $(LOGS_RUNNER)
+	for op in $(RUNNER_ARITH); do \
+	  for par in $(RM_PAIRS); do \
+	    ref_r=$${par%%:*}; tf_r=$${par##*:}; \
+	    echo "== runner $$op $$ref_r =="; \
+	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r f32_$$op \
+	      | ./$(RUNNER_EXE) $$op $$ref_r 2>&1 \
+	      | tee $(LOGS_RUNNER)/runner_$${op}_$${ref_r}_$(FECHA).log || exit 1; \
+	  done; \
+	done; \
+	for op in $(RUNNER_CMP); do \
+	  echo "== runner $$op rne =="; \
+	  $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) f32_$$op \
+	    | ./$(RUNNER_EXE) $$op rne 2>&1 \
+	    | tee $(LOGS_RUNNER)/runner_$${op}_rne_$(FECHA).log || exit 1; \
+	done
 
 
 ####################################################################################
