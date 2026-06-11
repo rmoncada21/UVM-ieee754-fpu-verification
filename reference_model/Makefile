@@ -10,7 +10,7 @@ REF_INC       = include
 REF_LOGS      = logs
 REF_BUILD     = build
 REF_VECTORS   = vectors
-# REF_CSV       = csv
+REF_CSV       = csv
 REF_STAND     = standalone_tests
 # STAND_BIN = standalone_tests/bin
 
@@ -70,11 +70,11 @@ VAL_N    ?= 500
 # token:flag  ->  rne=RNE  rtz=RTZ  rdn=RDN  rup=RUP  rmm=RMM
 ROUND_MODE_PAIR := rne:-rnear_even rtz:-rminMag rdn:-rmin rup:-rmax rmm:-rnear_maxMag
 TF_OPS          := f32_add f32_sub f32_mul f32_eq f32_lt f32_le
-RUNNER_ARITH := add sub mul
-RUNNER_CMP   := eq lt le
+RUNNER_ARITH    := add sub mul
+RUNNER_CMP      := eq lt le
 TF_ARITH_OPS    := f32_add f32_sub f32_mul
-TF_OPS_CMP   := f32_eq f32_lt f32_le
-SWEEP_OPS    := f32_add f32_sub f32_mul f32_mulAdd f32_mulSub
+TF_OPS_CMP      := f32_eq f32_lt f32_le
+SWEEP_OPS       := f32_add f32_sub f32_mul f32_mulAdd f32_mulSub
 # TF_OPS   : N1, las 6 funciones SoftFloat que el modelo llama
 # RUNNER_*  : N3, 3 ops aritmeticas x 5 modos + 3 comparaciones x RNE = 18
 # TF_ARITH_OPS : N4, set auditable por ver (madd/msub y cmp quedan fuera del gate)
@@ -223,7 +223,7 @@ driver_compile: $(REF_DRIVER_EXE)
 driver_run: $(REF_DRIVER_EXE) | $(LOGS_DRIVER)
 	./$(REF_DRIVER_EXE) | tee $(LOGS_DRIVER)_$(FECHA).log
 
-####################################################################################
+# N3 ###################################################################################
 #################### Target: compilar y ejecutar validación cruzada
 all_runner: runner_compile runner_matrix
 
@@ -240,9 +240,13 @@ runner_run: $(RUNNER_EXE) | $(LOGS_RUNNER)
 	  | ./$(RUNNER_EXE) mul rne 2>&1 \
 	  | tee $(LOGS_RUNNER)/runner_mul_rne_$(FECHA).log
 
-runner_matrix: $(RUNNER_EXE) | $(LOGS_RUNNER)
+# RUNNER_ARITH = 3 opciones
+# ROUND_MODE_PAIR     = 5 opciones  15 tests
+# RUNNER_COM   = 3 opciones sin redondeo
+# 18 tests en total
+runner_matrix: $(RUNNER_EXE) | $(LOGS_RUNNER) 
 	for op in $(RUNNER_ARITH); do \
-	  for par in $(RM_PAIRS); do \
+	  for par in $(ROUND_MODE_PAIR); do \
 	    ref_r=$${par%%:*}; tf_r=$${par##*:}; \
 	    echo "== runner $$op $$ref_r =="; \
 	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r f32_$$op \
@@ -258,40 +262,60 @@ runner_matrix: $(RUNNER_EXE) | $(LOGS_RUNNER)
 	done
 
 
-####################################################################################
+# N4 ###################################################################################
 #################### Target: compilación e integración tf_replay
-all_replayer: testfloat_gen testfloat_replay_compile testfloat_check
-
-#----------------------------
-# Generar vectores con tf_gen en vectors/, uno por op
-# gen_vectors/ guardar/respaldar vectores
-# TODO: BORRAR/CAMBIAR
-testfloat_gen:
-	for op in $(TF_OPS); do \
-		echo ">> $(REF_VECTORS)/$$op.tf"; \
-		$(TF_GEN) -rnear_even $$op > $(REF_VECTORS)/$$op.tf; \
-	done
+all_replayer: replayer_compile replayer_check_matrix
 
 #----------------------------
 # Compilar tf_replayer (usa reference_model.o ya producido antes)
 # produce el ejecutable standalone_tests/bin/tf_replay
-testfloat_replay_compile: $(REF_OBJ)
-	$(CC) $(CFLAGS) $(TF_REPLAY_C) $(REF_OBJ) $(SF_LIBRARY_A) \
-		$(INCLUDES) -o $(TF_REPLAY_EXE)
+$(TF_REPLAY_EXE): $(TF_REPLAY_C) $(REF_OBJ) $(SF_LIBRARY_A) | $(REF_BIN)
+	$(CC) $(CFLAGS) $(TF_REPLAY_C) $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+
+replayer_compile: $(TF_REPLAY_EXE)
 
 #----------------------------
-# Auditar reference_model contra testfloat mediante un piep
+# checkeo rápido (1 op, RNE)
+replayer_check_fast: $(TF_REPLAY_EXE) | $(LOGS_REPLAY)
+	$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) -rnear_even f32_add \
+	  | ./$(TF_REPLAY_EXE) f32_add rne \
+	  | $(TF_VER) -rnear_even -checkNaNs -errors 0 f32_add 2>&1 \
+	  | tee $(LOGS_REPLAY)/ver_f32_add_rne_$(FECHA).log
+
+#----------------------------
+# Auditar reference_model contra testfloat mediante un pipe
 # usa tf_gen | tf_ver
-testfloat_check: $(TF_REPLAY_EXE)
-	for op in $(TF_OPS); do \
-		echo "auditando $$op "; \
-		$(TF_GEN) -rnear_even $$op | $(TF_REPLAY_EXE) $$op \
-		| $(TF_VER) -rnear_even $$op \
-		| tee -a $(REF_LOGS)/$(@)_$(FECHA).log; \
+replayer_check_matrix: $(TF_REPLAY_EXE) | $(LOGS_REPLAY)
+	for op in $(TF_ARITH_OPS); do \
+	  for par in $(ROUND_MODE_PAIR); do \
+	    ref_r=$${par%%:*}; tf_r=$${par##*:}; \
+	    echo "== ver $$op $$ref_r =="; \
+	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r $$op \
+	      | ./$(TF_REPLAY_EXE) $$op $$ref_r \
+	      | $(TF_VER) $$tf_r -checkNaNs -errors 0 $$op 2>&1 \
+	      | tee $(LOGS_REPLAY)/ver_$${op}_$${ref_r}_$(FECHA).log || exit 1; \
+	  done; \
 	done
 
+replayer_sweep: $(TF_REPLAY_EXE) | $(REF_CSV)
+	for op in $(SWEEP_OPS); do \
+	  for par in $(ROUND_MODE_PAIRS); do \
+	    ref_r=$${par%%:*}; tf_r=$${par##*:}; \
+	    src=$$op; if [ "$$op" = "f32_mulSub" ]; then src=f32_mulAdd; fi; \
+	    echo "== csv $$op $$ref_r =="; \
+	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r $$src \
+	      | ./$(TF_REPLAY_EXE) --csv $$op $$ref_r \
+	      > $(REF_CSV)/$${op}_$${ref_r}.csv || exit 1; \
+	  done; \
+	done; \
+	for op in $(TF_OPS_CMP); do \
+	  echo "== csv $$op rne =="; \
+	  $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$op \
+	    | ./$(TF_REPLAY_EXE) --csv $$op rne \
+	    > $(REF_CSV)/$${op}_rne.csv || exit 1; \
+	done
 
-####################################################################################
+# N5 ###################################################################################
 # Reglas de análisis dinámico de código: 
 # valgrind  : memcheck, helgrind
 # sanitizers: addres, memory, thread, undefined
