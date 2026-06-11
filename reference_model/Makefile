@@ -1,18 +1,35 @@
 # usar "make -f make_ref_soft.mk" si se encuentra dentro del directorio de golde_model/
 
 SHELL := /bin/bash
-
+FECHA := $(shell date +%d_%H_%M_%S)
 #############################################################################
-# Folders
+# Folders del ambiente
 REF_BIN       = bin
 REF_SRC       = src
 REF_INC       = include
 REF_LOGS      = logs
 REF_BUILD     = build
 REF_VECTORS   = vectors
+# REF_CSV       = csv
 REF_STAND     = standalone_tests
 # STAND_BIN = standalone_tests/bin
 
+# Folders logs
+LOGS_BUILD    := $(REF_LOGS)/build
+LOGS_TFSOFT   := $(REF_LOGS)/testsoftfloat
+LOGS_VECTORS  := $(REF_LOGS)/vectores
+LOGS_DRIVER   := $(REF_LOGS)/driver
+LOGS_REPLAY   := $(REF_LOGS)/replayer
+LOGS_RUNNER   := $(REF_LOGS)/runner
+LOGS_VALGRIND := $(REF_LOGS)/valgrind
+LOGS_SAN      := $(REF_LOGS)/sanitizers
+
+LOG_DIRS      := $(LOGS_BUILD) $(LOGS_TFSOFT) $(LOGS_VECTORS) $(LOGS_DRIVER) \
+                 $(LOGS_REPLAY) $(LOGS_RUNNER) $(LOGS_VALGRIND) $(LOGS_SAN)
+DIRS          := $(REF_BIN) $(REF_BUILD) $(REF_VECTORS) $(REF_CSV) $(LOG_DIRS)
+
+$(DIRS):
+	mkdir -p $@
 #----------------------------
 # variables generales para soft/testfloat
 ARCH_TARGET       = RISCV
@@ -36,9 +53,36 @@ TF_GEN        := $(TF_BUILD)/testfloat_gen
 TF_VER        := $(TF_BUILD)/testfloat_ver
 TF_SOFTFLOAT  := $(TF_BUILD)/testsoftfloat
 TF_TIME       := $(TF_BUILD)/timesoftfloat
-TF_TOOLS       = $(notdir $(TF_TEST)) $(notdir $(TF_GEN)) $(notdir $(TF_VER)) $(notdir $(TF_SOFTFLOAT)) $(notdir $(TF_TIME))
-TF_OPS        := f32_add f32_sub f32_mul f32_eq f32_lt f32_le
-TF_ROUNDS_MODE = -rnear_even -rnear_maxMag -rminMag -rmin -rmax -rodd
+TF_TOOLS_PATHS = $(TF_TEST) $(TF_GEN) $(TF_VER) $(TF_SOFTFLOAT) $(TF_TIME)
+TF_TOOLS       = $(notdir $(TF_TOOLS_PATHS))
+
+
+#----------------------------
+# TF_LEVEL: 1 = ~46.5 K vectores por (op,modo); 2 = millones (barrido nocturno)
+# TF_SEED : reproducibilidad total del flujo (default de testfloat_gen: 1)
+# VAL_N   : vectores bajo valgrind (es ~20-50x mas lento que nativo)
+TF_LEVEL ?= 1
+TF_SEED  ?= 1
+VAL_N    ?= 500
+
+#----------------------------
+# Matrices de cobertura: 5 modos de redondeo RISC-V x operaciones del DUT
+# token:flag  ->  rne=RNE  rtz=RTZ  rdn=RDN  rup=RUP  rmm=RMM
+ROUND_MODE_PAIR := rne:-rnear_even rtz:-rminMag rdn:-rmin rup:-rmax rmm:-rnear_maxMag
+TF_OPS          := f32_add f32_sub f32_mul f32_eq f32_lt f32_le
+RUNNER_ARITH := add sub mul
+RUNNER_CMP   := eq lt le
+TF_ARITH_OPS    := f32_add f32_sub f32_mul
+TF_OPS_CMP   := f32_eq f32_lt f32_le
+SWEEP_OPS    := f32_add f32_sub f32_mul f32_mulAdd f32_mulSub
+# TF_OPS   : N1, las 6 funciones SoftFloat que el modelo llama
+# RUNNER_*  : N3, 3 ops aritmeticas x 5 modos + 3 comparaciones x RNE = 18
+# TF_ARITH_OPS : N4, set auditable por ver (madd/msub y cmp quedan fuera del gate)
+# SWEEP_OPS : barrido CSV; f32_mulSub consume vectores de f32_mulAdd (parte 2)
+
+
+# para build_testfloat_vectors
+TF_ROUNDS_MODE = -rnear_even -rminMag -rmin -rmax -rnear_maxMag
 
 #----------------------------
 # Compilador local
@@ -82,6 +126,7 @@ TF_REPLAY      ?= replayer_testfloat
 TF_REPLAY_C    := $(REF_STAND)/$(TF_REPLAY:=.c)
 TF_REPLAY_EXE  := $(REF_BIN)/$(TF_REPLAY:=_exe)
 
+#----------------------------
 # Variables para estudio con valgrind
 BIN_EXE    := $(wildcard $(REF_BIN)/*_exe)
 VAL_TOOLS  := memcheck helgrind
@@ -90,8 +135,8 @@ VAL_TOOLS  := memcheck helgrind
 #################### Target universales
 all: build_all
 
-_mkdir_folders:
-	mkdir -p $(REF_BIN) $(REF_BUILD) $(REF_LOGS) $(REF_VECTORS)
+# _mkdir_folders:
+# 	mkdir -p $(REF_BIN) $(REF_BUILD) $(REF_LOGS) $(REF_VECTORS)
 
 # revisar solo syntaxis
 # make src/nombre_archivo.c_syntax
@@ -100,7 +145,7 @@ $(CFILES:=_syntax):
 	$(CC) $(CFLAGS) $(CFSYNTAX) $(@:_syntax=)
 
 ####################################################################################
-#################### Target: build de librerías (internas, externas ) y herramientas
+#################### Target: N0 build de librerías (internas, externas ) y herramientas
 build_all: build_berkeley_softfloat build_berkeley_testfloat $(REF_OBJ)
 
 #---------------------------- Librerías
@@ -110,15 +155,17 @@ build_berkeley_softfloat:
 	$(MAKE) -C $(SF_BUILD) SPECIALIZE_TYPE=$(ARCH_TARGET)
 
 # Ambas deben coincidir para una correcta integración y compilación
-build_berkeley_testfloat: | $(SF_LIBRARY_A)
+build_berkeley_testfloat:
 	$(MAKE) -C $(TF_BUILD) SPECIALIZE_TYPE=$(ARCH_TARGET)
 
 # Ambas deben coincidir para una correcta integración y compilación
 # crear objeto reference_model.o
-$(REF_OBJ): _mkdir_folders
+$(REF_OBJ): | $(REF_BUILD)
 	$(CC) $(CFLAGS) -c $(REF_C) -I$(SF_INCLUDE) -o $@
 
-#---------------------------- herramientas de uso testfloat ----------------------------#
+####################################################################################
+#################### Target:  Nivel N1
+#-------------------------- herramientas de uso testfloat --------------------------#
 
 # Uso de testsoftfloat
 # testear softfloat vs testfloat de berkeley
@@ -126,22 +173,33 @@ $(REF_OBJ): _mkdir_folders
 # TODO: hacer fora para probar las operaciones del reference model
 # Compara el softfloat.a generado contra slowfloat (FP íntegro de berkeley)
 test_build_berkeleys_libraries:
-	$(TF_SOFTFLOAT) -level 1 -all1 \
-		2>&1 | tee $(REF_LOGS)/$(notdir $(TF_SOFTFLOAT))_$(shell date +%d_%H_%M_%S).log \
+	@for op in $(TF_OPS); do \
+		echo -e "\n== testsoftfloat $$op =="; \
+		$(TF_SOFTFLOAT) -level 1 $$op ;\
+	done
 
+#--------------------------
 # construir vectores.
 # TODO: crear mas vectores con otro modo de redondeo
 # cambiar nombre con respecto a la operación y modo de redondeo
 # $(TF_GEN) -rnear_even $$op > $(REF_VECTORS)/$$op.tf;
-build_testfloat_vectors: _mkdir_folders
-	@for op in $(TF_OPS); do \
-		echo ">> $(REF_VECTORS)/$$op*.tf"; \
-		for mode in $(TF_ROUNDS_MODE); do \
-			echo "$${op}_$${mode/-/}"; \
-			$(TF_GEN) $$mode $$op > $(REF_VECTORS)/$${op}_$${mode/-/}.tf; \
-		done \
-	done
+build_testfloat_vectors: | $(REF_VECTORS) $(LOGS_VECTORS)
+	{ echo -e "\n== vectores level=$(TF_LEVEL) seed=$(TF_SEED) fecha=$(FECHA) =="; \
+	for op in $(TF_ARITH_OPS) f32_mulAdd; do \
+	  for par in $(ROUND_MODE_PAIR); do \
+	    ref_r=$${par%%:*}; tf_r=$${par##*:}; \
+	    out=$(REF_VECTORS)/$${op}_$${ref_r}_l$(TF_LEVEL)_s$(TF_SEED).tf; \
+	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r $$op > $$out || exit 1; \
+	    echo "$$out ($$(wc -l < $$out) vectores)"; \
+	  done; \
+	done; \
+	for op in $(TF_OPS_CMP); do \
+	  out=$(REF_VECTORS)/$${op}_rne_l$(TF_LEVEL)_s$(TF_SEED).tf; \
+	  $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$op > $$out || exit 1; \
+	  echo "$$out ($$(wc -l < $$out) vectores)"; \
+	done; } 2>&1 | tee $(LOGS_VECTORS)/$@_$(FECHA).log
 
+#--------------------------
 # mostrar_nombres_vectors:
 # 	for op in $(TF_OPS); do \
 # 		echo ">> $(REF_VECTORS)/$$op.tf"; \
@@ -158,9 +216,9 @@ all_driver: driver_compile driver_run
 # enlaza objeto y compila simple_driver
 driver_compile: $(REF_DRIVER_C) $(REF_OBJ)
 	$(CC) $(CFLAGS) $< $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $(REF_DRIVER_EXE)
-
+#--------------------------
 driver_run: $(REF_DRIVER_C)
-	./$(REF_DRIVER_EXE) | tee $(REF_LOGS)/$(notdir $(REF_DRIVER_EXE))_$(shell date +%d_%H_%M_%S).log
+	./$(REF_DRIVER_EXE) | tee $(REF_LOGS)/$(notdir $(REF_DRIVER_EXE))_$(FECHA).log
 
 ####################################################################################
 #################### Target: compilar y ejecutar validación cruzada
@@ -170,14 +228,15 @@ runner_compile: $(RUNNER_C)
 	$(CC) $(CFLAGS) $< $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $(RUNNER_EXE)
 
 # probar solo con un redondeo y operacion por el momento
-runner_run: testfloat_gen_vectors
+runner_run:
 	$(TF_GEN) -rnear_even f32_mul | ./$(RUNNER_EXE) mul 0 | $(TF_VER) -rnear_even f32_mul
 
-testfloat_gen_vectors:
-	for op in $(TF_OPS); do \
-		echo ">> $(REF_VECTORS)/$$op.tf"; \
-		$(TF_GEN) -rnear_even $$op > $(REF_VECTORS)/$$op.tf; \
-	done
+
+
+
+
+
+
 
 ####################################################################################
 #################### Target: compilación e integración tf_replay
@@ -208,7 +267,7 @@ testfloat_check: $(TF_REPLAY_EXE)
 		echo "auditando $$op "; \
 		$(TF_GEN) -rnear_even $$op | $(TF_REPLAY_EXE) $$op \
 		| $(TF_VER) -rnear_even $$op \
-		| tee -a $(REF_LOGS)/$(@)_$(shell date +%d_%H_%M_%S).log; \
+		| tee -a $(REF_LOGS)/$(@)_$(FECHA).log; \
 	done
 
 
@@ -224,30 +283,30 @@ all_valgrind: $(TODO:=_memcheck) $(TODO:=_massif) $(TODO:=_callgrind)
 $(TODO:=_memcheck):
 	@echo ""
 	valgrind --tool=memcheck \
-		--log-file=$(REF_LOGS)/$(notdir $@)_$(shell date +%d_%H_%M_%S).log \
+		--log-file=$(REF_LOGS)/$(notdir $@)_$(FECHA).log \
 		./$(@:_memcheck=) f32_add \
 		| $(TF_VER) -rnear_even f32_add
-# 		| tee -a $(REF_LOGS)/$(notdir $@)_$(shell date +%d_%H_%M_%S).log
+# 		| tee -a $(REF_LOGS)/$(notdir $@)_$(FECHA).log
 
 $(TODO:=_massif):
 	@echo ""
 	valgrind --tool=massif \
-		--massif-out-file=$(REF_LOGS)/$(notdir $@)_$(shell date +%d_%H_%M_%S).log \
+		--massif-out-file=$(REF_LOGS)/$(notdir $@)_$(FECHA).log \
 		./$(@:_massif=) f32_add \
 		| $(TF_VER) -rnear_evenf32_add 
-# 		| tee -a $(REF_LOGS)/$(notdir $@)_$(shell date +%d_%H_%M_%S).log
+# 		| tee -a $(REF_LOGS)/$(notdir $@)_$(FECHA).log
 
 $(TODO:=_callgrind):
 	@echo ""
 	valgrind --tool=callgrind \
-		--callgrind-out-file=$(REF_LOGS)/$(notdir $@)_$(shell date +%d_%H_%M_%S).log \
+		--callgrind-out-file=$(REF_LOGS)/$(notdir $@)_$(FECHA).log \
 		./$(@:_callgrind=) f32_add \
 		| $(TF_VER) -rnear_even f32_add
 
 
 ####################################################################################
 #################### Target: de limpieza
-clean_all: clean clean_berkeley
+clean_all: clean clean_berkeley clean_build_reference
 # clean local, borra archivo locales al modelo de referencia
 clean: clean_bin clean_logs clean_vectors
 
