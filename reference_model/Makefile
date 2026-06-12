@@ -87,7 +87,8 @@ TF_ROUNDS_MODE = -rnear_even -rminMag -rmin -rmax -rnear_maxMag
 #----------------------------
 # Compilador local
 CC         := gcc
-CFLAGS     := -O2 -frounding-math -fno-unsafe-math-optimizations
+CFLAGS     := -O2 -frounding-math -fno-unsafe-math-optimizations -ffp-contract=off
+
 CFSYNTAX   := -fsyntax-only
 INCLUDES   := -Iinclude -I$(SF_INCLUDE)
 # para revisar sintaxis
@@ -99,7 +100,11 @@ CFILES      = $(CSOURCES) $(CTEST) $(HFILES)
 # TODO: AGREGAR Valgrind tools
 VALGRIND_TOOLS = memcheck massif callgrind
 
+#----------------------------
 # TODO: AGREGAR SANITIZERS con clang
+CLANG      ?= clang
+CLFLAGS    := 
+SANITIZERS := address memory undefined
 
 #----------------------------
 # Variables del modelo de referencia con softfloat
@@ -111,23 +116,32 @@ REF_EXE   := $(REF_BIN)/$(REF_MODEL:=_exe)
 #----------------------------
 # Archivos para inyectar datos desde el mismo archivo "main"
 DRIVER_FILE    ?= directed_driver
-REF_DRIVER_C   := $(REF_STAND)/$(DRIVER_FILE:=.c)
-REF_DRIVER_EXE := $(REF_BIN)/$(DRIVER_FILE:=_exe)
+DRIVER_C       := $(REF_STAND)/$(DRIVER_FILE:=.c)
+DRIVER_EXE     := $(REF_BIN)/$(DRIVER_FILE:=_exe)
+DRIVER_ASAN    := $(REF_BIN)/$(DRIVER_FILE:=_asan)
+DRIVER_MSAN    := $(REF_BIN)/$(DRIVER_FILE:=_msan)
+DRIVER_USAN    := $(REF_BIN)/$(DRIVER_FILE:=_usan)
 
 #----------------------------
 # runner
 # Nombre original tf_runner
-RUNNER_FILE ?= runner_testfloat
-RUNNER_C    := $(REF_STAND)/$(RUNNER_FILE:=.c)
-RUNNER_EXE  := $(REF_BIN)/$(RUNNER_FILE:=_exe)
+RUNNER_FILE  ?= runner_testfloat
+RUNNER_C     := $(REF_STAND)/$(RUNNER_FILE:=.c)
+RUNNER_EXE   := $(REF_BIN)/$(RUNNER_FILE:=_exe)
+RUNNER_ASAN  := $(REF_BIN)/$(RUNNER_FILE:=_asan)
+RUNNER_MSAN  := $(REF_BIN)/$(RUNNER_FILE:=_msan)
+RUNNER_UBSAN := $(REF_BIN)/$(RUNNER_FILE:=_ubsan)
 
 #----------------------------
 # Variables del testfloat replay
 # Archivos para inyectar datos mediante pipe con testfloat tools
 # nombre_original tf_replay  
-TF_REPLAY      ?= replayer_testfloat
-TF_REPLAY_C    := $(REF_STAND)/$(TF_REPLAY:=.c)
-TF_REPLAY_EXE  := $(REF_BIN)/$(TF_REPLAY:=_exe)
+REPLAYER_FILE  ?= replayer_testfloat
+REPLAYER_C     := $(REF_STAND)/$(REPLAYER_FILE:=.c)
+REPLAYER_EXE   := $(REF_BIN)/$(REPLAYER_FILE:=_exe)
+REPLAYER_ASAN  := $(REF_BIN)/$(REPLAYER_FILE:=_asan)
+REPLAYER_MSAN  := $(REF_BIN)/$(REPLAYER_FILE:=_msan)
+REPLAYER_UBSAN := $(REF_BIN)/$(REPLAYER_FILE:=_ubsan)
 
 #----------------------------
 # Variables para estudio con valgrind
@@ -137,6 +151,9 @@ VAL_TOOLS  := memcheck helgrind
 ####################################################################################
 #################### Target universales
 all: build_all
+
+# TARGET en blanco, útil para forzar de ser necesario la sobreescritura de un archivo
+FORCE:
 
 # _mkdir_folders:
 # 	mkdir -p $(REF_BIN) $(REF_BUILD) $(REF_LOGS) $(REF_VECTORS)
@@ -217,14 +234,14 @@ all_driver: driver_compile driver_run
 
 #----------------------------
 # enlaza objeto y compila simple_driver
-$(REF_DRIVER_EXE): $(REF_DRIVER_C) $(REF_OBJ) | $(REF_BIN)
-	$(CC) $(CFLAGS) $(REF_DRIVER_C) $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+$(DRIVER_EXE): $(DRIVER_C) $(REF_OBJ) | $(REF_BIN)
+	$(CC) $(CFLAGS) $(DRIVER_C) $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $@
 
-driver_compile: $(REF_DRIVER_EXE)
+driver_compile: $(DRIVER_EXE)
 
 #--------------------------
-driver_run: $(REF_DRIVER_EXE) | $(LOGS_DRIVER)
-	./$(REF_DRIVER_EXE) | tee $(LOGS_DRIVER)/$@_$(FECHA).log
+driver_run: $(DRIVER_EXE) | $(LOGS_DRIVER)
+	./$(DRIVER_EXE) | tee $(LOGS_DRIVER)/$@_$(FECHA).log
 
 # N3 ###################################################################################
 #################### Target: compilar y ejecutar validación cruzada
@@ -272,49 +289,49 @@ all_replayer: replayer_compile replayer_check_matrix
 #----------------------------
 # Compilar tf_replayer (usa reference_model.o ya producido antes)
 # produce el ejecutable standalone_tests/bin/tf_replay
-$(TF_REPLAY_EXE): $(TF_REPLAY_C) $(REF_OBJ) $(SF_LIBRARY_A) | $(REF_BIN)
-	$(CC) $(CFLAGS) $(TF_REPLAY_C) $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+$(REPLAYER_EXE ): $(REPLAYER_C)  $(REF_OBJ) $(SF_LIBRARY_A) | $(REF_BIN)
+	$(CC) $(CFLAGS) $(REPLAYER_C)  $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $@
 
-replayer_compile: $(TF_REPLAY_EXE)
+replayer_compile: $(REPLAYER_EXE )
 
 #----------------------------
 # checkeo rápido (1 op, RNE)
-replayer_check_fast: $(TF_REPLAY_EXE) | $(LOGS_REPLAY)
+replayer_check_fast: $(REPLAYER_EXE ) | $(LOGS_REPLAY)
 	$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) -rnear_even f32_add \
-	  | ./$(TF_REPLAY_EXE) f32_add rne \
+	  | ./$(REPLAYER_EXE ) f32_add rne \
 	  | $(TF_VER) -rnear_even -checkNaNs -errors 0 f32_add 2>&1 \
 	  | tee $(LOGS_REPLAY)/ver_f32_add_rne_$(FECHA).log
 
 #----------------------------
 # Auditar reference_model contra testfloat mediante un pipe
 # usa tf_gen | tf_ver
-replayer_check_matrix: $(TF_REPLAY_EXE) | $(LOGS_REPLAY)
+replayer_check_matrix: $(REPLAYER_EXE ) | $(LOGS_REPLAY)
 	for op in $(TF_ARITH_OPS); do \
 	  for par in $(ROUND_MODE_PAIR); do \
 	    ref_r=$${par%%:*}; tf_r=$${par##*:}; \
 	    echo "== ver $$op $$ref_r =="; \
 	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r $$op \
-	      | ./$(TF_REPLAY_EXE) $$op $$ref_r \
+	      | ./$(REPLAYER_EXE ) $$op $$ref_r \
 	      | $(TF_VER) $$tf_r -checkNaNs -errors 0 $$op 2>&1 \
 	      | tee $(LOGS_REPLAY)/ver_$${op}_$${ref_r}_$(FECHA).log || exit 1; \
 	  done; \
 	done
 
-replayer_sweep: $(TF_REPLAY_EXE) | $(REF_CSV)
+replayer_sweep: $(REPLAYER_EXE ) | $(REF_CSV)
 	for op in $(SWEEP_OPS); do \
 	  for par in $(ROUND_MODE_PAIRS); do \
 	    ref_r=$${par%%:*}; tf_r=$${par##*:}; \
 	    src=$$op; if [ "$$op" = "f32_mulSub" ]; then src=f32_mulAdd; fi; \
 	    echo "== csv $$op $$ref_r =="; \
 	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r $$src \
-	      | ./$(TF_REPLAY_EXE) --csv $$op $$ref_r \
+	      | ./$(REPLAYER_EXE ) --csv $$op $$ref_r \
 	      > $(REF_CSV)/$${op}_$${ref_r}.csv || exit 1; \
 	  done; \
 	done; \
 	for op in $(TF_OPS_CMP); do \
 	  echo "== csv $$op rne =="; \
 	  $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$op \
-	    | ./$(TF_REPLAY_EXE) --csv $$op rne \
+	    | ./$(REPLAYER_EXE ) --csv $$op rne \
 	    > $(REF_CSV)/$${op}_rne.csv || exit 1; \
 	done
 
@@ -327,38 +344,38 @@ replayer_sweep: $(TF_REPLAY_EXE) | $(REF_CSV)
 #################### Target: Análisis estático de código con linter
 all_valgrind: all_valgrind_driver all_valgrind_replayer all_valgrind_runner
 
-#--------------------------
+#------------------------------------------------------------------------------
 all_valgrind_driver: driver_memcheck driver_massif driver_callgrind
 
-driver_memcheck: $(REF_DRIVER_EXE) | $(LOGS_VALGRIND)
+driver_memcheck: $(DRIVER_EXE) | $(LOGS_VALGRIND)
 	@echo ""
 	valgrind --tool=memcheck \
 		./$< \
 		| tee $(LOGS_VALGRIND)/$@_$(FECHA).log
 
 
-driver_massif: $(REF_DRIVER_EXE) | $(LOGS_VALGRIND)
+driver_massif: $(DRIVER_EXE) | $(LOGS_VALGRIND)
 	@echo ""
 	valgrind --tool=massif \
 		./$< \
 		| tee $(LOGS_VALGRIND)/$@_$(FECHA).log
 
-driver_callgrind: $(REF_DRIVER_EXE) | $(LOGS_VALGRIND)
+driver_callgrind: $(DRIVER_EXE) | $(LOGS_VALGRIND)
 	@echo ""
 	valgrind --tool=callgrind \
 		./$< \
 		| tee $(LOGS_VALGRIND)/$@_$(FECHA).log
 
-#--------------------------
+#------------------------------------------------------------------------------
 all_valgrind_replayer:
 
-# replayer_memcheck: $(TF_REPLAY_EXE) | $(LOGS_VALGRIND)
+# replayer_memcheck: $(REPLAYER_EXE ) | $(LOGS_VALGRIND)
 # 	@echo ""
 # 	valgrind --tool=memcheck --leak-check=full --error-exitcode=1 \
 # 		./$< f32_add rne \
 # 		| $(TF_VER) -rnear_even f32_add
 
-replayer_memcheck: $(TF_REPLAY_EXE) | $(LOGS_VALGRIND)
+replayer_memcheck: $(REPLAYER_EXE ) | $(LOGS_VALGRIND)
 	@echo ""
 	for op in $(TF_ARITH_OPS); do \
 	  for par in $(ROUND_MODE_PAIR); do \
@@ -366,13 +383,13 @@ replayer_memcheck: $(TF_REPLAY_EXE) | $(LOGS_VALGRIND)
 	    echo "== ver $$op $$ref_r =="; \
 	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r $$op \
 	      | valgrind --tool=memcheck --leak-check=full --error-exitcode=1 \
-		  ./$(TF_REPLAY_EXE) $$op $$ref_r \
+		  ./$(REPLAYER_EXE ) $$op $$ref_r \
 	      | $(TF_VER) $$tf_r -checkNaNs -errors 0 $$op 2>&1 \
 	      | tee $(LOGS_VALGRIND)/ver_$${op}_$${ref_r}_$(FECHA).log || exit 1; \
 	  done; \
 	done
 
-replayer_massif: $(TF_REPLAY_EXE) | $(LOGS_VALGRIND)
+replayer_massif: $(REPLAYER_EXE ) | $(LOGS_VALGRIND)
 	@echo ""
 	for op in $(TF_ARITH_OPS); do \
 	  for par in $(ROUND_MODE_PAIR); do \
@@ -381,13 +398,13 @@ replayer_massif: $(TF_REPLAY_EXE) | $(LOGS_VALGRIND)
 	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r $$op \
 	      | valgrind --tool=massif --error-exitcode=1 \
 		  --massif-out-file=$(LOGS_VALGRIND)/$@s_$(FECHA).log \
-		  ./$(TF_REPLAY_EXE) $$op $$ref_r \
+		  ./$(REPLAYER_EXE ) $$op $$ref_r \
 	      | $(TF_VER) $$tf_r -checkNaNs -errors 0 $$op 2>&1 \
 	      | tee $(LOGS_VALGRIND)/ver_$${op}_$${ref_r}_$(FECHA).log || exit 1; \
 	  done; \
 	done
 
-replayer_callgrind: $(TF_REPLAY_EXE) | $(LOGS_VALGRIND)
+replayer_callgrind: $(REPLAYER_EXE ) | $(LOGS_VALGRIND)
 	@echo ""
 	for op in $(TF_ARITH_OPS); do \
 	  for par in $(ROUND_MODE_PAIR); do \
@@ -395,17 +412,20 @@ replayer_callgrind: $(TF_REPLAY_EXE) | $(LOGS_VALGRIND)
 	    echo "== ver $$op $$ref_r =="; \
 	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r $$op \
 	      | valgrind --tool=callgrind --error-exitcode=1 \
-		  ./$(TF_REPLAY_EXE) $$op $$ref_r \
+		  ./$(REPLAYER_EXE ) $$op $$ref_r \
 	      | $(TF_VER) $$tf_r -checkNaNs -errors 0 $$op 2>&1 \
 	      | tee $(LOGS_VALGRIND)/ver_$${op}_$${ref_r}_$(FECHA).log || exit 1; \
 	  done; \
 	done
 
-#--------------------------
-# TODO: runner targets
+#------------------------------------------------------------------------------
+# TODO:
 all_valgrind_runner:
+#### memcheck
+#### massif
+#### callgrind
 
-
+# TODO mejorar/modularizar los targets
 $(TODO:=_memcheck):
 	@echo ""
 	valgrind --tool=memcheck \
@@ -429,7 +449,52 @@ $(TODO:=_callgrind):
 		./$(@:_callgrind=) f32_add \
 		| $(TF_VER) -rnear_even f32_add
 
+####################################################################################
+#################### Clang Sanitizers
+# TODO: agregar reglas a all_driver_sanitizers
+all_sanitizers_driver:
 
+#### address
+$(DRIVER_ASAN): FORCE $(SF_LIBRARY_A) | $(REF_BIN)
+	$(CLANG) $(CLFLAGS) -fsanitize=address $(REF_C) $(DRIVER_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+
+driver_compile_asan: $(DRIVER_ASAN)
+
+driver_run_asan: $(DRIVER_ASAN) | $(LOGS_DRIVER)
+	./$(DRIVER_ASAN) | tee $(LOGS_DRIVER)/$@_$(FECHA).log
+
+#### memory
+$(DRIVER_MSAN): FORCE $(SF_LIBRARY_A) | $(REF_BIN)
+	$(CLANG) $(CLFLAGS) -fsanitize=memory $(REF_C) $(DRIVER_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+
+driver_compile_msan: $(DRIVER_MSAN)
+
+driver_run_msan: $(DRIVER_MSAN) | $(LOGS_DRIVER)
+	./$(DRIVER_MSAN) | tee $(LOGS_DRIVER)/$@_$(FECHA).log
+
+#### undefined
+$(DRIVER_USAN): FORCE $(SF_LIBRARY_A) | $(REF_BIN)
+	$(CLANG) $(CLFLAGS) -fsanitize=undefined $(REF_C) $(DRIVER_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+
+driver_compile_ubsan: $(DRIVER_USAN)
+
+driver_run_ubsan: $(DRIVER_USAN) | $(LOGS_DRIVER)
+	./$(DRIVER_USAN) | tee $(LOGS_DRIVER)/$@_$(FECHA).log
+
+#------------------------------------------------------------------------------
+# TODO:
+all_sanitizers_replayer:
+#### address
+#### memory
+#### undefined
+
+
+#------------------------------------------------------------------------------
+# TODO:
+all_sanitizers_runner:
+#### address
+#### memory
+#### undefined
 
 ####################################################################################
 #################### Target: de limpieza
@@ -438,7 +503,7 @@ clean_all: clean clean_berkeley clean_build_reference
 clean: clean_bin clean_logs clean_vectors
 
 clean_bin:
-	rm -rf $(REF_BIN) 
+	rm -rf $(REF_BIN)
 clean_logs:
 	rm -rf $(REF_LOGS)
 clean_vectors:
@@ -461,6 +526,7 @@ clean_berkeley_testfloat:
 help:
 	echo "TODO HELP FUNCTION"
 
+# TODO: agregar demás reglas al PHONY
 .PHONY: all _mkdir_folders _echo_vars \
 		build_all \
 		build_berkeley_testfloat \
@@ -470,6 +536,7 @@ help:
 		$(CFILES:=_syntax) \
 		$(CTEST:=_compile) \
 		$(BIN_EXE:=_run) \
+		driver_compile_asan \
 		testfloat_gen testfloat_replay testfloat_check \
 		clean clean_bin  clean_logs clean_build clean_build_reference \
 		clean_berkeley_softfloat clean_berkeley_testfloat clean_all \
