@@ -1,6 +1,16 @@
 /* test_driver.c — arnes standalone para el golden (sin VCS) */
 #include <stdio.h>
-#include "../include/reference_model.h"
+#include "reference_model.h"
+
+typedef struct{
+    unsigned int   opcode;
+    const char    *opcode_name;
+    unsigned int   fp_a, fp_b, fp_c;
+    unsigned int   round_mode;
+    unsigned char  result_exp;
+    unsigned char  flag_exp;
+    const char    *test_objective;
+} directed_case_t;
 
 int main(void) {
     printf("Prueba simple para probar integración\n");
