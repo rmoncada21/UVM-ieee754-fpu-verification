@@ -110,7 +110,7 @@ REF_EXE   := $(REF_BIN)/$(REF_MODEL:=_exe)
 
 #----------------------------
 # Archivos para inyectar datos desde el mismo archivo "main"
-DRIVER_FILE    ?= simple_driver
+DRIVER_FILE    ?= directed_driver
 REF_DRIVER_C   := $(REF_STAND)/$(DRIVER_FILE:=.c)
 REF_DRIVER_EXE := $(REF_BIN)/$(DRIVER_FILE:=_exe)
 
@@ -352,7 +352,57 @@ driver_callgrind: $(REF_DRIVER_EXE) | $(LOGS_VALGRIND)
 #--------------------------
 all_valgrind_replayer:
 
+# replayer_memcheck: $(TF_REPLAY_EXE) | $(LOGS_VALGRIND)
+# 	@echo ""
+# 	valgrind --tool=memcheck --leak-check=full --error-exitcode=1 \
+# 		./$< f32_add rne \
+# 		| $(TF_VER) -rnear_even f32_add
+
+replayer_memcheck: $(TF_REPLAY_EXE) | $(LOGS_VALGRIND)
+	@echo ""
+	for op in $(TF_ARITH_OPS); do \
+	  for par in $(ROUND_MODE_PAIR); do \
+	    ref_r=$${par%%:*}; tf_r=$${par##*:}; \
+	    echo "== ver $$op $$ref_r =="; \
+	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r $$op \
+	      | valgrind --tool=memcheck --leak-check=full --error-exitcode=1 \
+		  ./$(TF_REPLAY_EXE) $$op $$ref_r \
+	      | $(TF_VER) $$tf_r -checkNaNs -errors 0 $$op 2>&1 \
+	      | tee $(LOGS_VALGRIND)/ver_$${op}_$${ref_r}_$(FECHA).log || exit 1; \
+	  done; \
+	done
+
+replayer_massif: $(TF_REPLAY_EXE) | $(LOGS_VALGRIND)
+	@echo ""
+	for op in $(TF_ARITH_OPS); do \
+	  for par in $(ROUND_MODE_PAIR); do \
+	    ref_r=$${par%%:*}; tf_r=$${par##*:}; \
+	    echo "== ver $$op $$ref_r =="; \
+	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r $$op \
+	      | valgrind --tool=massif --error-exitcode=1 \
+		  --massif-out-file=$(LOGS_VALGRIND)/$@s_$(FECHA).log \
+		  ./$(TF_REPLAY_EXE) $$op $$ref_r \
+	      | $(TF_VER) $$tf_r -checkNaNs -errors 0 $$op 2>&1 \
+	      | tee $(LOGS_VALGRIND)/ver_$${op}_$${ref_r}_$(FECHA).log || exit 1; \
+	  done; \
+	done
+
+replayer_callgrind: $(TF_REPLAY_EXE) | $(LOGS_VALGRIND)
+	@echo ""
+	for op in $(TF_ARITH_OPS); do \
+	  for par in $(ROUND_MODE_PAIR); do \
+	    ref_r=$${par%%:*}; tf_r=$${par##*:}; \
+	    echo "== ver $$op $$ref_r =="; \
+	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$tf_r $$op \
+	      | valgrind --tool=callgrind --error-exitcode=1 \
+		  ./$(TF_REPLAY_EXE) $$op $$ref_r \
+	      | $(TF_VER) $$tf_r -checkNaNs -errors 0 $$op 2>&1 \
+	      | tee $(LOGS_VALGRIND)/ver_$${op}_$${ref_r}_$(FECHA).log || exit 1; \
+	  done; \
+	done
+
 #--------------------------
+# TODO: runner targets
 all_valgrind_runner:
 
 
