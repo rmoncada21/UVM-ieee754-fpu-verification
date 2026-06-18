@@ -22,7 +22,7 @@ CM_LOG    := logs/cov/cm.log
 
 # Flags C  críticos para semántica IEEE 754
 CC        := gcc
-CFLAGS    := -O2 -frounding-math -fno-unsafe-math-optimizations
+CFLAGS    := -O2 -frounding-math -fno-unsafe-math-optimizations -ffp-contract=off
 REF_MODEL := reference_model
 REF_OBJ   := $(REF_MODEL:=.o)
 # REF_MODEL := reference_model/reference_model.c
