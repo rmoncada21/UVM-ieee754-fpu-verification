@@ -23,6 +23,45 @@ _sim_fpu_test_arith_normal:
 	-l ../$(LOGS_SIM)/$(@:_sim_%=%).log \
 	| tee ../$(LOGS_TESTS)/$(@:_sim_%=%)_$(shell date +%d_%H_%M_%S).log
 
+_sim_fpu_test_cmp:
+	./testbench_sim \
+	+UVM_TESTNAME=$(@:_sim_%=%)_c \
+	+UVM_VERBOSITY=$(VERBOSITY) \
+	+ntb_random_seed_automatic \
+	-l ../$(LOGS_SIM)/$(@:_sim_%=%).log \
+	| tee ../$(LOGS_TESTS)/$(@:_sim_%=%)_$(shell date +%d_%H_%M_%S).log
+
+_sim_fpu_test_rounding:
+	./testbench_sim \
+	+UVM_TESTNAME=$(@:_sim_%=%)_c \
+	+UVM_VERBOSITY=$(VERBOSITY) \
+	+ntb_random_seed_automatic \
+	-l ../$(LOGS_SIM)/$(@:_sim_%=%).log \
+	| tee ../$(LOGS_TESTS)/$(@:_sim_%=%)_$(shell date +%d_%H_%M_%S).log
+
+_sim_fpu_test_special_spec:
+	./testbench_sim \
+	+UVM_TESTNAME=$(@:_sim_%=%)_c \
+	+UVM_VERBOSITY=$(VERBOSITY) \
+	+ntb_random_seed_automatic \
+	-l ../$(LOGS_SIM)/$(@:_sim_%=%).log \
+	| tee ../$(LOGS_TESTS)/$(@:_sim_%=%)_$(shell date +%d_%H_%M_%S).log
+
+# _sim_fpu_test_norm_spec:
+# 	./testbench_sim \
+# 	+UVM_TESTNAME=$(@:_sim_%=%)_c \
+# 	+UVM_VERBOSITY=$(VERBOSITY) \
+# 	+ntb_random_seed_automatic \
+# 	-l ../$(LOGS_SIM)/$(@:_sim_%=%).log \
+# 	| tee ../$(LOGS_TESTS)/$(@:_sim_%=%)_$(shell date +%d_%H_%M_%S).log
+
+_sim_fpu_test_subnormal_arith:
+	./testbench_sim \
+	+UVM_TESTNAME=$(@:_sim_%=%)_c \
+	+UVM_VERBOSITY=$(VERBOSITY) \
+	+ntb_random_seed_automatic \
+	-l ../$(LOGS_SIM)/$(@:_sim_%=%).log \
+	| tee ../$(LOGS_TESTS)/$(@:_sim_%=%)_$(shell date +%d_%H_%M_%S).log
 
 # 	_sim_fpu_NOMBRE_test:
 # 	./testbench_sim \
