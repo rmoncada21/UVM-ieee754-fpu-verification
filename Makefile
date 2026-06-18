@@ -86,6 +86,12 @@ testbench: _mkdir_folders
 # -- ejecutar test's 
 # -C sim-> cambia el working directory a sim
 
+run_all: testbench_sim run_fpu_base_test run_fpu_test_arith_normal \
+			run_fpu_test_cmp run_fpu_test_rounding run_fpu_test_special_spec \
+			run_fpu_test_subnormal_arith
+
+# 			run_fpu_test_norm_spec run_fpu_test_subnormal_arith
+
 testbench_sim: _cp_sim_makefile
 	$(MAKE) -C $(SIM) -f sim_make.mk _testbench_sim
 
@@ -95,10 +101,25 @@ run_fpu_base_test: _cp_sim_makefile
 run_fpu_test_arith_normal: _cp_sim_makefile
 	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_arith_normal
 
+run_fpu_test_cmp: _cp_sim_makefile
+	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_cmp
+
+run_fpu_test_rounding: _cp_sim_makefile
+	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_rounding
+
+run_fpu_test_special_spec: _cp_sim_makefile
+	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_special_spec
+
+# run_fpu_test_norm_spec: _cp_sim_makefile
+# 	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_norm_spec
+
+run_fpu_test_subnormal_arith: _cp_sim_makefile
+	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_subnormal_arith
+
 # ---------------------------------------------
 # -- Compilar el modelo de referencia C
 $(REF_MODEL): _mkdir_folders
-	$(CC) $(CFLAGS) -c $@/$(@).c -o $(SIM)/$(@).o
+	$(CC) $(CFLAGS) -c $@/src/$(@).c -o $(SIM)/$(@).o
 
 # $(REF_OBJ): $(REF_MODEL) | _mkdir_folders
 # 	$(CC) $(CFLAGS) -c $< -o $@
