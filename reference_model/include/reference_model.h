@@ -32,6 +32,14 @@ enum OPCODES {
 	OP_FLE   = 7
 };
 
+enum ROUND_MODE {
+    OP_RNE  = 0,   /*  round_near_even   */
+	OP_RTZ  = 1,   /*  round_minMag      */
+	OP_RDN  = 2,   /*  round_min         */
+	OP_RUP  = 3,   /*  round_max         */
+    OP_RMM  = 4,   /*  round_near_maxMag */
+};
+
  void dpi_fpu_reference(
     // entradas
     unsigned int   op_code,
