@@ -5,7 +5,7 @@ include standalone_tests/replayer/make_replayer.mk
 
 ####################################################################################
 #################### Targets: universales
-all: build_all
+all: build_all all_runner all_driver all_replayer
 
 # _mkdir_folders:
 # 	mkdir -p $(REF_BIN) $(REF_BUILD) $(REF_LOGS) $(REF_VECTORS)
@@ -125,9 +125,10 @@ clean_all: clean clean_berkeley clean_build_reference
 clean: clean_bin clean_logs clean_vectors
 
 clean_bin:
-	rm -rf $(REF_BIN)
+	rm -rf $(DIRS)
+# 	rm -rf  $(RUN_BIN) $(DRV_BIN) $(REP_BIN)
 clean_logs:
-	rm -rf $(REF_LOGS)
+	rm -rf $(LOGS_DIRS)
 clean_vectors:
 	rm -rf $(REF_VECTORS)
 clean_build_reference:

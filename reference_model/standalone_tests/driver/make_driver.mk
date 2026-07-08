@@ -6,18 +6,18 @@
 #------------------------------------------------------------------------------
 # Compilar y ejecutar: Driver
 #------------------------------------------------------------------------------
-driver_all: driver_run driver_valgrind_all driver_sanitizers_all
+all_driver: driver_run driver_valgrind_all driver_sanitizers_all
 
 #----------------------------
 # enlaza objeto y compila simple_driver
-$(DRIVER_EXE): $(DRIVER_MAIN_C) $(DRIVER_C) $(DRIVER_CASES_C) $(REF_OBJ) | $(REF_BIN)
+$(DRIVER_EXE): $(DRIVER_MAIN_C) $(DRIVER_C) $(DRIVER_CASES_C) $(REF_OBJ) | $(DRV_BIN)
 	$(CC) $(CFLAGS) $(DRIVER_MAIN_C) $(DRIVER_C) $(DRIVER_CASES_C) $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $@
 
 driver_compile: $(DRIVER_EXE)
 
 #--------------------------
-driver_run: $(DRIVER_EXE) | $(LOGS_DRIVER)
-	./$(DRIVER_EXE) | tee $(LOGS_DRIVER)/$@_$(FECHA).log
+driver_run: $(DRIVER_EXE) | $(LOGS_DRV_C)
+	./$(DRIVER_EXE) | tee $(LOGS_DRV_C)/$@_$(FECHA).log
 
 
 ####################################################################################
@@ -29,26 +29,26 @@ driver_run: $(DRIVER_EXE) | $(LOGS_DRIVER)
 #------------------------------------------------------------------------------
 driver_valgrind_all: driver_memcheck driver_massif driver_callgrind
 
-driver_memcheck: $(DRIVER_EXE) | $(LOGS_VALGRIND)
+driver_memcheck: $(DRIVER_EXE) | $(LOGS_DRV_VAL)
 	@echo ""
 	valgrind --tool=memcheck \
 		./$< \
-		| tee $(LOGS_VALGRIND)/$@_$(FECHA).log
+		| tee $(LOGS_DRV_VAL)/$@_$(FECHA).log
 
 
-driver_massif: $(DRIVER_EXE) | $(LOGS_VALGRIND)
+driver_massif: $(DRIVER_EXE) | $(LOGS_DRV_VAL)
 	@echo ""
 	valgrind --tool=massif --error-exitcode=1 \
-		--massif-out-file=$(LOGS_VALGRIND)/$@_$(FECHA).log \
+		--massif-out-file=$(LOGS_DRV_VAL)/$@_$(FECHA).log \
 		./$< \
-		| tee $(LOGS_VALGRIND)/$@_$(FECHA).log
+		| tee $(LOGS_DRV_VAL)/$@_$(FECHA).log
 
-driver_callgrind: $(DRIVER_EXE) | $(LOGS_VALGRIND)
+driver_callgrind: $(DRIVER_EXE) | $(LOGS_DRV_VAL)
 	@echo ""
 	valgrind --tool=callgrind \
-		--callgrind-out-file=$(LOGS_VALGRIND)/$@_$(FECHA).log \
+		--callgrind-out-file=$(LOGS_DRV_VAL)/$@_$(FECHA).log \
 		./$< \
-		| tee $(LOGS_VALGRIND)/$@_$(FECHA).log
+		| tee $(LOGS_DRV_VAL)/$@_$(FECHA).log
 
 
 ####################################################################################
@@ -62,31 +62,31 @@ driver_callgrind: $(DRIVER_EXE) | $(LOGS_VALGRIND)
 driver_sanitizers_all: driver_run_asan driver_run_msan driver_run_ubsan
 
 #### address
-$(DRIVER_ASAN): FORCE $(SF_LIBRARY_A) | $(REF_BIN)
+$(DRIVER_ASAN): FORCE $(SF_LIBRARY_A) | $(DRV_BIN)
 	$(CLANG) $(CLFLAGS) -fsanitize=address $(REF_OBJ) $(DRIVER_MAIN_C) $(DRIVER_C) $(DRIVER_CASES_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
 
 driver_compile_asan: $(DRIVER_ASAN)
 
-driver_run_asan: $(DRIVER_ASAN) | $(LOGS_SAN)
-	./$(DRIVER_ASAN) | tee $(LOGS_SAN)/$@_$(FECHA).log
+driver_run_asan: $(DRIVER_ASAN) | $(LOGS_DRV_SAN)
+	./$(DRIVER_ASAN) | tee $(LOGS_DRV_SAN)/$@_$(FECHA).log
 
 #### memory
-$(DRIVER_MSAN): FORCE $(SF_LIBRARY_A) | $(REF_BIN)
+$(DRIVER_MSAN): FORCE $(SF_LIBRARY_A) | $(DRV_BIN)
 	$(CLANG) $(CLFLAGS) -fsanitize=memory $(REF_OBJ) $(DRIVER_MAIN_C) $(DRIVER_C) $(DRIVER_CASES_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
 
 driver_compile_msan: $(DRIVER_MSAN)
 
-driver_run_msan: $(DRIVER_MSAN) | $(LOGS_SAN)
-	./$(DRIVER_MSAN) | tee $(LOGS_SAN)/$@_$(FECHA).log
+driver_run_msan: $(DRIVER_MSAN) | $(LOGS_DRV_SAN)
+	./$(DRIVER_MSAN) | tee $(LOGS_DRV_SAN)/$@_$(FECHA).log
 
 #### undefined
-$(DRIVER_USAN): FORCE $(SF_LIBRARY_A) | $(REF_BIN)
+$(DRIVER_USAN): FORCE $(SF_LIBRARY_A) | $(DRV_BIN)
 	$(CLANG) $(CLFLAGS) -fsanitize=undefined $(REF_OBJ) $(DRIVER_MAIN_C) $(DRIVER_C) $(DRIVER_CASES_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
 
 driver_compile_ubsan: $(DRIVER_USAN)
 
-driver_run_ubsan: $(DRIVER_USAN) | $(LOGS_SAN)
-	./$(DRIVER_USAN) | tee $(LOGS_SAN)/$@_$(FECHA).log
+driver_run_ubsan: $(DRIVER_USAN) | $(LOGS_DRV_SAN)
+	./$(DRIVER_USAN) | tee $(LOGS_DRV_SAN)/$@_$(FECHA).log
 
 # TODO: help driver
 help_driver:
