@@ -1,11 +1,11 @@
+####################################################################################
+#################### Targets: universales
+all: build_all all_runner all_driver all_replayer
+
 include make_common.mk
 include standalone_tests/runner/make_runner.mk
 include standalone_tests/driver/make_driver.mk
 include standalone_tests/replayer/make_replayer.mk
-
-####################################################################################
-#################### Targets: universales
-all: build_all all_runner all_driver all_replayer
 
 # _mkdir_folders:
 # 	mkdir -p $(REF_BIN) $(REF_BUILD) $(REF_LOGS) $(REF_VECTORS)
@@ -13,8 +13,8 @@ all: build_all all_runner all_driver all_replayer
 # revisar solo syntaxis
 # make src/nombre_archivo.c_syntax
 # make standalone_tests/nombre_archivo.c_syntax
-$(CFILES:=_syntax):
-	$(CC) $(CFLAGS) $(CFSYNTAX) $(@:_syntax=)
+# $(CFILES:=_syntax):
+# 	$(CC) $(CFLAGS) $(CFSYNTAX) $(@:_syntax=)
 
 ####################################################################################
 #################### Targets: TESTFLOAT test tools
@@ -99,24 +99,17 @@ build_testfloat_vectors: | $(REF_VECTORS) $(LOGS_VECTORS)
 	done; } 2>&1 | tee $(LOGS_VECTORS)/$@_$(FECHA).log
 
 ####################################################################################
-################### Targets: compilación y ejecución con gcc
+################### Targets: N1 - compilación y ejecución con gcc
 # gcc & ./exe
-compile_all:
 
 ####################################################################################
-################### Targets: Reglas de análisis dinámico de código: 
+################### N2- Targets: Reglas de análisis dinámico de código: 
 # valgrind  : memcheck, massif, callgrind
 
-valgrind_all:
-
-
 ####################################################################################
-#################### Clang Sanitizers
+#################### N3 Clang Sanitizers
 # sanitizers: addres, memory, undefined
 # 		clang -g -Wall -Wextra -fsanitize=address $(APPNAME).c -o $(APPNAME)_asan
-
-sanitizers_all:
-
 
 # ####################################################################################
 # #################### Targets: de limpieza

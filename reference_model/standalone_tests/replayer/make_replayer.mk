@@ -22,7 +22,7 @@ replayer_check_fast: $(REPLAYER_EXE) | $(LOGS_REP_C)
 	$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) -rnear_even f32_add \
 	  | ./$(REPLAYER_EXE) f32_add rne \
 	  | $(TF_VER) -rnear_even -checkNaNs -errors 0 f32_add 2>&1 \
-	  | tee $(LOGS_REP_C)/ver_f32_add_rne_$(FECHA).log
+	  | tee $(LOGS_REP_C)/ver_f32_add_rne.log
 
 #----------------------------
 # Auditar reference_model contra testfloat mediante un pipe
@@ -35,7 +35,7 @@ replayer_run_matrix: $(REPLAYER_EXE) | $(LOGS_REP_C)
 	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
 	      | ./$(REPLAYER_EXE) $$rm $$op \
 	      | $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1 \
-	      | tee $(LOGS_REP_C)/$@_$${op}_$${rm/-/}_$(FECHA).log || exit 1; \
+	      | tee $(LOGS_REP_C)/$@_$${op}_$${rm/-/}.log || exit 1; \
 	  done; \
 	done; \
 	for op in $(OPS_CMP); do \
@@ -43,7 +43,7 @@ replayer_run_matrix: $(REPLAYER_EXE) | $(LOGS_REP_C)
 	  $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$op \
 	    | ./$< -rnear_even $$op 2>&1 \
 		| $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1 \
-	    | tee $(LOGS_REP_C)/$@_$${op}_rne_$(FECHA).log || exit 1; \
+	    | tee $(LOGS_REP_C)/$@_$${op}_rne.log || exit 1; \
 	done
 
 # TODO: Correr para ver resultados
@@ -93,7 +93,7 @@ replayer_memcheck: $(REPLAYER_EXE) | $(LOGS_REP_VAL)
 	      | valgrind --tool=memcheck --leak-check=full --error-exitcode=1 \
 		  ./$(REPLAYER_EXE) $$rm $$op \
 	      | $(TF_VER) $$tf_r -checkNaNs -errors 0 $$op 2>&1 \
-	      | tee $(LOGS_REP_VAL)/ver_$${op}_$${rm/-/}_$(FECHA).log || exit 1; \
+	      | tee $(LOGS_REP_VAL)/ver_$${op}_$${rm/-/}.log || exit 1; \
 	  done; \
 	done
 
@@ -105,20 +105,20 @@ replayer_massif: $(REPLAYER_EXE) | $(LOGS_REP_VAL)
 	    echo "== ver $$op $$rm =="; \
 	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
 	    	| valgrind --tool=massif --error-exitcode=1 \
-			--massif-out-file=$(LOGS_REP_VAL)/$@_$${op}_$(FECHA).log \
+			--massif-out-file=$(LOGS_REP_VAL)/$@_$${op}.log \
 			./$(REPLAYER_EXE) $$rm $$op \
 	    	| $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1 \
-	    	| tee $(LOGS_REP_VAL)/$@_$${op}_$${rm/-/}_$(FECHA).log || exit 1; \
+	    	| tee $(LOGS_REP_VAL)/$@_$${op}_$${rm/-/}.log || exit 1; \
 	  done; \
 	done
 	for op in $(OPS_CMP); do \
 		echo -e "\n========== replayer $$op =========="; \
 		$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
   			| valgrind --tool=massif --error-exitcode=1 \
-  			--massif-out-file=$(LOGS_REP_VAL)/$@_$$op_$(FECHA).log \
+  			--massif-out-file=$(LOGS_REP_VAL)/$@_$$op.log \
   			./$(REPLAYER_EXE) $$rm $$op \
   			| $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1 \
-  			| tee -a $(LOGS_REP_VAL)/$@_$${op}_$(FECHA).log || exit 1; \
+  			| tee -a $(LOGS_REP_VAL)/$@_$${op}.log || exit 1; \
 	done
 
 
@@ -134,7 +134,7 @@ replayer_massif: $(REPLAYER_EXE) | $(LOGS_REP_VAL)
 # 	      | valgrind --tool=callgrind --error-exitcode=1 \
 # 		  ./$(REPLAYER_EXE) $$rm $$op \
 # 	      | $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1 \
-# 	      | tee $(LOGS_REP_VAL)/ver_$${op}_$${rm/-/}_$(FECHA).log || exit 1; \
+# 	      | tee $(LOGS_REP_VAL)/ver_$${op}_$${rm/-/}.log || exit 1; \
 # 	  done; \
 # 	done
 
@@ -147,18 +147,18 @@ replayer_callgrind: $(REPLAYER_EXE) | $(LOGS_REP_VAL)
 			echo -e "\n========== replayer $$rm $$op =========="; \
 			$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
 			| valgrind --tool=callgrind --error-exitcode=1 \
-				--callgrind-out-file=$(LOGS_REP_VAL)/$@_$${op}_$${rm/-/}_$(FECHA).log \
+				--callgrind-out-file=$(LOGS_REP_VAL)/$@_$${op}_$${rm/-/}.log \
 				./$< $$rm $$op \
-			| tee $(LOGS_REP_VAL)/$@_$${op}_$${rm/-/}_$(FECHA).log || exit 1; \
+			| tee $(LOGS_REP_VAL)/$@_$${op}_$${rm/-/}.log || exit 1; \
 		done ; \
 	done ; \
 	for op in $(OPS_CMP); do \
 		echo -e "\n========== replayer $$op =========="; \
 		$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
 		| valgrind --tool=callgrind --error-exitcode=1 \
-			--callgrind-out-file=$(LOGS_REP_VAL)/$@_$${op}_$${rm/-/}_$(FECHA).log \
+			--callgrind-out-file=$(LOGS_REP_VAL)/$@_$${op}_$${rm/-/}.log \
 			./$< $$rm $$op \
-		| tee $(LOGS_REP_VAL)/$@_$${op}_$(FECHA).log || exit 1; \
+		| tee $(LOGS_REP_VAL)/$@_$${op}.log || exit 1; \
 	done
 ####################################################################################
 #################### Clang Sanitizers
@@ -185,7 +185,7 @@ replayer_run_asan: $(REPLAYER_ASAN) | $(LOGS_REP_SAN)
 	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
 		  | ./$< $$rm $$op \
 	      | $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1 \
-	      | tee $(LOGS_REP_SAN)/$@_$${op}_$${rm/-/}_$(FECHA).log || exit 1; \
+	      | tee $(LOGS_REP_SAN)/$@_$${op}_$${rm/-/}.log || exit 1; \
 	  done; \
 	done; \
 		for op in $(OPS_CMP); do \
@@ -193,7 +193,7 @@ replayer_run_asan: $(REPLAYER_ASAN) | $(LOGS_REP_SAN)
 		$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
 		|	./$< $$rm $$op \
 		| $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1 \
-		| tee $(LOGS_REP_SAN)/$@_$${op}_$(FECHA).log || exit 1; \
+		| tee $(LOGS_REP_SAN)/$@_$${op}.log || exit 1; \
 	done
 
 #### memory
@@ -210,7 +210,7 @@ replayer_run_msan: $(REPLAYER_MSAN) | $(LOGS_REP_SAN)
 	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
 		  | ./$< $$rm $$op \
 	      | $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1 \
-	      | tee $(LOGS_REP_SAN)/$@_$${op}_$${rm/-/}_$(FECHA).log || exit 1; \
+	      | tee $(LOGS_REP_SAN)/$@_$${op}_$${rm/-/}.log || exit 1; \
 	  done; \
 	done; \
 		for op in $(OPS_CMP); do \
@@ -218,7 +218,7 @@ replayer_run_msan: $(REPLAYER_MSAN) | $(LOGS_REP_SAN)
 		$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
 		|	./$< $$rm $$op \
 		| $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1 \
-		| tee $(LOGS_REP_SAN)/$@_$${op}_$(FECHA).log || exit 1; \
+		| tee $(LOGS_REP_SAN)/$@_$${op}.log || exit 1; \
 	done
 
 
@@ -236,7 +236,7 @@ replayer_run_ubsan: $(REPLAYER_UBSAN) | $(LOGS_REP_SAN)
 	    $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
 		  | ./$< $$rm $$op \
 	      | $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1 \
-	      | tee $(LOGS_REP_SAN)/$@_$${op}_$${rm/-/}_$(FECHA).log || exit 1; \
+	      | tee $(LOGS_REP_SAN)/$@_$${op}_$${rm/-/}.log || exit 1; \
 	  done; \
 	done; \
 		for op in $(OPS_CMP); do \
@@ -244,7 +244,7 @@ replayer_run_ubsan: $(REPLAYER_UBSAN) | $(LOGS_REP_SAN)
 		$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
 		|	./$< $$rm $$op \
 		| $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1 \
-		| tee $(LOGS_REP_SAN)/$@_$${op}_$(FECHA).log || exit 1; \
+		| tee $(LOGS_REP_SAN)/$@_$${op}.log || exit 1; \
 	done
 
 # TODO: help replayer

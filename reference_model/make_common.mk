@@ -8,36 +8,36 @@ REF_BIN       = bin
 REF_SRC       = src
 REF_INC       = include
 REF_LOGS      = logs
+RUN_LOGS      = $(REF_STAND)/runner/logs
+DRV_LOGS      = $(REF_STAND)/driver/logs
+REP_LOGS      = $(REF_STAND)/replayer/logs
+RUN_LOGS_F    = $(REF_STAND)/runner/logs/$(FECHA)
+DRV_LOGS_F    = $(REF_STAND)/driver/logs/$(FECHA)
+REP_LOGS_F    = $(REF_STAND)/replayer/logs/$(FECHA)
 REF_BUILD     = build
 REF_VECTORS   = vectors
 REF_CSV       = csv
 
 # Folders logs
 REF_STAND     = standalone_tests
-LOGS_BUILD    := $(REF_LOGS)/build
-LOGS_TFSOFT   := $(REF_LOGS)/testsoftfloat
-LOGS_VECTORS  := $(REF_LOGS)/vectores 
-
+LOGS_BUILD    := $(REF_LOGS_F)/build
+LOGS_TFSOFT   := $(REF_LOGS_F)/testsoftfloat
+LOGS_VECTORS  := $(REF_LOGS_F)/vectores 
 RUN_BIN       := $(REF_STAND)/runner/bin
-LOGS_RUN_C    := $(REF_STAND)/runner/logs/compile
-LOGS_RUN_SAN  := $(REF_STAND)/runner/logs/sanitizers
-LOGS_RUN_VAL  := $(REF_STAND)/runner/logs/valgrind
+LOGS_RUN_C    := $(RUN_LOGS_F)/compile
+LOGS_RUN_SAN  := $(RUN_LOGS_F)/sanitizers
+LOGS_RUN_VAL  := $(RUN_LOGS_F)/valgrind
 DRV_BIN       := $(REF_STAND)/driver/bin
-LOGS_DRV_C    := $(REF_STAND)/driver/logs/compile
-LOGS_DRV_SAN  := $(REF_STAND)/driver/logs/sanitizers
-LOGS_DRV_VAL  := $(REF_STAND)/driver/logs/valgrind
+LOGS_DRV_C    := $(DRV_LOGS_F)/compile
+LOGS_DRV_SAN  := $(DRV_LOGS_F)/sanitizers
+LOGS_DRV_VAL  := $(DRV_LOGS_F)/valgrind
 REP_BIN       := $(REF_STAND)/replayer/bin
-LOGS_REP_C    := $(REF_STAND)/replayer/logs/compile
-LOGS_REP_SAN  := $(REF_STAND)/replayer/logs/sanitizers
-LOGS_REP_VAL  := $(REF_STAND)/replayer/logs/valgrind
-
-# Hacer mas carpetas para guardar logs/driver/valgrind logs/driver/sanitizers     ¿?
-# Hacer mas carpetas para guardar logs/runner/valgrind logs/runner/sanitizers     ¿?
-# Hacer mas carpetas para guardar logs/replayer/valgrind logs/replayer/sanitizers ¿?
-# LOGS_VALGRIND := $(REF_LOGS)/valgrind
-# LOGS_SAN      := $(REF_LOGS)/sanitizers
+LOGS_REP_C    := $(REP_LOGS_F)/compile
+LOGS_REP_SAN  := $(REP_LOGS_F)/sanitizers
+LOGS_REP_VAL  := $(REP_LOGS_F)/valgrind
 
 LOG_DIRS      := $(LOGS_BUILD) $(LOGS_TFSOFT) $(LOGS_VECTORS) \
+				 $(RUN_LOGS) $(DRV_LOGS) $(REP_LOGS) \
 				 $(RUN_BIN) $(LOGS_RUN_C) $(LOGS_RUN_SAN) $(LOGS_RUN_VAL)   \
 				 $(DRV_BIN) $(LOGS_DRV_C) $(LOGS_DRV_SAN) $(LOGS_DRV_VAL)    \
 				 $(REP_BIN) $(LOGS_REP_C) $(LOGS_REP_SAN) $(LOGS_REP_VAL)
@@ -45,6 +45,7 @@ DIRS          := $(REF_BUILD) $(REF_VECTORS) $(REF_CSV) $(LOG_DIRS)
 
 $(DIRS):
 	mkdir -p $@
+
 #----------------------------
 # variables generales para soft/testfloat
 ARCH_TARGET       = RISCV
@@ -103,22 +104,22 @@ SWEEP_OPS       := f32_add f32_sub f32_mul f32_mulAdd f32_mulSub
 CC         := gcc
 CFLAGS     := -O2 -frounding-math -fno-unsafe-math-optimizations -ffp-contract=off
 CFSYNTAX   := -fsyntax-only
-INC_RUNN   := $(REF_STAND)/runner/include
+INC_RUN    := $(REF_STAND)/runner/include
 INC_DRV    := $(REF_STAND)/driver/include
 INC_REP    := $(REF_STAND)/replayer/include
-INCLUDES   := -Iinclude -I$(SF_INCLUDE) -I$(INC_RUNN)  -I$(INC_DRV) -I$(INC_REP)
+INCLUDES   := -Iinclude -I$(SF_INCLUDE) -I$(INC_RUN) -I$(INC_DRV) -I$(INC_REP)
 # para revisar sintaxis
-CSOURCES    = $(wildcard $(REF_SRC)/*.c)
+# CSOURCES    = $(wildcard $(REF_SRC)/*.c)
 # TODO: Corregir CTEST -> para la regla CFILES__syntax
-CTEST       = $(wildcard $(REF_STAND)/*.c)
-HFILES      = $(wildcard $(REF_INC)/*.h)
-CFILES      = $(CSOURCES) $(CTEST) $(HFILES)
+# CTEST       = $(wildcard $(REF_STAND)/*.c)
+# HFILES      = $(wildcard $(REF_INC)/*.h)
+# CFILES      = $(CSOURCES) $(CTEST) $(HFILES)
 
 #----------------------------
 # valgrind
 #----------------------------
 # TODO: AGREGAR Valgrind tools, USAR AL MODULARIZAR FUNCIONES
-VALGRIND_TOOLS = memcheck massif callgrind
+# VALGRIND_TOOLS = memcheck massif callgrind
 
 #----------------------------
 # clang - sanitizers compilador
@@ -127,7 +128,6 @@ VALGRIND_TOOLS = memcheck massif callgrind
 CLANG      ?= clang
 CLFLAGS    := -O1 -g -fno-omit-frame-pointer -fno-sanitize-recover=all \
 			  -frounding-math -fno-unsafe-math-optimizations -ffp-contract=off
-
 SANITIZERS := address memory undefined
 
 #----------------------------
@@ -142,16 +142,15 @@ REF_EXE   := $(REF_BIN)/$(REF_MODEL:=_exe)
 #----------------------------
 # runner
 #----------------------------
-RUNNER_FILE  ?= runner_testfloat
-RUNNER_C     := $(REF_STAND)/runner/src/$(RUNNER_FILE:=.c)
-RUNNER_EXE   := $(RUN_BIN)/$(RUNNER_FILE:=_exe)
-RUNNER_ASAN  := $(RUN_BIN)/$(RUNNER_FILE:=_asan)
-RUNNER_MSAN  := $(RUN_BIN)/$(RUNNER_FILE:=_msan)
-RUNNER_UBSAN := $(RUN_BIN)/$(RUNNER_FILE:=_ubsan)
-
+RUNNER_FILE   ?= runner_testfloat
+RUNNER_MAIN_C := $(REF_STAND)/runner/main.c
+RUNNER_C      := $(REF_STAND)/runner/src/$(RUNNER_FILE:=.c)
+RUNNER_EXE    := $(RUN_BIN)/$(RUNNER_FILE:=_exe)
+RUNNER_ASAN   := $(RUN_BIN)/$(RUNNER_FILE:=_asan)
+RUNNER_MSAN   := $(RUN_BIN)/$(RUNNER_FILE:=_msan)
+RUNNER_UBSAN  := $(RUN_BIN)/$(RUNNER_FILE:=_ubsan)
 RUNNER_RM_DEFAULT ?= -rnear_even
 RUNNER_OP_DEFAULT ?= f32_mul
-
 
 #----------------------------
 # Driver
@@ -159,20 +158,22 @@ RUNNER_OP_DEFAULT ?= f32_mul
 # Archivos para inyectar datos desde el mismo archivo "main"
 DRIVER_FILE    ?= driver_directed
 DRIVER_C       := $(REF_STAND)/driver/src/$(DRIVER_FILE:=.c)
-DRIVER_CASES_C := $(REF_STAND)/driver/src/$(DRIVER_FILE:=_cases.c)
 DRIVER_MAIN_C  := $(REF_STAND)/driver/main.c
+DRIVER_CASES_C := $(REF_STAND)/driver/src/$(DRIVER_FILE:=_cases.c)
 DRIVER_EXE     := $(DRV_BIN)/$(DRIVER_FILE:=_exe)
 DRIVER_ASAN    := $(DRV_BIN)/$(DRIVER_FILE:=_asan)
 DRIVER_MSAN    := $(DRV_BIN)/$(DRIVER_FILE:=_msan)
 DRIVER_USAN    := $(DRV_BIN)/$(DRIVER_FILE:=_usan)
 
 #----------------------------
+# Replayer
+#----------------------------
 # Variables del testfloat replay
 # Archivos para inyectar datos mediante pipe con testfloat tools
 # nombre_original tf_replay  
 REPLAYER_FILE   ?= replayer_testfloat
-REPLAYER_C      := $(REF_STAND)/replayer/src/$(REPLAYER_FILE:=.c)
 REPLAYER_MAIN_C := $(REF_STAND)/replayer/main.c
+REPLAYER_C      := $(REF_STAND)/replayer/src/$(REPLAYER_FILE:=.c)
 REPLAYER_EXE    := $(REP_BIN)/$(REPLAYER_FILE:=_exe)
 REPLAYER_ASAN   := $(REP_BIN)/$(REPLAYER_FILE:=_asan)
 REPLAYER_MSAN   := $(REP_BIN)/$(REPLAYER_FILE:=_msan)
@@ -180,8 +181,10 @@ REPLAYER_UBSAN  := $(REP_BIN)/$(REPLAYER_FILE:=_ubsan)
 
 #----------------------------
 # Variables para estudio con valgrind
-BIN_EXE    := $(wildcard $(REF_BIN)/*_exe)
-VAL_TOOLS  := memcheck helgrind
+# BIN_EXE    := $(wildcard $(REF_BIN)/*_exe)
+# VAL_TOOLS  := memcheck helgrind
 
 # TARGET en blanco, útil para forzar de ser necesario la sobreescritura de un archivo
 FORCE:
+
+.PHONY: FORCE

@@ -17,7 +17,7 @@ driver_compile: $(DRIVER_EXE)
 
 #--------------------------
 driver_run: $(DRIVER_EXE) | $(LOGS_DRV_C)
-	./$(DRIVER_EXE) | tee $(LOGS_DRV_C)/$@_$(FECHA).log
+	./$(DRIVER_EXE) | tee $(LOGS_DRV_C)/$@.log
 
 
 ####################################################################################
@@ -33,22 +33,22 @@ driver_memcheck: $(DRIVER_EXE) | $(LOGS_DRV_VAL)
 	@echo ""
 	valgrind --tool=memcheck \
 		./$< \
-		| tee $(LOGS_DRV_VAL)/$@_$(FECHA).log
+		| tee $(LOGS_DRV_VAL)/$@.log
 
 
 driver_massif: $(DRIVER_EXE) | $(LOGS_DRV_VAL)
 	@echo ""
 	valgrind --tool=massif --error-exitcode=1 \
-		--massif-out-file=$(LOGS_DRV_VAL)/$@_$(FECHA).log \
+		--massif-out-file=$(LOGS_DRV_VAL)/$@.log \
 		./$< \
-		| tee $(LOGS_DRV_VAL)/$@_$(FECHA).log
+		| tee $(LOGS_DRV_VAL)/$@.log
 
 driver_callgrind: $(DRIVER_EXE) | $(LOGS_DRV_VAL)
 	@echo ""
 	valgrind --tool=callgrind \
-		--callgrind-out-file=$(LOGS_DRV_VAL)/$@_$(FECHA).log \
+		--callgrind-out-file=$(LOGS_DRV_VAL)/$@.log \
 		./$< \
-		| tee $(LOGS_DRV_VAL)/$@_$(FECHA).log
+		| tee $(LOGS_DRV_VAL)/$@.log
 
 
 ####################################################################################
@@ -68,7 +68,7 @@ $(DRIVER_ASAN): FORCE $(SF_LIBRARY_A) | $(DRV_BIN)
 driver_compile_asan: $(DRIVER_ASAN)
 
 driver_run_asan: $(DRIVER_ASAN) | $(LOGS_DRV_SAN)
-	./$(DRIVER_ASAN) | tee $(LOGS_DRV_SAN)/$@_$(FECHA).log
+	./$(DRIVER_ASAN) | tee $(LOGS_DRV_SAN)/$@.log
 
 #### memory
 $(DRIVER_MSAN): FORCE $(SF_LIBRARY_A) | $(DRV_BIN)
@@ -77,7 +77,7 @@ $(DRIVER_MSAN): FORCE $(SF_LIBRARY_A) | $(DRV_BIN)
 driver_compile_msan: $(DRIVER_MSAN)
 
 driver_run_msan: $(DRIVER_MSAN) | $(LOGS_DRV_SAN)
-	./$(DRIVER_MSAN) | tee $(LOGS_DRV_SAN)/$@_$(FECHA).log
+	./$(DRIVER_MSAN) | tee $(LOGS_DRV_SAN)/$@.log
 
 #### undefined
 $(DRIVER_USAN): FORCE $(SF_LIBRARY_A) | $(DRV_BIN)
@@ -86,7 +86,7 @@ $(DRIVER_USAN): FORCE $(SF_LIBRARY_A) | $(DRV_BIN)
 driver_compile_ubsan: $(DRIVER_USAN)
 
 driver_run_ubsan: $(DRIVER_USAN) | $(LOGS_DRV_SAN)
-	./$(DRIVER_USAN) | tee $(LOGS_DRV_SAN)/$@_$(FECHA).log
+	./$(DRIVER_USAN) | tee $(LOGS_DRV_SAN)/$@.log
 
 # TODO: help driver
 help_driver:
