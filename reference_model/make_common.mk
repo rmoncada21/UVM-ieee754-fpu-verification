@@ -91,7 +91,10 @@ SWEEP_OPS       := f32_add f32_sub f32_mul f32_mulAdd f32_mulSub
 CC         := gcc
 CFLAGS     := -O2 -frounding-math -fno-unsafe-math-optimizations -ffp-contract=off
 CFSYNTAX   := -fsyntax-only
-INCLUDES   := -Iinclude -I$(SF_INCLUDE) -I$(REF_STAND)/include
+INC_RUN    := $(REF_STAND)/runner/include
+INC_DRV    := $(REF_STAND)/driver/include
+INC_REP    := $(REF_STAND)/replayer/include
+INCLUDES   := -Iinclude -I$(SF_INCLUDE) -I$(REF_STAND)/driver/include
 # para revisar sintaxis
 CSOURCES    = $(wildcard $(REF_SRC)/*.c)
 CTEST       = $(wildcard $(REF_STAND)/*.c)
@@ -128,8 +131,8 @@ REF_EXE   := $(REF_BIN)/$(REF_MODEL:=_exe)
 #----------------------------
 # Archivos para inyectar datos desde el mismo archivo "main"
 DRIVER_FILE    ?= driver_directed
-DRIVER_C       := $(REF_STAND)/$(DRIVER_FILE:=.c)
-DRIVER_CASES_C := $(REF_STAND)/include/$(DRIVER_FILE:=_cases.c)
+DRIVER_C       := $(REF_STAND)/driver/src/$(DRIVER_FILE:=.c)
+DRIVER_CASES_C := $(REF_STAND)/driver/include/$(DRIVER_FILE:=_cases.c)
 DRIVER_EXE     := $(REF_BIN)/$(DRIVER_FILE:=_exe)
 DRIVER_ASAN    := $(REF_BIN)/$(DRIVER_FILE:=_asan)
 DRIVER_MSAN    := $(REF_BIN)/$(DRIVER_FILE:=_msan)
@@ -139,7 +142,7 @@ DRIVER_USAN    := $(REF_BIN)/$(DRIVER_FILE:=_usan)
 # runner
 #----------------------------
 RUNNER_FILE  ?= runner_testfloat
-RUNNER_C     := $(REF_STAND)/$(RUNNER_FILE:=.c)
+RUNNER_C     := $(REF_STAND)/runner/src/$(RUNNER_FILE:=.c)
 RUNNER_EXE   := $(REF_BIN)/$(RUNNER_FILE:=_exe)
 RUNNER_ASAN  := $(REF_BIN)/$(RUNNER_FILE:=_asan)
 RUNNER_MSAN  := $(REF_BIN)/$(RUNNER_FILE:=_msan)
@@ -153,7 +156,7 @@ RUNNER_OP_DEFAULT ?= f32_mul
 # Archivos para inyectar datos mediante pipe con testfloat tools
 # nombre_original tf_replay  
 REPLAYER_FILE  ?= replayer_testfloat
-REPLAYER_C     := $(REF_STAND)/$(REPLAYER_FILE:=.c)
+REPLAYER_C     := $(REF_STAND)/replayer/src/$(REPLAYER_FILE:=.c)
 REPLAYER_EXE   := $(REF_BIN)/$(REPLAYER_FILE:=_exe)
 REPLAYER_ASAN  := $(REF_BIN)/$(REPLAYER_FILE:=_asan)
 REPLAYER_MSAN  := $(REF_BIN)/$(REPLAYER_FILE:=_msan)

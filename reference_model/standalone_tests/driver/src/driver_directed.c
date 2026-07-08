@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "../include/reference_model.h"
-#include "include/driver_directed_cases.h"   /* typedef + tablas (extern) */
+#include "reference_model.h"
+#include "driver_directed_cases.h"   /* typedef + tablas (extern) */
 
 static const char *ROUND_MODE[5] = {"RNE", "RTZ", "RDN", "RUP", "RMM"};
 

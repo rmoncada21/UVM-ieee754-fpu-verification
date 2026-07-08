@@ -1,7 +1,7 @@
 include make_common.mk
-include make_driver.mk
-include make_runner.mk
-include make_replayer.mk
+include standalone_tests/runner/make_runner.mk
+include standalone_tests/driver/make_driver.mk
+include standalone_tests/replayer/make_replayer.mk
 
 ####################################################################################
 #################### Targets: universales
