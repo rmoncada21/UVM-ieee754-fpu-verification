@@ -94,7 +94,7 @@ CFSYNTAX   := -fsyntax-only
 INC_RUN    := $(REF_STAND)/runner/include
 INC_DRV    := $(REF_STAND)/driver/include
 INC_REP    := $(REF_STAND)/replayer/include
-INCLUDES   := -Iinclude -I$(SF_INCLUDE) -I$(REF_STAND)/driver/include
+INCLUDES   := -Iinclude -I$(SF_INCLUDE) -I$(INC_DRV)
 # para revisar sintaxis
 CSOURCES    = $(wildcard $(REF_SRC)/*.c)
 CTEST       = $(wildcard $(REF_STAND)/*.c)
@@ -132,7 +132,8 @@ REF_EXE   := $(REF_BIN)/$(REF_MODEL:=_exe)
 # Archivos para inyectar datos desde el mismo archivo "main"
 DRIVER_FILE    ?= driver_directed
 DRIVER_C       := $(REF_STAND)/driver/src/$(DRIVER_FILE:=.c)
-DRIVER_CASES_C := $(REF_STAND)/driver/include/$(DRIVER_FILE:=_cases.c)
+DRIVER_CASES_C := $(REF_STAND)/driver/src/$(DRIVER_FILE:=_cases.c)
+DRIVER_MAIN_C  := $(REF_STAND)/driver/main.c
 DRIVER_EXE     := $(REF_BIN)/$(DRIVER_FILE:=_exe)
 DRIVER_ASAN    := $(REF_BIN)/$(DRIVER_FILE:=_asan)
 DRIVER_MSAN    := $(REF_BIN)/$(DRIVER_FILE:=_msan)

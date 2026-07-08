@@ -10,8 +10,8 @@ driver_all: driver_run driver_valgrind_all driver_sanitizers_all
 
 #----------------------------
 # enlaza objeto y compila simple_driver
-$(DRIVER_EXE): $(DRIVER_C) $(REF_OBJ) | $(REF_BIN)
-	$(CC) $(CFLAGS) $(DRIVER_C) $(DRIVER_CASES_C) $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+$(DRIVER_EXE): $(DRIVER_MAIN_C) $(DRIVER_C) $(DRIVER_CASES_C) $(REF_OBJ) | $(REF_BIN)
+	$(CC) $(CFLAGS) $(DRIVER_MAIN_C) $(DRIVER_C) $(DRIVER_CASES_C) $(REF_OBJ) $(SF_LIBRARY_A) $(INCLUDES) -o $@
 
 driver_compile: $(DRIVER_EXE)
 
@@ -63,7 +63,7 @@ driver_sanitizers_all: driver_run_asan driver_run_msan driver_run_ubsan
 
 #### address
 $(DRIVER_ASAN): FORCE $(SF_LIBRARY_A) | $(REF_BIN)
-	$(CLANG) $(CLFLAGS) -fsanitize=address $(REF_C) $(DRIVER_C) $(DRIVER_CASES_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+	$(CLANG) $(CLFLAGS) -fsanitize=address $(REF_OBJ) $(DRIVER_MAIN_C) $(DRIVER_C) $(DRIVER_CASES_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
 
 driver_compile_asan: $(DRIVER_ASAN)
 
@@ -72,7 +72,7 @@ driver_run_asan: $(DRIVER_ASAN) | $(LOGS_SAN)
 
 #### memory
 $(DRIVER_MSAN): FORCE $(SF_LIBRARY_A) | $(REF_BIN)
-	$(CLANG) $(CLFLAGS) -fsanitize=memory $(REF_C) $(DRIVER_C) $(DRIVER_CASES_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+	$(CLANG) $(CLFLAGS) -fsanitize=memory $(REF_OBJ) $(DRIVER_MAIN_C) $(DRIVER_C) $(DRIVER_CASES_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
 
 driver_compile_msan: $(DRIVER_MSAN)
 
@@ -81,7 +81,7 @@ driver_run_msan: $(DRIVER_MSAN) | $(LOGS_SAN)
 
 #### undefined
 $(DRIVER_USAN): FORCE $(SF_LIBRARY_A) | $(REF_BIN)
-	$(CLANG) $(CLFLAGS) -fsanitize=undefined $(REF_C) $(DRIVER_C) $(DRIVER_CASES_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
+	$(CLANG) $(CLFLAGS) -fsanitize=undefined $(REF_OBJ) $(DRIVER_MAIN_C) $(DRIVER_C) $(DRIVER_CASES_C) $(SF_LIBRARY_A) $(INCLUDES) -o $@
 
 driver_compile_ubsan: $(DRIVER_USAN)
 

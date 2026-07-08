@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include "reference_model.h"
-#include "driver_directed_cases.h"   /* typedef + tablas (extern) */
+#include "driver_directed.h"          /* modo_e + prototipo propio */
+//#include "driver_directed_cases.h"   /* typedef + tablas (extern) */
 
 static const char *ROUND_MODE[5] = {"RNE", "RTZ", "RDN", "RUP", "RMM"};
-
-/* modo_e, calcular_tolerancia, run_suite_test, main (igual que ahora) */
-typedef enum { MODO_DIRECTED, MODO_TESTBENCH } modo_e;
 
 static int calcular_tolerancia(unsigned int valor_actual,
                                unsigned int valor_esperado) {
@@ -15,9 +13,9 @@ static int calcular_tolerancia(unsigned int valor_actual,
 }
 
 /* Corre una tanda. Devuelve fallos de GATE (siempre 0 en MODO_TESTBENCH). */
-static unsigned int run_suite_test(const char *nombre_casos,
-                                   const directed_case_t *casos,
-                                   unsigned int n_casos, modo_e modo) {
+unsigned int run_suite_test(const char *nombre_casos,
+                            const directed_case_t *casos,
+                            unsigned int n_casos, modo_e modo) {
     unsigned int fallos_gate = 0;
     unsigned int exactos = 0;
     unsigned int tolerancia = 0;
@@ -83,22 +81,4 @@ static unsigned int run_suite_test(const char *nombre_casos,
                 nombre_casos, exactos, tolerancia, diverge);
 
     return fallos_gate;
-}
-
-
-int main(void) {
-    unsigned int fallos = 0;
-
-    /* Gate real: SOLO CASOS_DIRIGIDOS en modo estricto fija el exit code */
-    fallos += run_suite_test("CASOS_DIRIGIDOS", CASOS_DIRIGIDOS, N_CASOS,
-            MODO_DIRECTED);
-
-    /* Cross-check de los vectores de Testbench dirigido (no afecta el gate) */
-    run_suite_test("TESTS_FPU_S", TESTS_FPU_S, N_TESTS_FPU_S, MODO_TESTBENCH);
-
-    printf("\ndriver directed: gate -> %s (%u fallos en CASOS_DIRIGIDOS)\n",
-           fallos ? "FAIL" : "PASS", fallos);
-
-    /* Codigo de salida = gate: driver_run (pipefail) se detiene si difiere. */
-    return fallos ? 1 : 0;
 }
