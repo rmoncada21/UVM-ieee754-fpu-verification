@@ -7,9 +7,6 @@ include standalone_tests/runner/make_runner.mk
 include standalone_tests/driver/make_driver.mk
 include standalone_tests/replayer/make_replayer.mk
 
-# _mkdir_folders:
-# 	mkdir -p $(REF_BIN) $(REF_BUILD) $(REF_LOGS) $(REF_VECTORS)
-
 # revisar solo syntaxis
 # make src/nombre_archivo.c_syntax
 # make standalone_tests/nombre_archivo.c_syntax
@@ -17,11 +14,12 @@ include standalone_tests/replayer/make_replayer.mk
 # 	$(CC) $(CFLAGS) $(CFSYNTAX) $(@:_syntax=)
 
 ####################################################################################
-#################### Targets: TESTFLOAT test tools
+################### Targets: Herramientas de testfloat por separado
+# TODO: Hacer regla con testfloat y probar vectores hechos con tf_ver
 _my_TF_SEED  = 5
 _my_TF_LEVEL = 1
 _my_RM       = -rnear_even
-_my_OP       = f32_add
+_my_OP       = f32_mulAdd
 
 _testfloat_gen:
 	$(TF_GEN) -level $(_my_TF_LEVEL) -seed $(_my_TF_SEED) \
@@ -30,12 +28,15 @@ _testfloat_gen:
 _testfloat_ver:
 	$(TF_VER) $(_my_RM) $(_my_OP)
 
+# pipe tf_gen | tf_ver
 _testfloat_test:
 	$(TF_GEN) -level $(_my_TF_LEVEL) -seed $(_my_TF_SEED) \
 		$(_my_RM) $(_my_OP) \
 	| $(TF_VER) $(_my_RM) -checkNaNs -errors 0 $(_my_OP)
+
 ####################################################################################
-#################### Targets: Build de librerías (internas, externas ) y herramientas
+################### N0: Build de librerías (internas, externas) y herramientas
+# construye las librerías berkeley y el objeto del modelo de referencia
 build_all: build_berkeley_softfloat build_berkeley_testfloat $(REF_OBJ)
 
 #---------------------------- Librerías
@@ -48,18 +49,16 @@ build_berkeley_softfloat:
 build_berkeley_testfloat:
 	$(MAKE) -C $(TF_BUILD) SPECIALIZE_TYPE=$(ARCH_TARGET)
 
-# Ambas deben coincidir para una correcta integración y compilación
 # crear objeto reference_model.o
 $(REF_OBJ): | $(REF_BUILD)
 	$(CC) $(CFLAGS) -c $(REF_C) -I$(SF_INCLUDE) -o $@
 
-# N1 ###################################################################################
-#################### Targets: herramientas de uso testfloat
+####################################################################################
+################### N1: herramientas de uso testfloat
 
-# Uso de testsoftfloat
+# Uso de testsoftfloat N1: primer nivel de verificación del modelo
 # testear softfloat vs testfloat de berkeley
 # opciones: -all2 -all1 f32_add f32_sub ...
-# TODO: hacer for para probar las operaciones del reference model
 # Compara el softfloat.a generado contra slowfloat (FP íntegro de berkeley)
 test_build_berkeleys_libraries:
 	for op in $(TF_OPS_ALL); do \
@@ -69,13 +68,6 @@ test_build_berkeleys_libraries:
 			$(TF_SOFTFLOAT) -level 1 $$rm $$op; \
 		done; \
 	done
-
-# 	for op in $(TF_OPS_ALL); do \
-# 		echo -e "\n== testsoftfloat $$op =="; \
-# 		$(TF_SOFTFLOAT) -level 1 $$op ;\
-# 	done
-
-# TODO: Hacer regla con testfloat y probar vectores hechos con tf_ver
 
 #--------------------------
 # construir vectores.
@@ -99,20 +91,16 @@ build_testfloat_vectors: | $(REF_VECTORS) $(LOGS_VECTORS)
 	done; } 2>&1 | tee $(LOGS_VECTORS)/$@_$(FECHA).log
 
 ####################################################################################
-################### Targets: N1 - compilación y ejecución con gcc
-# gcc & ./exe
+################### N2: make_runner.mk
 
 ####################################################################################
-################### N2- Targets: Reglas de análisis dinámico de código: 
-# valgrind  : memcheck, massif, callgrind
+################### N3: make_driver.mk
 
 ####################################################################################
-#################### N3 Clang Sanitizers
-# sanitizers: addres, memory, undefined
-# 		clang -g -Wall -Wextra -fsanitize=address $(APPNAME).c -o $(APPNAME)_asan
+################### N4: make_replayer.mk
 
-# ####################################################################################
-# #################### Targets: de limpieza
+####################################################################################
+################### Targets: de limpieza
 clean_all: clean clean_berkeley clean_build_reference
 # clean local, borra archivo locales al modelo de referencia
 clean: clean_bin clean_logs clean_vectors

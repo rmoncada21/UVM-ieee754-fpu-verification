@@ -8,14 +8,20 @@
 */
 
 void test_dpic(int num){
-    printf("DPI-C TEST from golden model -  num: %i \n", num);
+    printf("DPI-fp_C TEST from golden model -  num: %i \n", num);
     return;
 }
 
 /* Códigos de operación, idénticos al DUT (fp_alu.sv) */
 enum {
-    OP_FADD  = 0, OP_FSUB  = 1, OP_FMUL = 2, OP_FMADD = 3,
-    OP_FMSUB = 4, OP_FEQ   = 5, OP_FLT  = 6, OP_FLE   = 7
+    OP_FADD  = 0, 
+    OP_FSUB  = 1, 
+    OP_FMUL  = 2, 
+    OP_FMADD = 3,
+    OP_FMSUB = 4, 
+    OP_FEQ   = 5, 
+    OP_FLT   = 6, 
+    OP_FLE   = 7
 };
 
 /* Modo de redondeo RISC-V -> SoftFloat (mismo orden: identidad, con guarda) */
@@ -39,13 +45,17 @@ void dpi_fpu_reference(
     unsigned int  *fp_result_o,
     unsigned char *flags_o)
 {
-    float32_t a, b, c, z, res;
-    uint_fast8_t fl = 0;
+    float32_t fp_a;
+    float32_t fp_b;
+    float32_t fp_c;
+    float32_t fp_z;
+    float32_t fp_result;
+    uint_fast8_t flags = 0;
 
-    a.v = (uint32_t)fp_a_i;
-    b.v = (uint32_t)fp_b_i;
-    c.v = (uint32_t)fp_c_i;
-    res.v = 0u;
+    fp_a.v = (uint32_t)fp_a_i;
+    fp_b.v = (uint32_t)fp_b_i;
+    fp_c.v = (uint32_t)fp_c_i;
+    fp_result.v = 0u;
 
     /* RISC-V detecta tininess después del redondeo */
     softfloat_detectTininess = softfloat_tininess_afterRounding;
@@ -54,79 +64,79 @@ void dpi_fpu_reference(
         case OP_FADD:
             softfloat_roundingMode   = map_rmode(r_mode_i);
             softfloat_exceptionFlags = 0;
-            res = f32_add(a, b);
-            fl  = softfloat_exceptionFlags;
+            fp_result = f32_add(fp_a, fp_b);
+            flags  = softfloat_exceptionFlags;
             break;
 
         case OP_FSUB:
             softfloat_roundingMode   = map_rmode(r_mode_i);
             softfloat_exceptionFlags = 0;
-            res = f32_sub(a, b);
-            fl  = softfloat_exceptionFlags;
+            fp_result = f32_sub(fp_a, fp_b);
+            flags  = softfloat_exceptionFlags;
             break;
 
         case OP_FMUL:
             softfloat_roundingMode   = map_rmode(r_mode_i);
             softfloat_exceptionFlags = 0;
-            res = f32_mul(a, b);
-            fl  = softfloat_exceptionFlags;
+            fp_result = f32_mul(fp_a, fp_b);
+            flags  = softfloat_exceptionFlags;
             break;
 
         case OP_FMADD: {
             /* Doble redondeo deliberado: mul en RNE, suma en el modo */
-            uint_fast8_t fl_mul, fl_add;
+            uint_fast8_t flag_mul, flag_add;
             softfloat_roundingMode   = softfloat_round_near_even;
             softfloat_exceptionFlags = 0;
-            z      = f32_mul(a, b);
-            fl_mul = softfloat_exceptionFlags;
+            fp_z      = f32_mul(fp_a, fp_b);
+            flag_mul = softfloat_exceptionFlags;
             softfloat_roundingMode   = map_rmode(r_mode_i);
             softfloat_exceptionFlags = 0;
-            res    = f32_add(z, c);
-            fl_add = softfloat_exceptionFlags;
-            fl     = (uint_fast8_t)(fl_mul | fl_add);
+            fp_result    = f32_add(fp_z, fp_c);
+            flag_add = softfloat_exceptionFlags;
+            flags     = (uint_fast8_t)(flag_mul | flag_add);
             break;
         }
 
         case OP_FMSUB: {
-            /* fp_mul(a,b) en RNE, luego fp_sub(z, c) en el modo */
-            uint_fast8_t fl_mul, fl_sub;
+            /* fp_mul(fp_a,fp_b) en RNE, luego fp_sub(fp_z, fp_c) en el modo */
+            uint_fast8_t flag_mul, flag_sub;
             softfloat_roundingMode   = softfloat_round_near_even;
             softfloat_exceptionFlags = 0;
-            z      = f32_mul(a, b);
-            fl_mul = softfloat_exceptionFlags;
+            fp_z      = f32_mul(fp_a, fp_b);
+            flag_mul = softfloat_exceptionFlags;
             softfloat_roundingMode   = map_rmode(r_mode_i);
             softfloat_exceptionFlags = 0;
-            res    = f32_sub(z, c);
-            fl_sub = softfloat_exceptionFlags;
-            fl     = (uint_fast8_t)(fl_mul | fl_sub);
+            fp_result    = f32_sub(fp_z, fp_c);
+            flag_sub = softfloat_exceptionFlags;
+            flags     = (uint_fast8_t)(flag_mul | flag_sub);
             break;
         }
 
         case OP_FEQ:
             softfloat_exceptionFlags = 0;
-            // convertir booleano a 1, 0, tipoo
-            res.v = f32_eq(a, b) ? 1u : 0u;
-            fl    = 0;   /* el DUT fuerza banderas a 0 en comparaciones */
+            // convertir booleano fp_a 1, 0, tipo
+            fp_result.v = f32_eq(fp_a, fp_b) ? 1u : 0u;
+            flags    = 0;   /* el DUT fuerza banderas a 0 en comparaciones */
             break;
 
         case OP_FLT:
             softfloat_exceptionFlags = 0;
-            res.v = f32_lt(a, b) ? 1u : 0u;
-            fl    = 0;
+            fp_result.v = f32_lt(fp_a, fp_b) ? 1u : 0u;
+            flags    = 0;
             break;
 
         case OP_FLE:
             softfloat_exceptionFlags = 0;
-            res.v = f32_le(a, b) ? 1u : 0u;
-            fl    = 0;
+            fp_result.v = f32_le(fp_a, fp_b) ? 1u : 0u;
+            flags    = 0;
             break;
 
         default:
-            res.v = 0u;
-            fl    = 0;
+            fp_result.v = 0u;
+            flags    = 0;
             break;
     }
 
-    *fp_result_o = (unsigned int)res.v;
-    *flags_o     = (unsigned char)(fl & 0x1F);
+    *fp_result_o = (unsigned int)fp_result.v;
+    *flags_o     = (unsigned char)(flags & 0x1F);
 }
