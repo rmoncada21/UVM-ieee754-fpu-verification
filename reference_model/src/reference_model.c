@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "../../third_party/berkeley-softfloat-3/source/include/softfloat.h"
+#include "softfloat.h"
 
 /* 
     Dejar de momento para cuando se haga el merge, no romper la compilación
