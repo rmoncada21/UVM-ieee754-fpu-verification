@@ -9,7 +9,8 @@ zfile_*
 bin/
 images/
 logs/
-sim/
+sim/**
+!sim/sim_make.mk
 zfolder_*/
 vectors/
 ## quitar al finalizar el ambiente

@@ -22,7 +22,7 @@ _my_RM       = -rnear_even
 _my_OP       = f32_mulAdd
 
 _testfloat_gen:
-	$(TF_GEN) -level $(_my_TF_LEVEL) -seed $(_my_TF_SEED) \
+	$(TF_GEN)  -level $(_my_TF_LEVEL) -seed $(_my_TF_SEED) \
 		$(_my_RM) $(_my_OP)
 
 _testfloat_ver:
@@ -52,6 +52,8 @@ build_berkeley_testfloat:
 # crear objeto reference_model.o
 $(REF_OBJ): | $(REF_BUILD)
 	$(CC) $(CFLAGS) -c $(REF_C) -I$(SF_INCLUDE) -o $@
+
+build_reference_model_obj: $(REF_OBJ)
 
 ####################################################################################
 ################### N1: herramientas de uso testfloat
