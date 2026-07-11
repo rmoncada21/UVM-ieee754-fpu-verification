@@ -47,13 +47,13 @@ CM_LOG    := logs/cov/cm.log
 # Modelo de referencia
 REF_DIR   := reference_model
 REF_OBJ   := $(REF_DIR)/build/reference_model.o
-
+SF_LIB  := third_party/berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
 
 # Exporta variables para que sim_make.mk las vea
 export LOGS_SIM LOGS_TESTS VERBOSITY SEED TIMEOUT
 
 # Targets
-all: clean_all $(REF_MODEL) testbench _grep_warnings
+all: clean_all build_reference_model_obj testbench _grep_warnings
 
 include scripts/.ansi_code.mk
 include sim/sim_make.mk
@@ -87,7 +87,7 @@ build_reference_model_obj:
 testbench: _mkdir_folders
 	$(VCS) $(SVFLAGS) -timescale=$(TIMESCALE) \
 	-f $(FILELIST) \
-	$(REF_OBJ) \
+	$(REF_OBJ) $(SF_LIB) \
 	-o $(EXE_SIM) -l $(LOG_TB) \
 	-Mdir=$(MDIR) $(MSG_FORMAT) \
 	$(DFLAGS) \
