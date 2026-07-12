@@ -1,89 +1,100 @@
-# Target: prerrequisites
-# command to build Target
-
-# include scripts/.ansi_code.mk
-# include sim/sim_make.mk
+# usar "make -f Makefile" desde la raíz del repo UVM; este archivo solo define
+# variables y la regla genérica de directorios (no contiene targets de trabajo)
 
 SHELL := /bin/bash
-
+FECHA := $(shell date +%d_%H_%M_%S)
+#############################################################################
 # Folders del ambiente UVM
 SIM        := sim
 BIN        := bin
-LOGS_SIM   := logs/sim
-LOGS_TESTS := logs/tests
-LOGS_COV   := logs/cov
-WARNINGS   := logs/warnings
+LOGS       := logs
+LOGS_SIM   := $(LOGS)/sim
+LOGS_TESTS := $(LOGS)/tests
+LOGS_COV   := $(LOGS)/cov
+WARNINGS   := $(LOGS)/warnings
 REPORT_CSV := reportes_csv
 
-# Variables del entorno
-SEED := auto
+DIRS       := $(BIN) $(LOGS_SIM) $(LOGS_TESTS) $(LOGS_COV)
 
+$(DIRS):
+	mkdir -p $@
+
+#----------------------------
+# variables generales del entorno de simulación
+#----------------------------
+# SEED   : semilla de simulación (auto -> +ntb_random_seed_automatic)
+# TIMEOUT: YES -> el timeout dentro del ambiente sobreescribe este plusarg, 5000000=5ms
+SEED    := auto
+TIMEOUT := 5000000,YES
+
+#----------------------------
 # Flags Macros
+#----------------------------
 # make testbench ANSI=1 para mostrar el mensaje con formato ANSI
+# make testbench R=1    para compilación recursiva (-R)
 MSG_FORMAT := $(if $(filter 1,$(ANSI)),+define+MSG_ANSI_FORMAT)
-RECURSIVE  := $(if $(filter 1, $(R)),-R)
-# YES: timeout dentro del ambiente sobreescribe este plusargs, 5000000=5ms
-TIMEOUT=5000000,YES
+RECURSIVE  := $(if $(filter 1,$(R)),-R)
 
-# Flags VCS
-VCS 	  := vcs
+#----------------------------
+# vcs - compilador/simulador
+#----------------------------
+VCS       := vcs
 TIMESCALE := 1ns/1ps
 SVFLAGS   := -Mupdate -full64 -sverilog -ntb_opts uvm-1.2
 FILELIST  := scripts/filelist.f
-EXE_SIM   := sim/testbench_sim
-LOG_TB    := logs/sim/testbench_compile.log
+EXE_SIM   := $(SIM)/testbench_sim
+LOG_TB    := $(LOGS_SIM)/testbench_compile.log
 MDIR      := $(BIN)
 DFLAGS    := -kdb -debug_acc+all -debug_region+cell+encrypt
 VERBOSITY := UVM_HIGH
 LINT      := TFIPC-L
-COVERAGE  := line+tgl+cond+fsm+branch+assert 
-CM_LOG    := logs/cov/cm.log
+COVERAGE  := line+tgl+cond+fsm+branch+assert
+CM_LOG    := $(LOGS_COV)/cm.log
 
-# Se movio al makefile el modelo
-# Flags C críticos para semántica IEEE 754
-# CC        := gcc
-# CFLAGS    := -O2 -frounding-math -fno-unsafe-math-optimizations -ffp-contract=off
-
-# Modelo de referencia
-REF_DIR   := reference_model
-REF_OBJ   := $(REF_DIR)/build/reference_model.o
+#----------------------------
+# reference model (delegado a reference_model/Makefile)
+#----------------------------
+# Los flags C críticos IEEE 754 viven en reference_model/make_common.mk:
+#   -O2 -frounding-math -fno-unsafe-math-optimizations -ffp-contract=off
+# Aquí solo se referencian los artefactos que VCS enlaza como argumentos
+# posicionales (NO van en filelist.f)
+REF_DIR := reference_model
+REF_OBJ := $(REF_DIR)/build/reference_model.o
 SF_LIB  := third_party/berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
 
-# Exporta variables para que sim_make.mk las vea
+#----------------------------
+# exports hacia sim_make.mk
+#----------------------------
+# sim_make.mk se ejecuta con -C sim; estas variables deben ser visibles allí
 export LOGS_SIM LOGS_TESTS VERBOSITY SEED TIMEOUT
 
-# Targets
+# TARGET en blanco, útil para forzar de ser necesario la sobreescritura de un archivo
+FORCE:
+
+.PHONY: FORCE
+
+####################################################################################
+#################### Targets: universales
 all: clean_all build_reference_model_obj testbench _grep_warnings
 
 include scripts/.ansi_code.mk
 include sim/sim_make.mk
 
-# mkdir -p bin/ sim/ sim/logs sim/sim_out reportes-csv reportes_log_compile
-# mkdir -p bin/ sim/ logs/cov logs/sim logs/tests
-_mkdir_folders:
-	mkdir -p $(BIN) $(LOGS_SIM) $(LOGS_COV) $(LOGS_TESTS)
-
-# _cp_sim_makefile:
-# 	mkdir -p sim/
-# 	cp -f scripts/sim_make.mk sim/
-
-# _test: _cp_sim_makefile
-# 	$(MAKE) -C sim -f sim_make.mk _test_target
-
-_grep_warnings:
-	grep -i -C 10 "warning" $(LOG_TB) > $(WARNINGS).log
+# alias de compatibilidad; los targets dependen de la regla genérica $(DIRS)
+_mkdir_folders: | $(DIRS)
 
 ####################################################################################
-################### Compilar el modelo de referencia C
-# $(REF_MODEL): _mkdir_folders
-# 	$(CC) $(CFLAGS) -c $@/src/$(@).c -o $(SIM)/$(@).o
-
+################### Modelo de referencia C (delegado)
+# construye reference_model.o con GCC y los flags IEEE 754 críticos;
+# crea adems librera estatica softfloat
+# la lógica completa vive en reference_model/{Makefile, make_common.mk}
 build_reference_model_obj:
-	$(MAKE) -C reference_model -f Makefile $@
+	$(MAKE) -C $(REF_DIR) -f Makefile $@
 
 ####################################################################################
-################### Compilar el top testbench 
-# Mejor usar Camino A para compilar (ver si vcs compila con flgas C)
+################### Compilación del top testbench (VCS-UVM)
+# Mejor usar Camino A para compilar (ver si vcs compila con flags C)
+# enlaza el objeto del modelo y softfloat.a como argumentos posicionales
 testbench: _mkdir_folders
 	$(VCS) $(SVFLAGS) -timescale=$(TIMESCALE) \
 	-f $(FILELIST) \
@@ -94,52 +105,43 @@ testbench: _mkdir_folders
 	+lint=$(LINT) \
 	-cm $(COVERAGE) -cm_log $(CM_LOG) \
 	$(RECURSIVE)
-	@mv -f vc_hdrs.h .fsm.sch.verilog.xml sim 2>/dev/null || true
+	@mv -f vc_hdrs.h .fsm.sch.verilog.xml $(SIM) 2>/dev/null || true
+
+# extrae los warnings del log de compilación a logs/warnings.log
+_grep_warnings:
+	grep -i -C 10 "warning" $(LOG_TB) > $(WARNINGS).log
 
 ####################################################################################
-################### ejecutar test's 
-# -C sim-> cambia el working directory a sim
-
+################### Ejecución de tests (sim/sim_make.mk)
 run_all: testbench_sim all_test
 
 testbench_sim:
 	$(MAKE) -C $(SIM) -f sim_make.mk _testbench_sim
 
-# run_fpu_base_test:
-# 	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_base_test
-# run_fpu_test_arith_normal:
-# 	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_arith_normal
-# run_fpu_test_cmp:
-# 	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_cmp
-# run_fpu_test_rounding:
-# 	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_rounding
-# run_fpu_test_special_spec:
-# 	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_special_spec
-# run_fpu_test_norm_spec:
-# 	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_norm_spec
-# run_fpu_test_subnormal_arith:
-# 	$(MAKE) -C $(SIM) -f sim_make.mk _sim_fpu_test_subnormal_arith
-
-#####################################################################################
-################### Limpiar archivos
+####################################################################################
+################### Targets: de limpieza
 clean:
 	rm -f ucli.key
 	rm -rf $(MDIR)
 	find $(SIM) -mindepth 1 ! -name "sim_make.mk" -delete
-# 	find ! -name "sim_make.mk" -delete
 
 clean_all: clean
-	rm -rf logs/ $(REPORT_CSV)
+	rm -rf $(LOGS)/ $(REPORT_CSV)
+	$(MAKE) -C $(REF_MODEL) -f Makefile clean_all
 
 ####################################################################################
-################### help
-#	make help, función para ver como 
 help:
-	echo "help"
+	echo "TODO HELP FUNCTION"
 
-.PHONY: all _mkdir_folders \
-		testbench testbench_sim \
-		run_fpu_base_test \
-		build_reference_model_obj \
-		clean clean_all \
-		help \
+# TODO: ACTUALIZAR PHONY
+.PHONY: \
+	all \
+	_mkdir_folders \
+	build_reference_model_obj \
+	testbench \
+	_grep_warnings \
+	run_all \
+	testbench_sim \
+	clean \
+	clean_all \
+	help

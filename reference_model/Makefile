@@ -50,7 +50,7 @@ build_berkeley_testfloat:
 	$(MAKE) -C $(TF_BUILD) SPECIALIZE_TYPE=$(ARCH_TARGET)
 
 # crear objeto reference_model.o
-$(REF_OBJ): build_berkeley_softfloat | $(REF_BUILD)
+$(REF_OBJ): build_berkeley_softfloat build_berkeley_testfloat | $(REF_BUILD)
 	$(CC) $(CFLAGS) -c $(REF_C) -I$(SF_INCLUDE) -o $@
 
 build_reference_model_obj: $(REF_OBJ)
