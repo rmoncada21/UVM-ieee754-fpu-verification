@@ -49,7 +49,7 @@ build_berkeley_softfloat:
 build_berkeley_testfloat:
 	$(MAKE) -C $(TF_BUILD) SPECIALIZE_TYPE=$(ARCH_TARGET)
 
-# crear objeto reference_model.o
+# TODO: mover prerrequisito build_*_testfloat a runner/driver
 $(REF_OBJ): build_berkeley_softfloat build_berkeley_testfloat | $(REF_BUILD)
 	$(CC) $(CFLAGS) -c $(REF_C) -I$(SF_INCLUDE) -o $@
 

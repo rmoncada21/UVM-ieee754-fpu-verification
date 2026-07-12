@@ -95,7 +95,7 @@ build_reference_model_obj:
 ################### Compilación del top testbench (VCS-UVM)
 # Mejor usar Camino A para compilar (ver si vcs compila con flags C)
 # enlaza el objeto del modelo y softfloat.a como argumentos posicionales
-testbench: _mkdir_folders
+testbench: _mkdir_folders build_reference_model_obj
 	$(VCS) $(SVFLAGS) -timescale=$(TIMESCALE) \
 	-f $(FILELIST) \
 	$(REF_OBJ) $(SF_LIB) \
@@ -127,7 +127,7 @@ clean:
 
 clean_all: clean
 	rm -rf $(LOGS)/ $(REPORT_CSV)
-	$(MAKE) -C $(REF_MODEL) -f Makefile clean_all
+	$(MAKE) -C $(REF_DIR) -f Makefile clean_all
 
 ####################################################################################
 help:
