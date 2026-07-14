@@ -5,12 +5,14 @@ package fpu_env_pkg;
 	`include "uvm_macros.svh"
 	import uvm_pkg::*;
 	import fpu_types_pkg::*;
+	import fpu_types_seq_pkg::*;
 
-	// packages
+	// macros
 	`include "tb_components/packages/msg_macros.svh"
 
 	// seq item
 	`include "tb_components/seq_item/fpu_seq_item.sv"
+	`include "tb_components/seq_item/fpu_seq_constraints.sv"
 
 	// sequences
 	`include "tb_components/sequences/fpu_sequencer.sv"
@@ -30,6 +32,7 @@ package fpu_env_pkg;
 
 
 endpackage
-import fpu_env_pkg::*;
 import uvm_pkg::*;
+import fpu_env_pkg::*;
+import fpu_types_seq_pkg::*;
 `endif
