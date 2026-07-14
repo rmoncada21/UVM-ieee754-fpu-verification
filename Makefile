@@ -76,7 +76,7 @@ FORCE:
 ####################################################################################
 #################### Targets: universales
 all: clean_all build_reference_model_obj testbench _grep_warnings
-
+remake: build_reference_model_obj testbench _grep_warnings
 include scripts/.ansi_code.mk
 include sim/sim_make.mk
 
@@ -115,8 +115,6 @@ _grep_warnings:
 ################### Ejecución de tests (sim/sim_make.mk)
 run_all: testbench_sim all_test
 
-testbench_sim:
-	$(MAKE) -C $(SIM) -f sim_make.mk _testbench_sim
 
 ####################################################################################
 ################### Targets: de limpieza
@@ -141,7 +139,6 @@ help:
 	testbench \
 	_grep_warnings \
 	run_all \
-	testbench_sim \
 	clean \
 	clean_all \
 	help
