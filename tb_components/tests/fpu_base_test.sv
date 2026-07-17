@@ -1,3 +1,21 @@
+/*
+ * File:    fpu_base_test.sv
+ * - Project:  FPU RV32F — Verificación funcional UVM
+ *
+ * Description:
+ *   Test base del ambiente. Instancia fpu_env_c y configura el agente
+ *   como activo en build_phase; valida la topología y el estado del
+ *   agente en end_of_elaboration_phase; imprime banner y metadatos de
+ *   corrida (test, semilla, timeout) en start_of_simulation_phase. El
+ *   run_phase arranca fpu_base_sequence_c directamente sobre el
+ *   secuenciador del agente (smoke: estímulo completamente aleatorio).
+ *   Los tests hijos heredan todas las fases y solo agregan su propia
+ *   secuencia derivada de fpu_base_sequence_c.
+ *
+ * Dependencies:
+ *   fpu_env.sv, fpu_agent.sv, fpu_base_sequence.sv
+ */
+
 class fpu_base_test_c extends uvm_test;
 	`uvm_component_utils(fpu_base_test_c)
 
