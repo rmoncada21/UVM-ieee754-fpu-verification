@@ -45,7 +45,7 @@ class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
 			$sformatf("Inicio de la secuencia: %0d items", 
 			num_items_rand), UVM_LOW)
 		
-		for(int i=0, i<num_items_rand; i++) begin
+		for(int i=0; i<num_items_rand; i++) begin
 			item = fpu_seq_item_c::type_id::create($sformatf("item_%0d", i));
 			start_item(item);
 

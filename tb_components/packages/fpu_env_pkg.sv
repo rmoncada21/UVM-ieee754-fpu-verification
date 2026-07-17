@@ -16,7 +16,7 @@ package fpu_env_pkg;
 
 	// sequences
 	`include "tb_components/sequences/fpu_sequencer.sv"
-	`include "tb_components/sequences/fpu_base_sequences.sv"
+	`include "tb_components/sequences/fpu_base_sequence.sv"
 	// `include "tb_components/sequences/fpu_sequence_arith_normal.sv"
 
 	// uvm component

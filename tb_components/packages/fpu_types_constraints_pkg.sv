@@ -15,11 +15,11 @@
 `ifndef FPU_TYPES_CONSTRAINTS_PKG
 `define FPU_TYPES_CONSTRAINTS_PKG
 
-package fpu_types_constraints_pkg
+package fpu_types_constraints_pkg;
     
     // anchos de campo del formato IEEE 754 binary32
     localparam int C_EXP_WIDTH = 8; // exponente
-    localparam int C_MANT_WIDHT = 23; // mantissa
+    localparam int C_MANT_WIDTH = 23; // mantissa
 
     // limites del campo del exponente (sesgo)
     localparam logic [C_EXP_WIDTH-1:0] C_EXP_MIN_NORMAL = 8'd1;   // menor normal
