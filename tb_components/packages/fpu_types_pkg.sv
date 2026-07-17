@@ -3,13 +3,13 @@
     
 package fpu_types_pkg;
 
-    localparam int C_OP_CODE_WIDTH = 3; // opcode
-    localparam int C_FP_WIDTH = 32; // fp_a_i, fp_b_i, fp_c_i
-    localparam int C_R_MODE = 3; // r_mode
-
+    localparam int C_OP_CODE_WIDTH = 3; // opcode (8 operaciones: 5 aritmeticas, 3 comparacion)
+    localparam int C_FP_WIDTH = 32;     // fp_a_i, fp_b_i, fp_c_i
+    localparam int C_R_MODE = 3;        // r_mode (5 modos)
 
     parameter p_addr_width = 3; // definir luego en el makefile
 
+    // clasificación del modo de operación del DUT
     typedef enum logic [C_OP_CODE_WIDTH-1:0]{
         FADD = 3'd0,
         FSUB = 3'd1,
@@ -20,7 +20,8 @@ package fpu_types_pkg;
         FLT = 3'd6,
         FLE = 3'd7
     } fpu_op_code_e;
-
+    
+    // clasificación del modo de redondeo del DUT
     typedef enum logic [C_R_MODE-1:0]{
         RNE = 3'b000,
         RTZ = 3'b001,
@@ -31,7 +32,7 @@ package fpu_types_pkg;
 
     // Importar funciones DPIC
     import "DPI-C" function void test_dpic(int num);
-        
+
 
 endpackage: fpu_types_pkg;
 
