@@ -1,34 +1,68 @@
+/*
+ * File:    fpu_base_sequence.sv
+ * - Project:  FPU RV32F — Verificación funcional UVM
+ *
+ * Description:
+ *   Secuencia base del ambiente. Su body() envía num_items_rand
+ *   transacciones completamente aleatorias (smoke). Expone a las
+ *   secuencias hijas los generadores dirigidos de operandos IEEE 754
+ *   (gen_cero, gen_subnormal, gen_normal, gen_inf, gen_qnan, gen_snan),
+ *   construidos sobre el contenedor de constraints item_constraints
+ *   (fpu_seq_constraints_c) con encendido/apagado por clase.
+ *
+ * Dependencies:
+ *   fpu_seq_item.sv, fpu_seq_constraints.sv, fpu_types_contraints_pkg.sv
+ */
+
 class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
 	`uvm_object_utils(fpu_base_sequence_c)
 
-	rand int num_items;
+	// knobs de la secuencia
+	rand int num_items_rand;
+	rand bit signo_rand; // signo compartido opcional
 
+	// generador de operandos de constraints por clase IEEE 754
+	protected fpu_seq_constraints_c item_constraints;
 
-	constraint c_num_items {
-		num_items inside {[100:200]};
+	// cantidad de items; soft para que los derivados lo redefinan
+	constraint cn_num_items {
+		soft num_items_rand inside {
+			[100 : 200]
+		};
 	}
-
+	
 	function new(string name="fpu_base_sequence_c");
 		super.new(name);
+		// instanciar el contenedor de los constraints
+		item_constraints = fpu_seq_constraints_c::type_id::create("item_constraints");
 	endfunction : new
 
-	// boy()
+	// body
 	virtual task body();
-		`uvm_info(this.get_type_name(),
-			$sformatf("body aleatorio: %0d items", num_items),
-			UVM_LOW)
+		fpu_seq_item_c item;
 		
-		repeat(num_items) begin
-			this.req = fpu_seq_item_c::type_id::create("req");
-			// se mandan item al sequencer
-			this.start_item(req);
-			if(!req.randomize()) begin
-				`uvm_error(this.get_type_name(),
-					"Fallo en randomize() base sequence")
+		`uvm_info(get_type_name(),
+			$sformatf("Inicio de la secuencia: %0d items", 
+			num_items_rand), UVM_LOW)
+		
+		for(int i=0, i<num_items_rand; i++) begin
+			item = fpu_seq_item_c::type_id::create($sformatf("item_%0d", i));
+			start_item(item);
+
+			// operacion, modo de rodondeo y operandos aleatorios
+			if(!item.randomize()) begin
+				`uvm_error(get_type_name(),
+					$sformatf("Falló el randomize del item %0d", i))
 			end
-			this.finish_item(req);
+			finish_item(item);
+
+			`uvm_info(get_type_name(), 
+				$sformatf("Item %0d enviado", i), UVM_MEDIUM)
 		end
-	endtask: body
+
+		`uvm_info(get_type_name(), 
+			"Fin de Secuencia", UVM_MEDIUM)
+	endtask :  body
 
 	// Prototipos de generdores de operandos IEEE 754
 	// 0: positivo - 1: negativo
