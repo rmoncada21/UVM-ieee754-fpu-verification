@@ -36,7 +36,7 @@ dut/ALU-FPU-ieee754/ALU_FP/fp_alu.sv
 
 # Incluir packages
 tb_components/packages/fpu_types_pkg.sv
-tb_components/packages/fpu_types_seq_pkg.sv
+tb_components/packages/fpu_types_constraints_pkg.sv
 tb_components/packages/fpu_env_pkg.sv
 tb_components/interface/fpu_if.sv
 
