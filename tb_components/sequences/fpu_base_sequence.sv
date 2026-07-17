@@ -1,6 +1,6 @@
 /*
  * File:    fpu_base_sequence.sv
- * - Project:  FPU RV32F — Verificación funcional UVM
+ * - Project:  FPU RV32F  Verificación funcional UVM
  *
  * Description:
  *   Secuencia base del ambiente. Su body() envía num_items_rand
@@ -23,51 +23,18 @@ class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
 
 	// generador de operandos de constraints por clase IEEE 754
 	protected fpu_seq_constraints_c item_constraints;
-
 	// cantidad de items; soft para que los derivados lo redefinan
 	constraint cn_num_items {
-		soft num_items_rand inside {
-			[100 : 200]
-		};
+		soft num_items_rand inside { [100:200] };
 	}
 	
-	function new(string name="fpu_base_sequence_c");
-		super.new(name);
-		// instanciar el contenedor de los constraints
-		item_constraints = fpu_seq_constraints_c::type_id::create("item_constraints");
-	endfunction : new
-
-	// body
-	virtual task body();
-		fpu_seq_item_c item;
-		
-		`uvm_info(get_type_name(),
-			$sformatf("Inicio de la secuencia: %0d items", 
-			num_items_rand), UVM_LOW)
-		
-		for(int i=0; i<num_items_rand; i++) begin
-			item = fpu_seq_item_c::type_id::create($sformatf("item_%0d", i));
-			start_item(item);
-
-			// operacion, modo de rodondeo y operandos aleatorios
-			if(!item.randomize()) begin
-				`uvm_error(get_type_name(),
-					$sformatf("Falló el randomize del item %0d", i))
-			end
-			finish_item(item);
-
-			`uvm_info(get_type_name(), 
-				$sformatf("Item %0d enviado", i), UVM_MEDIUM)
-		end
-
-		`uvm_info(get_type_name(), 
-			"Fin de Secuencia", UVM_MEDIUM)
-	endtask :  body
+	// Prototipos de funiones del base sequence
+	extern function new(string name="fpu_base_sequence_c");
+	extern virtual task body();
 
 	// Prototipos de generdores de operandos IEEE 754
-	// 0: positivo - 1: negativo
-	extern protected function logic [C_FP_WIDTH-1:0] gen_operando(
-		fpu_clase_operando_e clase, int signo = -1);
+	// signo positivo:0 - negativo: -1
+	extern protected function logic [C_FP_WIDTH-1:0] gen_operando( fpu_clase_operando_e clase, int signo = -1);
 	extern protected function logic [C_FP_WIDTH-1:0] gen_cero(int signo = -1);
 	extern protected function logic [C_FP_WIDTH-1:0] gen_subnormal(int signo = -1);
 	extern protected function logic [C_FP_WIDTH-1:0] gen_normal(int signo = -1);
@@ -76,6 +43,38 @@ class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
 	extern protected function logic [C_FP_WIDTH-1:0] gen_snan(int signo = -1);
 
 endclass : fpu_base_sequence_c
+
+// Implementación de las funciones
+// constructor de la clase
+function fpu_base_sequence_c::new(string name="fpu_base_sequence_c");
+	super.new(name);
+	// instanciar el contenedor de los constraints
+	item_constraints = fpu_seq_constraints_c::type_id::create("item_constraints");
+endfunction : new
+
+// body
+task fpu_base_sequence_c::body();
+	fpu_seq_item_c item;
+	`uvm_info(get_type_name(),
+		$sformatf("Inicio de la secuencia: %0d items", 
+		num_items_rand), UVM_LOW)
+		
+	for(int i=0; i<num_items_rand; i++) begin
+		item = fpu_seq_item_c::type_id::create($sformatf("item_%0d", i));
+		start_item(item);
+		// operacion, modo de rodondeo y operandos aleatorios
+		if(!item.randomize()) begin
+			`uvm_error(get_type_name(),
+				$sformatf("Falló el randomize del item %0d", i))
+		end
+		finish_item(item);
+		`uvm_info(get_type_name(), 
+			$sformatf("Item %0d enviado", i), UVM_MEDIUM)
+	end
+
+	`uvm_info(get_type_name(), 
+		"Fin de Secuencia", UVM_MEDIUM)
+endtask :  body
 
 // Function: gen_operando
 // Nucleo comun: activa la clase pedida en item_constraints, fija el knob de signo,
