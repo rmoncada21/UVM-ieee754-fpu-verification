@@ -66,76 +66,60 @@ class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
 
 	// Prototipos de generdores de operandos IEEE 754
 	// 0: positivo - 1: negativo
-	extern protected function logic [31:0] gen_cero(bit signo = 1'b0);
-	extern protected function logic [31:0] gen_subnormal(bit signo = 1'b0);
-	extern protected function logic [31:0] gen_normal(bit signo = 1'b0);
-	extern protected function logic [31:0] gen_inf(bit signo = 1'b0);
-	extern protected function logic [31:0] gen_qnan(bit signo = 1'b0);
-	extern protected function logic [31:0] gen_snan(bit signo = 1'b0);
+	extern protected function logic [C_FP_WIDTH-1:0] gen_operando(
+		fpu_clase_operando_e clase, int signo = -1);
+	extern protected function logic [C_FP_WIDTH-1:0] gen_cero(int signo = -1);
+	extern protected function logic [C_FP_WIDTH-1:0] gen_subnormal(int signo = -1);
+	extern protected function logic [C_FP_WIDTH-1:0] gen_normal(int signo = -1);
+	extern protected function logic [C_FP_WIDTH-1:0] gen_inf(int signo = -1);
+	extern protected function logic [C_FP_WIDTH-1:0] gen_qnan(int signo = -1);
+	extern protected function logic [C_FP_WIDTH-1:0] gen_snan(int signo = -1);
+
+endclass : fpu_base_sequence_c
+
+// Function: gen_operando
+// Nucleo comun: activa la clase pedida en item_constraints, fija el knob de signo,
+// randomiza y empaqueta. Sin bloque with: evita el sombreado entre
+// signo_rand de la secuencia y signo_rand de item_constraints.
+function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_operando(
+		fpu_clase_operando_e clase, int signo);
+	item_constraints.activar_clase(clase);
+	item_constraints.signo_forzado = signo;
 	
-endclass: fpu_base_sequence_c
+	if (!item_constraints.randomize())
+		`uvm_error(get_type_name(),
+			$sformatf("Fallo el randomize de gen_operando (clase=%s)", 
+			clase.name()))
 
-// Cero con signo.
-function logic [31:0] fpu_base_sequence_c::gen_cero(bit signo = 1'b0);
-	logic [7:0] exponent;
-	logic [22:0] mantissa;
-	exponent = 	8'h00;
-	mantissa = 23'h00_000;
+	return item_constraints.operando();
+endfunction : gen_operando
 
-	return {signo, exponent, mantissa};
-endfunction: gen_cero
+// Cero con signo
+function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_cero(int signo);
+	return gen_operando(CLASE_CERO, signo);
+endfunction : gen_cero
 
-// Subnormal: exponente cero, mantisa distinta de cero
-function logic [31:0] fpu_base_sequence_c::gen_subnormal(bit signo = 1'b0);
-	logic [7:0] exponent;
-	logic [22:0] mantissa;
-	exponent = 8'h00;
-	mantissa = 32'($urandom_range(23'h7F_FFFF,23'd1));
+// Subnormal
+function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_subnormal(int signo);
+	return gen_operando(CLASE_SUBNORMAL, signo);
+endfunction : gen_subnormal
 
-	return {signo, exponent, mantissa};
-endfunction: gen_subnormal
+// Normal
+function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_normal(int signo);
+	return gen_operando(CLASE_NORMAL, signo);
+endfunction : gen_normal
 
-// Normmal: exponente en [1,254], mantisa cualquiera
-function logic [31:0] fpu_base_sequence_c::gen_normal(bit signo = 1'b0);
-	logic [7:0] exponent;
-	logic [22:0] mantissa;
-	exponent = 8'($urandom_range(8'd254,8'd1));
-	mantissa = 23'($urandom_range(23'h7F_FFFF,0));
+// Infinito
+function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_inf(int signo);
+	return gen_operando(CLASE_INF, signo);
+endfunction : gen_inf
 
-	return{signo, exponent, mantissa};
-endfunction: gen_normal
+// qNaN
+function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_qnan(int signo);
+	return gen_operando(CLASE_QNAN, signo);
+endfunction : gen_qnan
 
-// Infinito: exponente todos unos, mantisa cero 
-function logic [31:0] fpu_base_sequence_c::gen_inf(bit signo = 1'b0);
-	logic [7:0] exponent;
-	logic [22:0] mantissa;
-	exponent = 8'hFF;
-	mantissa = 32'h00_000;
-
-	return {signo, exponent, mantissa};
-endfunction: gen_inf
-
-// qNaN: exponente todos en unos, bit alto de mantisa en 1 (quiet)
-function logic [31:0] fpu_base_sequence_c::gen_qnan(bit signo = 1'b0);
-	logic [7:0] exponent;
-	logic mantissa;
-	logic [21:0] payload;
-	exponent = 8'hFF;
-	mantissa = 1'b1;
-	payload = 22'($urandom);
-
-	return{signo, exponent, mantissa, payload};
-endfunction: gen_qnan
-
-// signaling not a number
-// sNaN: exponentes todos en unos, bit alto de mantisa en 0, resto disinto de cero
-function logic [31:0] fpu_base_sequence_c::gen_snan(bit signo = 1'b0);
-	logic [7:0] exponent;
-	logic mantissa;
-	logic [21:0] payload;
-	exponent = 8'hFF;
-	mantissa = 1'b0;
-	payload = 22'($urandom_range(22'h3F_FFFF,22'd1));
-
-	return{signo, exponent, mantissa, payload};
-endfunction: gen_snan
+// sNaN
+function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_snan(int signo);
+	return gen_operando(CLASE_SNAN, signo);
+endfunction : gen_snan
