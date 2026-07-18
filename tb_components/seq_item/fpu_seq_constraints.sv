@@ -58,15 +58,16 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 
 	// qNaN : exponente 255, MSB de mantisa en 1 (payload libre)
 	constraint cn_qnan {
-		exponente_rand == C_EXP_ESPECIAL;
-		mantisa_rand[C_MANT_WIDTH-1] == 1'b1;
+		exponente_rand == C_EXP_ESPECIAL;       
+		mantisa_rand[C_MANT_WIDTH-1] == 1'b1;  // MSB
+		// mantisa_rand[C_MANT_WIDTH-2:0]      // payload libre
 	}
 
 	// sNaN : exponente 255, MSB de mantisa en 0, payload != 0
 	constraint cn_snan {
 		exponente_rand == C_EXP_ESPECIAL;
-		mantisa_rand[C_MANT_WIDTH-1]   == 1'b0;
-		mantisa_rand[C_MANT_WIDTH-2:0] != '0;
+		mantisa_rand[C_MANT_WIDTH-1]   == 1'b0; // MSB
+		mantisa_rand[C_MANT_WIDTH-2:0] != '0;   // payload
 	}
 
 	// constructor: todas las clases apagadas, control desde afuera
