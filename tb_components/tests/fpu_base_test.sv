@@ -1,6 +1,6 @@
 /*
  * File:    fpu_base_test.sv
- * - Project:  FPU RV32F — Verificación funcional UVM
+ * - Project:  FPU RV32F  Verificación funcional UVM
  *
  * Description:
  *   Test base del ambiente. Instancia fpu_env_c y configura el agente
@@ -28,6 +28,7 @@ class fpu_base_test_c extends uvm_test;
 	extern virtual function void end_of_elaboration_phase (uvm_phase phase);
 	extern virtual function void start_of_simulation_phase(uvm_phase phase);
 	extern virtual task run_phase(uvm_phase phase);
+	extern virtual function fpu_base_sequence_c crear_secuencia();
 	// TODO : implementar report_phase
 
 endclass :  fpu_base_test_c
@@ -122,15 +123,23 @@ task fpu_base_test_c::run_phase(uvm_phase phase);
 	fpu_base_sequence_c base_sequence;
 		
 	phase.raise_objection(this, "fpu_base_test_c: estimulo enviado");
-		base_sequence = fpu_base_sequence_c::type_id::create("base_sequence");
+		base_sequence = crear_secuencia();
+		// randomizar secuencia: resuelve num_items_rand y signo_rand
+		if(!base_sequence.randomize()) begin
+			`uvm_error(this.get_type_name(),
+				"Falló el randomize de la secuencia base")
+		end
 		base_sequence.start(fpu_env.fpu_agent.fpu_sequencer);
 	phase.drop_objection(this, "fpu_base_test_c: estimulo completo");
 
-	// `uvm_info(this.get_type_name(), 
-	// 	"No EJECUTA SECUENCIAS",
-	// 	UVM_LOW);
-	// phase.drop_objection(this);
-endtask: run_phase
+endtask : run_phase
+
+// crear secuencia
+// los test derivados solo sobreescriben esta función para 
+// devolver su suencie derivada de fpu_base_sequence_c
+function fpu_base_sequence_c fpu_base_test_c::crear_secuencia();
+	return fpu_base_sequence_c::type_id::create("base_sequence");
+endfunction : crear_secuencia
 
 // RP
 // TODO : implementar report_phase
