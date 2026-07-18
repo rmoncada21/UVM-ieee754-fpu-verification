@@ -33,7 +33,8 @@ class fpu_base_test_c extends uvm_test;
 
 endclass :  fpu_base_test_c
 
-
+// Implementacion de los prototipos
+// constructor
 function fpu_base_test_c::new(string name="fpu_base_test_c", uvm_component parent=null);
 	super.new(name, parent);
 endfunction : new
