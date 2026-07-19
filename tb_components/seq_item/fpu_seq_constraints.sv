@@ -53,9 +53,9 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 	// normal en banda segura [70,184]: operandos y resultados normales
 	// sin overflow ni underflow en arith normal (testplan sec)
 	constraint cn_normal_banda {
-		exponent_rand inside {
+		exponente_rand inside {
 			[C_EXP_BANDA_MINIMA : C_EXP_BANDA_MAXIMA]
-		}
+		};
 	}
 
 	// ±inf : exponente 255, mantisa 0

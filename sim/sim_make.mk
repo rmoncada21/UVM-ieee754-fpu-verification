@@ -26,8 +26,8 @@ run_fpu_base_test:
 	echo "$@"
 	@$(call run_uvm_test, $(@:run_%=%))
 
-# run_fpu_test_arith_normal:
-# 	@$(call run_uvm_test, $(@:run_%=%))
+run_fpu_test_arith_normal:
+	@$(call run_uvm_test, $(@:run_%=%))
 
 # run_fpu_test_cmp:
 # 	@$(call run_uvm_test, $(@:run_%=%))
