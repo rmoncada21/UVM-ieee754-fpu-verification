@@ -5,6 +5,7 @@ package fpu_env_pkg;
 	`include "uvm_macros.svh"
 	import uvm_pkg::*;
 	import fpu_types_pkg::*;
+	import fpu_dpic_ref_model_pkg::*;
 	import fpu_types_constraints_pkg::*;
 
 	// macros
@@ -34,5 +35,6 @@ package fpu_env_pkg;
 endpackage
 import uvm_pkg::*;
 import fpu_types_pkg::*;
+import fpu_dpic_ref_model_pkg::*;
 import fpu_types_constraints_pkg::*;
 `endif

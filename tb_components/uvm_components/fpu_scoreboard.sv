@@ -18,8 +18,8 @@
  *   distribución por opcode.
  *
  * Dependencies:
- *   fpu_seq_item.sv, fpu_types_pkg.sv (dpi_fpu_reference, golden_result_s,
- *   golden_calcular), reference_model.c (DPI-C)
+ *   fpu_seq_item.sv, fpu_types_pkg.sv, fpu_dpic_ref_model_pkg.sv (dpi_fpu_reference,
+ *   golden_result_s, golden_calcular), reference_model.c (DPI-C)
  */
 
 class fpu_scoreboard_c extends uvm_scoreboard;

@@ -30,10 +30,6 @@ package fpu_types_pkg;
         RMM = 3'b100
     } fpu_r_mode_e;
 
-    // Importar funciones DPIC
-    import "DPI-C" function void test_dpic(int num);
-
-
 endpackage: fpu_types_pkg;
 
 import fpu_types_pkg::*;
