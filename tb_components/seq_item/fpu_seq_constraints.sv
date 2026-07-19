@@ -50,6 +50,14 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
         };
 	}
 
+	// normal en banda segura [70,184]: operandos y resultados normales
+	// sin overflow ni underflow en arith normal (testplan sec)
+	constraint cn_normal_banda {
+		exponent_rand inside {
+			[C_EXP_BANDA_MINIMA : C_EXP_BANDA_MAXIMA]
+		}
+	}
+
 	// ±inf : exponente 255, mantisa 0
 	constraint cn_inf {
 		exponente_rand == C_EXP_ESPECIAL;
@@ -85,6 +93,8 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 		cn_inf.constraint_mode(0);
 		cn_qnan.constraint_mode(0);
 		cn_snan.constraint_mode(0);
+		// subconjuntos - bandas
+		cn_normal_banda.constraint_mode(0);
 	endfunction : desactivar_clases
 
 	// Function: activar_clase
@@ -93,12 +103,14 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 	function void activar_clase(fpu_clase_operando_e clase);
 		desactivar_clases();
 		case (clase)
-			CLASE_CERO      : cn_cero.constraint_mode(1);
-			CLASE_SUBNORMAL : cn_subnormal.constraint_mode(1);
-			CLASE_NORMAL    : cn_normal.constraint_mode(1);
-			CLASE_INF       : cn_inf.constraint_mode(1);
-			CLASE_QNAN      : cn_qnan.constraint_mode(1);
-			CLASE_SNAN      : cn_snan.constraint_mode(1);
+			CLASE_CERO         : cn_cero.constraint_mode(1);
+			CLASE_SUBNORMAL    : cn_subnormal.constraint_mode(1);
+			CLASE_NORMAL       : cn_normal.constraint_mode(1);
+			CLASE_INF          : cn_inf.constraint_mode(1);
+			CLASE_QNAN         : cn_qnan.constraint_mode(1);
+			CLASE_SNAN         : cn_snan.constraint_mode(1);
+			// subconjutos - banda segura
+			CLASE_NORMAL_BANDA : cn_normal_banda.constraint_mode(1);
 			default : `uvm_warning(get_type_name(),
 				$sformatf("Clase de operando desconocida: %0d", clase))
 		endcase

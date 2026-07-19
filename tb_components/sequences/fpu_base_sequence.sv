@@ -38,6 +38,7 @@ class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
 	extern protected function logic [C_FP_WIDTH-1:0] gen_cero(int signo = -1);
 	extern protected function logic [C_FP_WIDTH-1:0] gen_subnormal(int signo = -1);
 	extern protected function logic [C_FP_WIDTH-1:0] gen_normal(int signo = -1);
+	extern protected function logic [C_FP_WIDTH-1:0] gen_normal_banda(int signo = -1);
 	extern protected function logic [C_FP_WIDTH-1:0] gen_inf(int signo = -1);
 	extern protected function logic [C_FP_WIDTH-1:0] gen_qnan(int signo = -1);
 	extern protected function logic [C_FP_WIDTH-1:0] gen_snan(int signo = -1);
@@ -107,6 +108,11 @@ endfunction : gen_subnormal
 function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_normal(int signo);
 	return gen_operando(CLASE_NORMAL, signo);
 endfunction : gen_normal
+
+// Normal banda segura [70,184]
+function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_normal_banda(int signo);
+	return gen_operando(CLASE_NORMAL, signo);
+endfunction : gen_normal_banda
 
 // Infinito
 function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_inf(int signo);
