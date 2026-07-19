@@ -22,16 +22,18 @@
 `define FPU_DPIC_REF_MODEL_PKG
 
 package fpu_dpic_ref_model_pkg;
+    import fpu_types_pkg::*;
+
     // Importar funciones DPIC
     import "DPI-C" function void test_dpic(input int num);
 
     // Banderas 
     typedef struct packed {
-        logic nv, // bit 4: invalid
-        logic dz, // bit 3: divide by zero/ infinite
-        logic ov, // bit 2: overflow
-        logic uf, // bit 1: underflow
-        logic nx  // bit 0: inexact
+        logic nv; // bit 4: invalid
+        logic dz; // bit 3: divide by zero/ infinite
+        logic ov; // bit 2: overflow
+        logic uf; // bit 1: underflow
+        logic nx; // bit 0: inexact
     } fpu_ref_flags_s;
 
     // resultado completo del modelo de referencia
@@ -72,7 +74,7 @@ package fpu_dpic_ref_model_pkg;
         fpu_ref_resultado_s reference_model_resultado;
         
         // llamada a función dpi, con entrada de datos del mismo pkg
-        dpi_fpu_referencia (
+        dpi_fpu_reference (
             int'(op_code_i_pkg),
             fp_a_i_pkg,
             fp_b_i_pkg,
