@@ -200,6 +200,34 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	end
 
 	// --- 4. Clasificacion en tres parametros ---
+	if(coincide_resultado && coincide_overflow && coincide_underflow && coincide_invalid)  begin
+		num_pass++;
+		clasificacion = "PASS";
+	end 
+	else if (es_bug_conocido(item_dut)) begin
+		num_bag++; // documentado (familia BUG-001), no es un fallo nuevo
+		clasificacion = "BUG";
+		// imprimir mensaje
+		`uvm_warning(get_type_name(), $sformatf(
+            "BUG-001 opcode=%s rm=%s fp_a=%08h fp_b=%08h fp_c=%08h | DUT=%08h reference=%08h",
+            item_dut.op_code_i.name(), item_dut.r_mode_i.name(),
+            item_dut.fp_a_i, item_dut.fp_b_i, item_dut.fp_c_i,
+            item_dut.fp_result_o, reference_model_s.resultado))
+	end 
+	else begin
+        num_fail++;      // fallo inesperado: debería quedar en 0
+        clasificacion = "FAIL";
+        // imprimir mensaje
+		`uvm_error(get_type_name(), $sformatf(
+            {"MISMATCH opcode=%s rm=%s fp_a=%08h fp_b=%08h fp_c=%08h | DUT=%08h reference=%08h",
+             " | flags DUT overflow=%0b underflow=%0b invalid=%0b esperadas overflow=%0b underflow=%0b invalid=%0b"},
+            item_dut.op_code_i.name(), item_dut.r_mode_i.name(),
+            item_dut.fp_a_i, item_dut.fp_b_i, item_dut.fp_c_i,
+            item_dut.fp_result_o, reference_model_s.resultado,
+            item_dut.overflow_o, item_dut.underflow_o, item_dut.invalid_o,
+            overflow_esperado, underflow_esperado, invalid_esperado))
+    end
+
 	// --- 5. Volcado CSV para análisis posterior ---
 
 endtask
