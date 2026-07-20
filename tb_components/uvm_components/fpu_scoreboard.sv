@@ -34,6 +34,7 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 
 
 	// Contadores de clasificación en tres cubos + distribución por opcode.
+	// clasificación en tres parametros
     // num_pass / num_bug / num_fail
 	int unsigned num_transacciones;
 	int unsigned num_pass;
@@ -145,9 +146,9 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	bit coincide_invalid;
 
 	// banderas que el dur debería marcar, las llena flags_esperadas_dut
-	logic overflow_esperado;
-	logic underflow_esperado;
-	logic invalid_esperado;
+	logic  overflow_esperado;
+	logic  underflow_esperado;
+	logic  invalid_esperado;
 	string clasificacion;
 
 	numm_trasacciones++;
@@ -158,7 +159,9 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 
 
 	// --- 1. Modelo de referencia (SoftFloat vía DPI-C) ---
-	reference_model_s = fpu_ref_calcular( item_dut.op_code_i,
+	// salida de la función fpu_ref se guarda en reference_model_s
+	reference_model_s = fpu_ref_calcular( // entradas a la función
+										  item_dut.op_code_i,
 										  item_dut.fp_a_i,
 										  item_dut.fp_b_i,
 										  item_dut.fp_c_i,
@@ -169,7 +172,35 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 							( reference_model_s.resultado [22:0] == '0 ); 
 
 	// --- 2. Banderas esperadas según la semántica del DUT ---
+	flags_esperadas_dut( // entradas a la función
+						 item_dut.op_code_i,
+						 reference_model_s,
+						 //  salidas de la función hacia los punteros
+						 overflow_esperado,
+						 underflow_esperado,
+						 invalid_esperado );
+
 	// --- 3. Comparación EXACTA (sin tolerancia de 1 ULP) ---
+	if (es_opcode_comparacion) begin
+		// El dut entrega el bit en cmp_result_o y pone fp_result_o y banderas a 0.
+		// el modelo entrga todo en resultado[31:0]
+		coincide_resultado = (item_dut.cmp_result_o === reference_model_s.resultado[0]) &&
+							 (item_dut.fp_result_o  === 32'h0000_0000);
+		coincide_overflow  = (item_dut.overflow_o   === 1'b0); 
+		coincide_underflow = (item_dut.underflow_o  === 1'b0); 
+		coincide_invalid   = (item_dut.invalid_o    === 1'b0); 
+	end else begin // si no es de comparación sucedió alguna operación arimética
+		coincide_resultado = (item_dut.fp_result_o  === reference_model_s.resultado)
+		
+		coincide_overflow  = (item_dut.overflow_o === overflow_esperado)
+		
+		coincide_underflow = (item_dut.underflow_o === underflow_esperado) || resultado_es_qnan || resultado_es_infinito;
+
+		coincide_invalid   = (item_dut.invalid_o === invalid_esperado) || resultado_es_qnan || resultado_es_infinito;
+	end
+
+	// --- 4. Clasificacion en tres parametros ---
+	// --- 5. Volcado CSV para análisis posterior ---
 
 endtask
 
