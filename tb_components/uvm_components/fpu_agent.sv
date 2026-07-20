@@ -37,12 +37,13 @@ class fpu_agent_c extends uvm_agent;
 
 endclass: fpu_agent_c
 
-
+// Implementación de funciones
 // constructor
 function fpu_agent_c::new(string name="fpu_agent_c", uvm_component parent);
 	super.new(name, parent);
 endfunction : new
 
+// BP
 // build_phase
 function void fpu_agent_c::build_phase(uvm_phase phase);
 	super.build_phase(phase);
@@ -67,6 +68,7 @@ function void fpu_agent_c::build_phase(uvm_phase phase);
 
 endfunction: build_phase
 
+// CP
 // connect_phase - conectar puertos
 function void fpu_agent_c::connect_phase(uvm_phase phase);
 	super.connect_phase(phase);
