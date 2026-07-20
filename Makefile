@@ -14,7 +14,7 @@ LOGS_COV   := $(LOGS)/cov
 WARNINGS   := $(LOGS)/warnings
 REPORT_CSV := reportes_csv
 
-DIRS       := $(BIN) $(LOGS_SIM) $(LOGS_TESTS) $(LOGS_COV)
+DIRS       := $(BIN) $(LOGS_SIM) $(LOGS_TESTS) $(LOGS_COV) $(WARNINGS)
 
 $(DIRS):
 	mkdir -p $@
@@ -75,8 +75,8 @@ FORCE:
 
 ####################################################################################
 #################### Targets: universales
-all: clean_all build_reference_model_obj testbench _grep_warnings
-remake: build_reference_model_obj testbench _grep_warnings
+all: clean_all build_reference_model_obj testbench
+remake: build_reference_model_obj testbench
 include scripts/.ansi_code.mk
 include sim/sim_make.mk
 

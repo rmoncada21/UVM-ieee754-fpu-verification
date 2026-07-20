@@ -4,11 +4,11 @@
 
 define run_uvm_test
 	./$(EXE_SIM) \
-		+UVM_TESTNAME=$(1)_c \
+		+UVM_TESTNAME=$(strip $(1))_c \
 		+UVM_VERBOSITY=$(VERBOSITY) \
 		+ntb_random_seed_automatic \
-		-l ../$(LOGS_SIM)/$(1).log \
-		| tee ../$(LOGS_TESTS)/$(1)_$(FECHA).log
+		-l ../$(LOGS_SIM)/$(strip $(1)).log \
+		| tee ../$(LOGS_TESTS)/$(strip $(1))_$(FECHA).log
 endef
 
 all_test: run_fpu_base_test run_fpu_test_arith_normal run_fpu_test_cmp \
