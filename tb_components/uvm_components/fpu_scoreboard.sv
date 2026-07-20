@@ -6,7 +6,7 @@
  *   Scoreboard UVM de la FPU RV32F. Recibe transacciones del monitor
  *   por tlm_scb_aimp (conectado en fpu_env_c vía item_collected_port
  *   del agente) y las compara contra el modelo de referencia DPI-C
- *   (golden_calcular / golden_result_s, fpu_types_pkg). La comparación
+ *   (fpu_ref_calcular() / fpu_ref_resultado_s, fpu_types_pkg). La comparación
  *   es EXACTA (sin tolerancia de 1 ULP): resultado bit a bit y
  *   banderas derivadas con la semántica OPERATIVA del DUT no el NV/OV
  *   IEEE puro vía flags_esperadas_dut() (comparaciones fuerzan todo a
@@ -19,7 +19,7 @@
  *
  * Dependencies:
  *   fpu_seq_item.sv, fpu_types_pkg.sv, fpu_dpic_ref_model_pkg.sv (dpi_fpu_reference,
- *   golden_result_s, golden_calcular), reference_model.c (DPI-C)
+ *   fpu_ref_resultado_s, fpu_ref_calcular()), reference_model.c (DPI-C)
  */
 
 class fpu_scoreboard_c extends uvm_scoreboard;
@@ -29,10 +29,22 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	// proviene del monitor, conectado en el env
 	uvm_analysis_imp #(fpu_seq_item_c, fpu_scoreboard_c) tlm_scb_aimp;
 
+	// qNaN canónico RISC-V
+	localparam logic [31:0] C_QNAN = 32'h7FC0_0000;
+
 	// Prototipos de funciones del scoreboard
 	extern function new(string name="fpu_scoreboard_c", uvm_component parent);
 	extern virtual function void build_phase(uvm_phase phase);
 	extern virtual function void start_of_simulation_phase(uvm_phase phase);
+	// TODO: flags esperadas, bug_conocido, archivo CSV de salida
+	extern protected function void flags_esperadas_dut(
+		input  fpu_op_code_e       dut_op_code_i,
+		input  fpu_ref_resultado_s dut_resultado,
+		output logic               dut_exp_overflow,
+		output logic               dut_exp_underflow,
+		output logic               dut_exp_invalid
+	);
+	extern protected function bit es_bug_conocido(fpu_seq_item_c item);
 	extern virtual task write(fpu_seq_item_c item);
 	extern virtual function void report_phase(uvm_phase phase);
 
@@ -62,12 +74,58 @@ function void fpu_scoreboard_c::start_of_simulation_phase(uvm_phase phase);
 		UVM_LOW)
 endfunction : start_of_simulation_phase
 
+// flags
+// Function: flags_esperadas_dut
+// Deriva las banderas esperadas con la semántica OPERATIVA del DUT a
+// partir del resultado golden (el DUT no tiene fflags IEEE; sus
+// banderas son consecuencia del patrón de bits de la salida).
+//   - Comparaciones: todo a 0 (BUG-004).
+//   - Aritmética: ov = OV de IEEE (coincide); uf = exponente 0
+//     (subnormal o cero); inv = qNaN | ov | uf (fórmula del DUT, BUG-003).
+function void fpu_soreboard_c::flags_esperadas_dut(
+	input  fpu_op_code_e       op_code_i,
+	input  fpu_ref_resultado_s reference_model_s, // respuesta completa (resultado + flag) del modelo
+	output logic               dut_overflow_esperado,
+	output logic               dut_underflow_esperado,
+	output logic               dut_invalid_esperado
+);
+	bit es_opcode_comparacion; //opcode: FEQ/FLT/FLE
+	bit resultado_es_qnan;
+	bit resultado_es_subnormal;
+	bit resultado_es_cero;
+
+	es_opcode_comparacion      = ( op_code_i == FEQ || op_code_i == FLET || op_code_i == FLE );
+	resultado_es_qnan      = ( reference_model_s.resultado == C_QNAN );
+	resultado_es_subnormal = ( reference_model_s.resultado[30:23] == 8'h00 ) && ( referene_model.resultado[22:0] != '0);
+	resultado_es_cero      = ( reference_model_s.resultado[30:0] == '0 );
+
+	if (es_opcode_comparacion) begin
+		// El DUT fuerza overflow/underflow/invalid a 0 en comparaciones (BUG-004)
+		dut_overflow_esperado  = 1'b0;
+		dut_underflow_esperado = 1'b0;
+		dut_invalid_esperado   = 1'b0;
+	end else begin
+		dut_overflow_esperado  = reference_model_s.flags.ov;                        // OV de IEEE coincide
+		dut_underflow_esperado = ( resultado_es_subnormal || resultado_es_cero ); // campo exponente == 0
+		dut_invalid_esperado   = ( resultado_es_qnan || dut_overflow_esperado || dut_underflow_esperado );
+	end
+
+endfunction : flags_esperadas_dut
+
+// Bug del ambiente
+// function bit fpu_soreboard_c::es_bug_conocido(fpu_seq_item_c item);
+// endfunction : es_bug_conocido
+
 // Write
 // TODO: implementar funcion write
-task fpu_scoreboard_c::write(fpu_seq_item_c item);
-	`uvm_info(this.get_type_name(),
-		" - ",
-		UVM_LOW);
+// Function: write
+// Callback del analysis_imp - monitor; UVM lo invoca por cada transacción que
+// publica el monitor. Cinco pasos: reference -> banderas esperadas ->
+// comparación EXACTA (sin tolerancia de 1 ULP) -> veredicto -> volcado CSV.
+task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
+	fpu_ref_resultado_s reference_model_s; // respuesta completa (resultado + flag) del modelo
+
+
 endtask
 
 // RP
