@@ -37,7 +37,7 @@ class fpu_seq_item_c extends uvm_sequence_item;
 
 
 	// constraints
-
+	// en archivo: fpu_seq_constraints.sv
 
 
 endclass: fpu_seq_item_c
