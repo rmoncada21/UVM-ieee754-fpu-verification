@@ -32,20 +32,29 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	// qNaN canónico RISC-V
 	localparam logic [31:0] C_QNAN = 32'h7FC0_0000;
 
+
+	// Contadores de clasificación en tres cubos + distribución por opcode.
+    // num_pass / num_bug / num_fail
+	int unsigned num_transacciones;
+	int unsigned num_pass;
+	int unsigned num_bug;
+	int unsigned num_fail;
+	int unsigned conteo_por_opcode[fpu_op_code_e];
+
 	// Prototipos de funciones del scoreboard
 	extern function new(string name="fpu_scoreboard_c", uvm_component parent);
 	extern virtual function void build_phase(uvm_phase phase);
 	extern virtual function void start_of_simulation_phase(uvm_phase phase);
 	// TODO: flags esperadas, bug_conocido, archivo CSV de salida
 	extern protected function void flags_esperadas_dut(
-		input  fpu_op_code_e       dut_op_code_i,
-		input  fpu_ref_resultado_s dut_resultado,
-		output logic               dut_exp_overflow,
-		output logic               dut_exp_underflow,
-		output logic               dut_exp_invalid
+		input  fpu_op_code_e       op_code_i,
+		input  fpu_ref_resultado_s reference_model_s,
+		output logic               dut_overflow_esperado,
+		output logic               dut_underflow_esperado,
+		output logic               dut_invalid_esperado
 	);
 	extern protected function bit es_bug_conocido(fpu_seq_item_c item);
-	extern virtual task write(fpu_seq_item_c item);
+	extern virtual task write(fpu_seq_item_c item_dut);
 	extern virtual function void report_phase(uvm_phase phase);
 
 endclass: fpu_scoreboard_c
@@ -94,7 +103,7 @@ function void fpu_soreboard_c::flags_esperadas_dut(
 	bit resultado_es_subnormal;
 	bit resultado_es_cero;
 
-	es_opcode_comparacion      = ( op_code_i == FEQ || op_code_i == FLET || op_code_i == FLE );
+	es_opcode_comparacion  = ( op_code_i == FEQ || op_code_i == FLT || op_code_i == FLE );
 	resultado_es_qnan      = ( reference_model_s.resultado == C_QNAN );
 	resultado_es_subnormal = ( reference_model_s.resultado[30:23] == 8'h00 ) && ( referene_model.resultado[22:0] != '0);
 	resultado_es_cero      = ( reference_model_s.resultado[30:0] == '0 );
@@ -125,6 +134,42 @@ endfunction : flags_esperadas_dut
 task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	fpu_ref_resultado_s reference_model_s; // respuesta completa (resultado + flag) del modelo
 
+	bit es_opcode_comparacion; // opcode: FEQ/FLT/FLE
+	bit resultado_es_qnan;     // resultado reference == qNaN canónico
+	bit resultado_es_infinito; // resultado golden == ±Inf
+
+	// clasificación por campo: resultado observado del dut coincide con los esperado?
+	bit coincide_resultado;
+	bit coincide_overflow;
+	bit coincide_underflow;
+	bit coincide_invalid;
+
+	// banderas que el dur debería marcar, las llena flags_esperadas_dut
+	logic overflow_esperado;
+	logic underflow_esperado;
+	logic invalid_esperado;
+	string clasificacion;
+
+	numm_trasacciones++;
+	conteo_por_opcode[item_dut.op_code_i]++;
+	es_opcode_comparacion = ( item_dut.op_code_i == FEQ ) || 
+							( item_dut.op_code_i == FLT ) || 
+							( item_dut.op_code_i == FLE); 
+
+
+	// --- 1. Modelo de referencia (SoftFloat vía DPI-C) ---
+	reference_model_s = fpu_ref_calcular( item_dut.op_code_i,
+										  item_dut.fp_a_i,
+										  item_dut.fp_b_i,
+										  item_dut.fp_c_i,
+										  item_dut.r_mode_i );
+	// clasificar/ovservar el resultado
+	resultado_es_qnan     = ( reference_model_s.resultado == CQNAN );
+	resultado_es_infinito = ( reference_model_s.resultado[30:23] == 8'hFF) &&
+							( reference_model_s.resultado [22:0] == '0 ); 
+
+	// --- 2. Banderas esperadas según la semántica del DUT ---
+	// --- 3. Comparación EXACTA (sin tolerancia de 1 ULP) ---
 
 endtask
 

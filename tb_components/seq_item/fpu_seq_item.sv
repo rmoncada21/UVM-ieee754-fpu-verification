@@ -1,10 +1,10 @@
 class fpu_seq_item_c extends uvm_sequence_item;
 	// entradas 
 	rand fpu_op_code_e op_code_i;
-	rand fpu_r_mode_e r_mode_i;
 	rand logic [C_FP_WIDTH-1:0] fp_a_i;
 	rand logic [C_FP_WIDTH-1:0] fp_b_i;
 	rand logic [C_FP_WIDTH-1:0] fp_c_i;
+	rand fpu_r_mode_e r_mode_i;
 
 	// salidas
 	logic [C_FP_WIDTH-1:0] fp_result_o;
