@@ -57,9 +57,9 @@ task fpu_sequence_arith_normal_c::body();
         finish_item(item);
 
         `uvm_info(get_type_name(),
-            $sformatf("Item %0d enviado: op=%s a=%8h b=%8h c=%8h rm=%s",
-                i, item.op_code_i.name(), item.fp_a_i, item.fp_b_i,
-                item.fp_c_i, item.r_mode_i.name()),
+            $sformatf("Item %0d enviado: opcode=%s rm=%s fp_a=%8h fp_b=%8h fp_c=%8h",
+                i, item.op_code_i.name(), item.r_mode_i.name()),
+                item.fp_a_i, item.fp_b_i, item.fp_c_i,
             UVM_HIGH)
     end
 

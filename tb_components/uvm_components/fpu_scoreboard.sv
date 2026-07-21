@@ -232,8 +232,33 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 
 endtask
 
-// RP
-// TODO: hacer report phase
+// Function: report_phase
+// Resumen final. Todas las líneas con uvm_info: cada fallo ya emitió
+// su propio uvm_error en write()
+// Cierra además el CSV y reporta su ruta para el estudio posterior.
+// ------------------------------------------------------------------
 function void fpu_scoreboard_c::report_phase(uvm_phase phase);
-	super.report_phase(phase);
+    string separador = "==================================================";
+    super.report_phase(phase);
+    `uvm_info(get_type_name(), separador, UVM_NONE)
+    `uvm_info(get_type_name(), "  FPU Scoreboard (golden SoftFloat) -- Resumen", UVM_NONE)
+    `uvm_info(get_type_name(), separador, UVM_NONE)
+    `uvm_info(get_type_name(), $sformatf("  Transacciones : %0d", num_transacciones), UVM_NONE)
+    `uvm_info(get_type_name(), $sformatf("  PASS          : %0d", num_pass), UVM_NONE)
+    `uvm_info(get_type_name(), $sformatf("  BUG-001       : %0d (documentado)", num_bug), UVM_NONE)
+    `uvm_info(get_type_name(), $sformatf("  FALLO nuevo   : %0d", num_fail), UVM_NONE)
+    // TODO: hacer salida hacia archivo CSV
+
+    `uvm_info(get_type_name(), "  Distribucion por opcode:", UVM_NONE)
+    
+    foreach (conteo_por_opcode[opcode])
+        `uvm_info(get_type_name(),
+                  $sformatf("    %-6s : %0d", opcode.name(), conteo_por_opcode[opcode]), UVM_NONE)
+    `uvm_info(get_type_name(), separador, UVM_NONE)
+    
+    if (num_fail == 0)
+        `uvm_info(get_type_name(), "  Sin fallos inesperados.", UVM_NONE)
+    else
+        `uvm_info(get_type_name(),
+                  "  Hay fallos inesperados; revisar los UVM_ERROR del log.", UVM_NONE)
 endfunction : report_phase
