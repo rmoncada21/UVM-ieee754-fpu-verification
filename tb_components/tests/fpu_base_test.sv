@@ -46,7 +46,9 @@ function void fpu_base_test_c::build_phase(uvm_phase phase);
 		
 	// creacion del ambiente
 	fpu_env = fpu_env_c::type_id::create("fpu_env", this);
-		
+	
+	uvm_config_db#(int)::set(this, "fpu_env.fpu_scoreboard", "semilla", $get_initial_random_seed());
+
 	`uvm_info(this.get_type_name(),
 			"FPU_ENV creado desde fpu_base_test",
 			UVM_LOW);

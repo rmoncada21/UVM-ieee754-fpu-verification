@@ -13,8 +13,7 @@ LOGS_TESTS := $(LOGS)/tests
 LOGS_COV   := $(LOGS)/cov
 WARNINGS   := $(LOGS)/warnings
 REPORT_CSV := reportes_csv
-
-DIRS       := $(BIN) $(LOGS_SIM) $(LOGS_TESTS) $(LOGS_COV) $(WARNINGS)
+DIRS       := $(BIN) $(LOGS_SIM) $(LOGS_TESTS) $(LOGS_COV) $(WARNINGS) $(REPORT_CSV)
 
 $(DIRS):
 	mkdir -p $@
@@ -34,7 +33,7 @@ TIMEOUT := 5000000,YES
 # make testbench R=1    para compilación recursiva (-R)
 MSG_FORMAT := $(if $(filter 1,$(ANSI)),+define+MSG_ANSI_FORMAT)
 RECURSIVE  := $(if $(filter 1,$(R)),-R)
-
+CSV_KNOB   := ON
 #----------------------------
 # vcs - compilador/simulador
 #----------------------------

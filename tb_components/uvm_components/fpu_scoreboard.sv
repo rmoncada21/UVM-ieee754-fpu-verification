@@ -25,6 +25,9 @@
 class fpu_scoreboard_c extends uvm_scoreboard;
 	`uvm_component_utils(fpu_scoreboard_c)
 	
+	// semilla obtenida del fpu base test
+	int semilla;
+
 	// uvm_tlm_analysis_fifo ¿?
 	// proviene del monitor, conectado en el env
 	uvm_analysis_imp #(fpu_seq_item_c, fpu_scoreboard_c) tlm_scb_aimp;
@@ -38,6 +41,7 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	// Formato: encabezado + una fila por transacción.
 	bit csv_habilitado = 1'b1;
 	string csv_ruta    = "fpu_scoreboard_results.csv";
+	string csv_knob    = "OFF";
 	protected int csv_signal_open = 0;
 
 	// Contadores de clasificación en tres cubos + distribución por opcode.
@@ -91,6 +95,9 @@ function void fpu_scoreboard_c::build_phase(uvm_phase phase);
 	super.build_phase(phase);
 	tlm_scb_aimp = new("tlm_scb_aimp", this);
 
+	if(!uvm_config_db#(int)::get(this, "", "semilla", semilla))
+		`uvm_warning(get_type_name(), "Semilla not FOUND en soreaboard ");
+
 	`uvm_info(this.get_type_name(),
 			"TLM - uvm_analysis_imp: tlm_scb_aimp creado",
 			UVM_LOW)
@@ -102,6 +109,7 @@ function void fpu_scoreboard_c::start_of_simulation_phase(uvm_phase phase);
 	`uvm_info(this.get_type_name(),
 		"Scoreboard, modelo de referencia DPI-C cargado",
 		UVM_LOW)
+	csv_abrir();
 endfunction : start_of_simulation_phase
 
 // flags
@@ -167,13 +175,15 @@ endfunction : es_bug_conocido
 // enteros 0/1, patrones de bits en hex de 8 dígitos SIN prefijo 0x
 // (leer en Python con int(x, 16)), tiempo en unidades del timescale.
 function void fpu_scoreboard_c::csv_abrir();
-    if ($test$plusargs("SCB_CSV_OFF"))
-        csv_habilitado = 1'b0;
+    void'($value$plusargs("SCB_CSV_KNOB=%s",csv_knob));
+    csv_habilitado = (csv_knob == "ON");
+
     void'($value$plusargs("SCB_CSV=%s", csv_ruta));
     if (!csv_habilitado)
         return;
 
     csv_signal_open = $fopen(csv_ruta, "w");
+
     if (csv_signal_open == 0) begin
         csv_habilitado = 1'b0;
         `uvm_warning(get_type_name(), $sformatf(

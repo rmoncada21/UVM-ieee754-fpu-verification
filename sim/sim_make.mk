@@ -7,6 +7,8 @@ define run_uvm_test
 		+UVM_TESTNAME=$(strip $(1))_c \
 		+UVM_VERBOSITY=$(VERBOSITY) \
 		+ntb_random_seed_automatic \
+		+SCB_CSV_KNOB=$(CSV_KNOB) \
+		+SCB_CSV=$(REPORT_CSV)/$(strip $(1))_$(FECHA).csv \
 		-l ../$(LOGS_SIM)/$(strip $(1)).log \
 		| tee ../$(LOGS_TESTS)/$(strip $(1))_$(FECHA).log
 endef
