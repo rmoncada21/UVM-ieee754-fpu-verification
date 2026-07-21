@@ -8,8 +8,8 @@
  *   del agente) y las compara contra el modelo de referencia DPI-C
  *   (fpu_ref_calcular() / fpu_ref_resultado_s, fpu_types_pkg). La comparación
  *   es EXACTA (sin tolerancia de 1 ULP): resultado bit a bit y
- *   banderas derivadas con la semántica OPERATIVA del DUT no el NV/OV
- *   IEEE puro vía flags_esperadas_dut() (comparaciones fuerzan todo a
+ *   banderas derivadas con la semántica OPERATIVA del DUT ?no el NV/OV
+ *   IEEE puro? vía flags_esperadas_dut() (comparaciones fuerzan todo a
  *   0 por BUG-004; aritmética deriva uf de exponente 0 e inv como
  *   qNaN|ov|uf por BUG-003). Cada transacción se clasifica en tres
  *   cubos: num_pass, num_bug (firma BUG-001 reconocida por
@@ -32,6 +32,13 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	// qNaN canónico RISC-V
 	localparam logic [31:0] C_QNAN = 32'h7FC0_0000;
 
+	// Volcado CSV de resultados para análisis posterior
+	// csv_ruta se puede sobreescribir con el plusarg +SCB_CSV=<ruta> 
+	// el volcado completo se desactiva con +SCB_CSV_OFF. 
+	// Formato: encabezado + una fila por transacción.
+	bit csv_habilitado = 1'b1;
+	string csv_ruta    = "fpu_scoreboard_results.csv";
+	protected int csv_signal_open = 0;
 
 	// Contadores de clasificación en tres cubos + distribución por opcode.
 	// clasificación en tres parametros
@@ -55,6 +62,19 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 		output logic               dut_invalid_esperado
 	);
 	extern protected function bit es_bug_conocido(fpu_seq_item_c item_dut);
+	extern protected function void csv_abrir();
+	extern protected function void csv_linea(
+	    input fpu_seq_item_c      item_dut,
+	    input fpu_ref_resultado_s reference_model_s,
+	    input logic               overflow_esperado,
+	    input logic               underflow_esperado,
+	    input logic               invalid_esperado,
+	    input bit                 coincide_resultado,
+	    input bit                 coincide_overflow,
+	    input bit                 coincide_underflow,
+	    input bit                 coincide_invalid,
+	    input string              clasificacion
+	);
 	extern virtual task write(fpu_seq_item_c item_dut);
 	extern virtual function void report_phase(uvm_phase phase);
 
@@ -138,12 +158,75 @@ function automatic bit fpu_scoreboard_c::es_bug_conocido(fpu_seq_item_c item_dut
     return op_usa_multiplicador && (operando_a_subnormal || operando_b_subnormal);
 endfunction : es_bug_conocido
 
+// Function: csv_abrir
+// Abre el archivo CSV de resultados y escribe la fila de encabezado.
+// Se invoca desde start_of_simulation_phase. Plusargs desde terminal:
+//   +SCB_CSV=<ruta>  sobreescribe csv_ruta
+//   +SCB_CSV_OFF     desactiva el volcado por completo
+// Formato: banderas y clasificaión por campo como
+// enteros 0/1, patrones de bits en hex de 8 dígitos SIN prefijo 0x
+// (leer en Python con int(x, 16)), tiempo en unidades del timescale.
+function void fpu_scoreboard_c::csv_abrir();
+    if ($test$plusargs("SCB_CSV_OFF"))
+        csv_habilitado = 1'b0;
+    void'($value$plusargs("SCB_CSV=%s", csv_ruta));
+    if (!csv_habilitado)
+        return;
+
+    csv_signal_open = $fopen(csv_ruta, "w");
+    if (csv_signal_open == 0) begin
+        csv_habilitado = 1'b0;
+        `uvm_warning(get_type_name(), $sformatf(
+            "No se pudo abrir '%s'; volcado CSV desactivado", csv_ruta))
+        return;
+    end
+	// TODO: agregar seed
+    $fdisplay(csv_signal_open,
+        {"idx,tiempo,op,rm,fp_a,fp_b,fp_c,dut_res,dut_cmp,ref_result,",
+		 "dut_ov,dut_uf,dut_inv,ref_ov,ref_uf,ref_inv,",
+         "ok_res,ok_ov,ok_uf,ok_inv,clasificacion"});
+    `uvm_info(get_type_name(),
+        $sformatf("Volcado CSV de resultados en '%s'", csv_ruta), UVM_LOW)
+endfunction : csv_abrir
+
+// Function: csv_linea
+// Vuelca una transacción ya clasificada como fila del CSV (una fila
+// por write()). Esquema plano y uniforme para las 8 operaciones: en
+// comparaciones el bit útil viaja en dut_cmp y en ref_result[0]; en
+// aritmética dut_cmp es indiferente. Los coincide_* se exportan con
+// las relajaciones ya aplicadas (qNaN/Inf, knobs chequear_*), de modo
+// que un script en Python no tenga que re-implementar esa lógica.
+function void fpu_scoreboard_c::csv_linea(
+    input fpu_seq_item_c      item_dut,
+    input fpu_ref_resultado_s reference_model_s,
+    input logic               overflow_esperado,
+    input logic               underflow_esperado,
+    input logic               invalid_esperado,
+    input bit                 coincide_resultado,
+    input bit                 coincide_overflow,
+    input bit                 coincide_underflow,
+    input bit                 coincide_invalid,
+    input string              clasificacion
+);
+    if (!csv_habilitado || csv_signal_open == 0)
+        return;
+    $fdisplay(csv_signal_open, $sformatf(
+        "%0d,%0d,%s,%s,%08h,%08h,%08h,%08h,%0b,%08h,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%s",
+        num_transacciones, $time,
+        item_dut.op_code_i.name(), item_dut.r_mode_i.name(),
+        item_dut.fp_a_i, item_dut.fp_b_i, item_dut.fp_c_i,
+        item_dut.fp_result_o, item_dut.cmp_result_o, reference_model_s.resultado,
+        item_dut.overflow_o, item_dut.underflow_o, item_dut.invalid_o,
+        overflow_esperado, underflow_esperado, invalid_esperado,
+        coincide_resultado, coincide_overflow, coincide_underflow, coincide_invalid,
+        clasificacion));
+endfunction : csv_linea
+
 // Write
-// TODO: implementar funcion write
 // Function: write
 // Callback del analysis_imp - monitor; UVM lo invoca por cada transacción que
 // publica el monitor. Cinco pasos: reference -> banderas esperadas ->
-// comparación EXACTA (sin tolerancia de 1 ULP) -> veredicto -> volcado CSV.
+// comparación EXACTA (sin tolerancia de 1 ULP) -> clasificación -> volcado CSV.
 task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	fpu_ref_resultado_s reference_model_s; // respuesta completa (resultado + flag) del modelo
 
@@ -246,7 +329,10 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
     end
 
 	// --- 5. Volcado CSV para análisis posterior ---
-
+	csv_linea(item_dut, reference_model_s,
+              overflow_esperado, underflow_esperado, invalid_esperado,
+              coincide_resultado, coincide_overflow, coincide_underflow, coincide_invalid,
+              clasificacion);
 endtask
 
 // Function: report_phase
