@@ -54,7 +54,7 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 		output logic               dut_underflow_esperado,
 		output logic               dut_invalid_esperado
 	);
-	extern protected function bit es_bug_conocido(fpu_seq_item_c item);
+	extern protected function bit es_bug_conocido(fpu_seq_item_c item_dut);
 	extern virtual task write(fpu_seq_item_c item_dut);
 	extern virtual function void report_phase(uvm_phase phase);
 
@@ -92,7 +92,7 @@ endfunction : start_of_simulation_phase
 //   - Comparaciones: todo a 0 (BUG-004).
 //   - Aritmética: ov = OV de IEEE (coincide); uf = exponente 0
 //     (subnormal o cero); inv = qNaN | ov | uf (fórmula del DUT, BUG-003).
-function void fpu_soreboard_c::flags_esperadas_dut(
+function void fpu_scoreboard_c::flags_esperadas_dut(
 	input  fpu_op_code_e       op_code_i,
 	input  fpu_ref_resultado_s reference_model_s, // respuesta completa (resultado + flag) del modelo
 	output logic               dut_overflow_esperado,
@@ -106,7 +106,7 @@ function void fpu_soreboard_c::flags_esperadas_dut(
 
 	es_opcode_comparacion  = ( op_code_i == FEQ || op_code_i == FLT || op_code_i == FLE );
 	resultado_es_qnan      = ( reference_model_s.resultado == C_QNAN );
-	resultado_es_subnormal = ( reference_model_s.resultado[30:23] == 8'h00 ) && ( referene_model.resultado[22:0] != '0);
+	resultado_es_subnormal = ( reference_model_s.resultado[30:23] == 8'h00 ) && ( reference_model_s.resultado[22:0] != '0);
 	resultado_es_cero      = ( reference_model_s.resultado[30:0] == '0 );
 
 	if (es_opcode_comparacion) begin
@@ -122,9 +122,21 @@ function void fpu_soreboard_c::flags_esperadas_dut(
 
 endfunction : flags_esperadas_dut
 
-// Bug del ambiente
-// function bit fpu_soreboard_c::es_bug_conocido(fpu_seq_item_c item);
-// endfunction : es_bug_conocido
+// Function: es_bug_conocido
+// Reconoce la "firma" de la familia BUG-001: operando subnormal en una
+// operación que pasa por fp_mul
+function automatic bit fpu_scoreboard_c::es_bug_conocido(fpu_seq_item_c item_dut);
+    bit op_usa_multiplicador;   // el datapath del opcode pasa por fp_mul
+    bit operando_a_subnormal;
+    bit operando_b_subnormal;
+
+    op_usa_multiplicador = (item_dut.op_code_i == FMUL)  ||
+                           (item_dut.op_code_i == FMADD) ||
+                           (item_dut.op_code_i == FMSUB);
+    operando_a_subnormal = (item_dut.fp_a_i[30:23] == 8'h00) && (item_dut.fp_a_i[22:0] != '0);
+    operando_b_subnormal = (item_dut.fp_b_i[30:23] == 8'h00) && (item_dut.fp_b_i[22:0] != '0);
+    return op_usa_multiplicador && (operando_a_subnormal || operando_b_subnormal);
+endfunction : es_bug_conocido
 
 // Write
 // TODO: implementar funcion write
@@ -151,7 +163,12 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	logic  invalid_esperado;
 	string clasificacion;
 
-	numm_trasacciones++;
+	num_transacciones++;
+
+	$display("op_code_i = %b", item_dut.op_code_i);
+
+	if ($isunknown(item_dut.op_code_i))
+    	$fatal("Opcode con X/Z");
 	conteo_por_opcode[item_dut.op_code_i]++;
 	es_opcode_comparacion = ( item_dut.op_code_i == FEQ ) || 
 							( item_dut.op_code_i == FLT ) || 
@@ -167,9 +184,9 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 										  item_dut.fp_c_i,
 										  item_dut.r_mode_i );
 	// clasificar/ovservar el resultado
-	resultado_es_qnan     = ( reference_model_s.resultado == CQNAN );
+	resultado_es_qnan     = ( reference_model_s.resultado == C_QNAN );
 	resultado_es_infinito = ( reference_model_s.resultado[30:23] == 8'hFF) &&
-							( reference_model_s.resultado [22:0] == '0 ); 
+							( reference_model_s.resultado[22:0]  == '0 ); 
 
 	// --- 2. Banderas esperadas según la semántica del DUT ---
 	flags_esperadas_dut( // entradas a la función
@@ -190,9 +207,9 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 		coincide_underflow = (item_dut.underflow_o  === 1'b0); 
 		coincide_invalid   = (item_dut.invalid_o    === 1'b0); 
 	end else begin // si no es de comparación sucedió alguna operación arimética
-		coincide_resultado = (item_dut.fp_result_o  === reference_model_s.resultado)
+		coincide_resultado = (item_dut.fp_result_o  === reference_model_s.resultado);
 		
-		coincide_overflow  = (item_dut.overflow_o === overflow_esperado)
+		coincide_overflow  = (item_dut.overflow_o === overflow_esperado);
 		
 		coincide_underflow = (item_dut.underflow_o === underflow_esperado) || resultado_es_qnan || resultado_es_infinito;
 
@@ -205,7 +222,7 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 		clasificacion = "PASS";
 	end 
 	else if (es_bug_conocido(item_dut)) begin
-		num_bag++; // documentado (familia BUG-001), no es un fallo nuevo
+		num_bug++; // documentado (familia BUG-001), no es un fallo nuevo
 		clasificacion = "BUG";
 		// imprimir mensaje
 		`uvm_warning(get_type_name(), $sformatf(
@@ -256,9 +273,10 @@ function void fpu_scoreboard_c::report_phase(uvm_phase phase);
                   $sformatf("    %-6s : %0d", opcode.name(), conteo_por_opcode[opcode]), UVM_NONE)
     `uvm_info(get_type_name(), separador, UVM_NONE)
     
-    if (num_fail == 0)
+    if (num_fail == 0) begin
         `uvm_info(get_type_name(), "  Sin fallos inesperados.", UVM_NONE)
-    else
+    end else begin
         `uvm_info(get_type_name(),
                   "  Hay fallos inesperados; revisar los UVM_ERROR del log.", UVM_NONE)
+    end
 endfunction : report_phase

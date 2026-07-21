@@ -76,7 +76,7 @@ FORCE:
 ####################################################################################
 #################### Targets: universales
 all: clean_all build_reference_model_obj testbench
-remake: build_reference_model_obj testbench
+remake: clean build_reference_model_obj testbench
 include scripts/.ansi_code.mk
 include sim/sim_make.mk
 

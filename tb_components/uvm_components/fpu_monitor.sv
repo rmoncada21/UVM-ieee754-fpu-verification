@@ -61,6 +61,7 @@ task fpu_monitor_c::run_phase(uvm_phase phase);
 
 	forever begin : forever_loop
 		@(posedge bif.clk);
+			#1; // delay
 			// rastrear las entradas
 			item.op_code_i = fpu_op_code_e'(bif.op_code_i);
 			item.r_mode_i = fpu_r_mode_e'(bif.r_mode_i);
