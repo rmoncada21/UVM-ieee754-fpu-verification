@@ -9,8 +9,8 @@ define run_uvm_test
 		+ntb_random_seed_automatic \
 		+SCB_CSV_KNOB=$(CSV_KNOB) \
 		+SCB_CSV=$(REPORT_CSV)/$(strip $(1))_$(FECHA).csv \
-		-l ../$(LOGS_SIM)/$(strip $(1)).log \
-		| tee ../$(LOGS_TESTS)/$(strip $(1))_$(FECHA).log
+		-l $(LOGS_SIM)/$(strip $(1)).log \
+		| tee $(LOGS_TESTS)/$(strip $(1))_$(FECHA).log
 endef
 
 all_test: run_fpu_base_test run_fpu_test_arith_normal run_fpu_test_cmp \

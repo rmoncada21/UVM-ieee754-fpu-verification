@@ -1,8 +1,9 @@
 `timescale 1ns/1ps
 
 module tb_top;
-
-
+    import uvm_pkg::*;
+    import fpu_dpic_ref_model_pkg::*;  // test_dpic()
+    import fpu_env_pkg::*;             // fuerza elaboración de la factory
 
     // instancia del la interface de la fpu
     fpu_if bif(); // bus interface b-if
@@ -29,17 +30,12 @@ module tb_top;
             "vif", // identifcador 
             bif    // valor del identificador
         );
-        // Prueba simpl de DPIC
-        test_dpic(8);
-        
+
         // iniciar los test
         `CUSTOM_INFO("TOP TESTBENCH",
                     "test antes de run_test()",
                     `CYAN);
 
-        
-        // `INFO_COLOR("test","MENSAJE" ,`CYAN, UVM_LOW);
-        // run_test();
         run_test();
         $finish;
     end

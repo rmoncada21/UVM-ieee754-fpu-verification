@@ -32,6 +32,6 @@ package fpu_types_pkg;
 
 endpackage: fpu_types_pkg;
 
-import fpu_types_pkg::*;
+// import fpu_types_pkg::*;
 
 `endif // FPU_TYPES_PKG

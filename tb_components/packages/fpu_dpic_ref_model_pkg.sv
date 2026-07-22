@@ -95,6 +95,6 @@ package fpu_dpic_ref_model_pkg;
 
 endpackage : fpu_dpic_ref_model_pkg
 
-import fpu_dpic_ref_model_pkg::*;
+// import fpu_dpic_ref_model_pkg::*;
 
 `endif // FPU_DPIC_REF_MODEL_PKG

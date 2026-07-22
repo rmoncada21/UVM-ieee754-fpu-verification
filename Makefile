@@ -120,6 +120,7 @@ run_all: testbench_sim all_test
 clean:
 	rm -f ucli.key
 	rm -rf $(MDIR)
+	rm -rf $(LOGS)
 	find $(SIM) -mindepth 1 ! -name "sim_make.mk" -delete
 
 clean_all: clean

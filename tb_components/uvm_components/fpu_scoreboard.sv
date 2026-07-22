@@ -79,7 +79,7 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	    input bit                 coincide_invalid,
 	    input string              clasificacion
 	);
-	extern virtual task write(fpu_seq_item_c item_dut);
+	extern virtual function write(fpu_seq_item_c item_dut);
 	extern virtual function void report_phase(uvm_phase phase);
 
 endclass: fpu_scoreboard_c
@@ -237,7 +237,7 @@ endfunction : csv_linea
 // Callback del analysis_imp - monitor; UVM lo invoca por cada transacción que
 // publica el monitor. Cinco pasos: reference -> banderas esperadas ->
 // comparación EXACTA (sin tolerancia de 1 ULP) -> clasificación -> volcado CSV.
-task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
+function fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	fpu_ref_resultado_s reference_model_s; // respuesta completa (resultado + flag) del modelo
 
 	bit es_opcode_comparacion; // opcode: FEQ/FLT/FLE
@@ -258,7 +258,8 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 
 	num_transacciones++;
 
-	$display("op_code_i = %b", item_dut.op_code_i);
+	// deteccion de datos entrantes XXX/ZZZ
+	// $display("op_code_i = %b", item_dut.op_code_i);
 
 	if ($isunknown(item_dut.op_code_i))
     	$fatal("Opcode con X/Z");
@@ -328,7 +329,7 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
         num_fail++;      // fallo inesperado: debería quedar en 0
         clasificacion = "FAIL";
         // imprimir mensaje
-		`uvm_error(get_type_name(), $sformatf(
+		`uvm_error("FPU_SCOREBOARD", $sformatf(
             {"MISMATCH opcode=%s rm=%s fp_a=%08h fp_b=%08h fp_c=%08h | DUT=%08h reference=%08h",
              " | flags DUT overflow=%0b underflow=%0b invalid=%0b esperadas overflow=%0b underflow=%0b invalid=%0b"},
             item_dut.op_code_i.name(), item_dut.r_mode_i.name(),
@@ -343,7 +344,7 @@ task fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
               overflow_esperado, underflow_esperado, invalid_esperado,
               coincide_resultado, coincide_overflow, coincide_underflow, coincide_invalid,
               clasificacion);
-endtask
+endfunction
 
 // Function: report_phase
 // Resumen final. Todas las líneas con uvm_info: cada fallo ya emitió

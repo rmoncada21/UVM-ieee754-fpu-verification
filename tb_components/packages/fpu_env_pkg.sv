@@ -33,8 +33,8 @@ package fpu_env_pkg;
 
 
 endpackage
-import uvm_pkg::*;
-import fpu_types_pkg::*;
-import fpu_dpic_ref_model_pkg::*;
-import fpu_types_constraints_pkg::*;
+// import uvm_pkg::*;
+// import fpu_types_pkg::*;
+// import fpu_dpic_ref_model_pkg::*;
+// import fpu_types_constraints_pkg::*;
 `endif

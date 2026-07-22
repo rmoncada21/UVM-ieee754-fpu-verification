@@ -19,6 +19,10 @@
 class fpu_base_test_c extends uvm_test;
 	`uvm_component_utils(fpu_base_test_c)
 
+	// variables para mover el archivo de salida tr_db.log de raiz a logs
+	uvm_text_tr_database base_datos_tr;
+	uvm_coreservice_t    uvm_servicio;
+
 	// handler/puntero al ambiente
 	fpu_env_c fpu_env;
 
@@ -29,7 +33,6 @@ class fpu_base_test_c extends uvm_test;
 	extern virtual function void start_of_simulation_phase(uvm_phase phase);
 	extern virtual task run_phase(uvm_phase phase);
 	extern virtual function fpu_base_sequence_c crear_secuencia();
-	// TODO : implementar report_phase
 
 endclass :  fpu_base_test_c
 
@@ -43,19 +46,27 @@ endfunction : new
 // instanciar los hijos del componente via factory de UVM
 function void fpu_base_test_c::build_phase(uvm_phase phase);
 	super.build_phase(phase);
-		
+
+	// redirigir la base de datos de transaction recording de UVM
+	// (por defecto genera tr_db.log raiz)
+	base_datos_tr   = new("base_datos_tr");
+	base_datos_tr.set_file_name("logs/tr_db.log");
+	uvm_servicio = uvm_coreservice_t::get();
+	uvm_servicio.set_default_tr_database(base_datos_tr);
+
 	// creacion del ambiente
 	fpu_env = fpu_env_c::type_id::create("fpu_env", this);
-	
-	uvm_config_db#(int)::set(this, "fpu_env.fpu_scoreboard", "semilla", $get_initial_random_seed());
+
+	uvm_config_db#(int)::set(this, "fpu_env.fpu_scoreboard",
+	                        "semilla", $get_initial_random_seed());
 
 	`uvm_info(this.get_type_name(),
-			"FPU_ENV creado desde fpu_base_test",
-			UVM_LOW);
+	         "FPU_ENV creado desde fpu_base_test",
+	         UVM_LOW);
 
 	// variable para crear el agente activo
 	uvm_config_db#(uvm_active_passive_enum)::set(
-		this, "fpu_env.fpu_agent", "is_active", UVM_ACTIVE);
+	  this, "fpu_env.fpu_agent", "is_active", UVM_ACTIVE);
 
 endfunction: build_phase
 
