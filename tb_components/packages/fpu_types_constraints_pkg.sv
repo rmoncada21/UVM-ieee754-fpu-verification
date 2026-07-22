@@ -32,17 +32,35 @@ package fpu_types_constraints_pkg;
 	localparam logic [C_EXP_WIDTH-1:0] C_EXP_BANDA_MINIMA = 8'd70;
 	localparam logic [C_EXP_WIDTH-1:0] C_EXP_BANDA_MAXIMA = 8'd184;
 
+    // exponentes dirigidos para flag_arith (testplan sec. 2.2.1.2):
+    // 191+191-127 = 255 -> el producto de dos operandos con exp >= 191 siempre desborda; 
+    // 63+63-127+1 = 0 -> el producto de dos operandos
+    // con exp <= 63 siempre es tiny (bajo el minimo normal)
+    localparam logic [C_EXP_WIDTH-1:0] C_EXP_OVF_PROD_MIN = 8'd191;
+    localparam logic [C_EXP_WIDTH-1:0] C_EXP_UDF_PROD_MAX = 8'd63;
+
+
+
     // clasificacion IEEE 754 de un operando binary32
      typedef enum int {
-        CLASE_CERO      = 0, // ±0
-        CLASE_SUBNORMAL = 1, // exp = 0, mantisa != 0
-        CLASE_NORMAL    = 2, // exp en [1, 254]
-        CLASE_INF       = 3, // ±inf
-        CLASE_QNAN      = 4, // NaN silencioso (mantisa[22] = 1)
-        CLASE_SNAN      = 5, // NaN señalizador (mantisa[22] = 0, payload != 0)
+        CLASE_CERO      = 0,    // ±0
+        CLASE_SUBNORMAL = 1,    // exp = 0, mantisa != 0
+        CLASE_NORMAL    = 2,    // exp en [1, 254]
+        CLASE_INF       = 3,    // ±inf
+        CLASE_QNAN      = 4,    // NaN silencioso (mantisa[22] = 1)
+        CLASE_SNAN      = 5,    // NaN señalizador (mantisa[22] = 0, payload != 0)
 		// bandas  - subconjuntos de valores
-		CLASE_NORMAL_BANDA = 6 // normal en banda segura [70,184]
+		CLASE_NORMAL_BANDA = 6,     // normal en banda segura [70,184]
+        CLASE_NORMAL_OVF_SUMA = 7,  // normal con exp = 254 overflow en suma/resta
+        CLASE_NORMAL_OVF_PROD = 8,  // normal con exp en [191, 254] - overflow en producto
+        CLASE_NORMAL_UDF_PROD = 9   // normal con exp en [1, 63] underflow en producto
      } fpu_clase_operando_e;
+
+    typedef enum int{
+        FAM_OVERFLOW  = 0, // resultado supera el máxximo finito
+        FAM_UNDERFLOW = 1, // resultado tiny con perdida de exactitud 
+        FAM_INVALID   = 2  // operación invalida IEEE (0*inf, inf-inf, NaN entrante)
+    } fpu_familia_flag_e;
 
 endpackage
 

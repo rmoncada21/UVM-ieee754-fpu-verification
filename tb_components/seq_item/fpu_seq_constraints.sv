@@ -30,6 +30,8 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 		if (signo_forzado >= 0) signo_rand == signo_forzado[0];
 	}
 
+	/*Arith normal*/
+
 	// Constraints por clase IEEE 754 (desactivadas por defecto)
 	// ±0 : exponente 0, mantisa 0
 	constraint cn_cero {
@@ -58,6 +60,30 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 		};
 	}
 
+	/* FLAG ARITH NORMAL TEST */
+	// normal con exponente maximo (254): la suam efectiva de dos de estos
+	// siempre excede al máximo finito -> overflow
+	constraint cn_normal_ovf_suma {
+		exponente_rand == C_EXP_MAX_NORMAL;
+	}
+
+	// normal alto [191, 254]: el producto de dos de estos siempre desborda
+	// (exp_a + exp_b - 127 >= 255 ) -> overflow
+	constraint cn_normal_ovf_prod {
+		exponente_rand inside {
+			[C_EXP_OVF_PRO_MIN : C_EXP_MAX_NORMAL]
+		};
+	}
+   
+	// normal bajo [1, 63]: el producto de dos de estos siempre es tiny
+    // (exp_a + exp_b - 127 + 1 <=0 ) -> underflow
+    constraint cn_normal_udf_prod {
+		exponente_rand inside {
+			[C_EXP_MIN_NORMAL : C_EXP_UDF_PROD_MAX]
+		};
+    }
+
+   /* OTROS */
 	// ±inf : exponente 255, mantisa 0
 	constraint cn_inf {
 		exponente_rand == C_EXP_ESPECIAL;
@@ -78,6 +104,8 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 		mantisa_rand[C_MANT_WIDTH-2:0] != '0;   // payload
 	}
 
+	
+
 	// constructor: todas las clases apagadas, control desde afuera
 	function new(string name = "fpu_seq_constraints_c");
 		super.new(name);
@@ -95,6 +123,9 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 		cn_snan.constraint_mode(0);
 		// subconjuntos - bandas
 		cn_normal_banda.constraint_mode(0);
+		cn_normal_ovf_suma.constraint_mode(0);
+		cn_normal_ovf_prod.constraint_mode(0);
+		cn_normal_uvf_prod.constraint_mode(0);
 	endfunction : desactivar_clases
 
 	// Function: activar_clase
@@ -111,6 +142,9 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 			CLASE_SNAN         : cn_snan.constraint_mode(1);
 			// subconjutos - banda segura
 			CLASE_NORMAL_BANDA : cn_normal_banda.constraint_mode(1);
+			CLASE_NORMAL_OVF_SUMA : cn_normal_ovf_suma.constraint_mode(1);
+			CLASE_NORMAL_OVF_PROD : cn_normal_ovf_prod.constraint_mode(1);
+			CLASE_NORMAL_UDF_PROD : cn_normal_uvf_prod.constraint_mode(1);
 			default : `uvm_warning(get_type_name(),
 				$sformatf("Clase de operando desconocida: %0d", clase))
 		endcase
