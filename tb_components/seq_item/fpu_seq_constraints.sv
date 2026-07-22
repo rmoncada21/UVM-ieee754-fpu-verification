@@ -71,7 +71,7 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 	// (exp_a + exp_b - 127 >= 255 ) -> overflow
 	constraint cn_normal_ovf_prod {
 		exponente_rand inside {
-			[C_EXP_OVF_PRO_MIN : C_EXP_MAX_NORMAL]
+			[C_EXP_OVF_PROD_MIN : C_EXP_MAX_NORMAL]
 		};
 	}
    
@@ -125,7 +125,7 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 		cn_normal_banda.constraint_mode(0);
 		cn_normal_ovf_suma.constraint_mode(0);
 		cn_normal_ovf_prod.constraint_mode(0);
-		cn_normal_uvf_prod.constraint_mode(0);
+		cn_normal_udf_prod.constraint_mode(0);
 	endfunction : desactivar_clases
 
 	// Function: activar_clase
@@ -144,7 +144,7 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 			CLASE_NORMAL_BANDA : cn_normal_banda.constraint_mode(1);
 			CLASE_NORMAL_OVF_SUMA : cn_normal_ovf_suma.constraint_mode(1);
 			CLASE_NORMAL_OVF_PROD : cn_normal_ovf_prod.constraint_mode(1);
-			CLASE_NORMAL_UDF_PROD : cn_normal_uvf_prod.constraint_mode(1);
+			CLASE_NORMAL_UDF_PROD : cn_normal_udf_prod.constraint_mode(1);
 			default : `uvm_warning(get_type_name(),
 				$sformatf("Clase de operando desconocida: %0d", clase))
 		endcase

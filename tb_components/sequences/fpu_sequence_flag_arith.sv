@@ -26,21 +26,21 @@ class fpu_sequence_flag_arith_c extends fpu_base_sequence_c;
 
     // Prototipos de las funciones de la secuencia
     extern function new(string name = "fpu_sequence_flag_arith_c");
-    extern virtual function body();
+    extern virtual task body();
 
 endclass : fpu_sequence_flag_arith_c
 
 // Implmentación de las funciones
 function fpu_sequence_flag_arith_c::new(string name = "fpu_sequence_flag_arith_c");
     super.new(name);
-endfunction : fpu_sequence_flag_arith_c
+endfunction : new
 
 // Task: body
 // Reparto uniforme y determinista (i % 3) entre FAM_OVERFLOW,
 // FAM_UNDERFLOW (solo FMUL) y FAM_INVALID
-function fpu_sequence_flag_arith_c::body();
+task fpu_sequence_flag_arith_c::body();
     fpu_seq_item_c item;
     fpu_familia_flag_e familia;
     logic [C_FP_WIDTH-1:0] fp_a_seq;
 
-endfunction : fpu_sequence_flag_arith_c
+endtask : body
