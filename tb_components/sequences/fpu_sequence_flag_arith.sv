@@ -54,7 +54,6 @@ task fpu_sequence_flag_arith_c::body();
         item = fpu_seq_item_c::type_id::create($sformatf("item_%0d", i));
 
         start_item(item);
-
             if (familia == FAM_UNDERFLOW) begin
                 if (!item.randomize() with { op_code_i == FMUL; }) begin
                     `uvm_error(get_type_name(),
@@ -70,7 +69,7 @@ task fpu_sequence_flag_arith_c::body();
             // tercer operando por defecto normal en banda segura
             item.fp_c_i = gen_normal_banda();
 
-            case(item.op_code_i)
+            case(familia)
                 // resultado supera el máximo finito representable
                 FAM_OVERFLOW : begin
                     case(item.op_code_i)
@@ -126,9 +125,7 @@ task fpu_sequence_flag_arith_c::body();
                         end
                     endcase
                 end
-
             endcase
-
         finish_item(item);
     end
 
