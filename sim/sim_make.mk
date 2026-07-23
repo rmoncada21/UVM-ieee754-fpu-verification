@@ -15,6 +15,7 @@
 EXE_ABS := $(abspath $(EXE_SIM))
 MOSTRAR_EXE_ABS:
 	echo "$(EXE_ABS)"
+
 # tests activos; agregar aquí conforme se integren los del testplan
 TESTS_ACTIVOS := fpu_base_test fpu_test_arith_normal fpu_test_flag_arith
 

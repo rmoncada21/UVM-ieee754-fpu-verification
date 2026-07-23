@@ -1,6 +1,7 @@
+// Language: SystemVerilog
 /*
  * File:    fpu_scoreboard_c.sv
- * Project:  FPU RV32F — Verificación funcional UVM
+ * Project:  FPU RV32F  Verificación funcional UVM
  *
  * Description:
  *   Scoreboard UVM de la FPU RV32F. Recibe transacciones del monitor
@@ -35,13 +36,21 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	// qNaN canónico RISC-V
 	localparam logic [31:0] C_QNAN = 32'h7FC0_0000;
 
+	// knobs de chequeo por clase de bandera (knobs por test si hiciera falta)
+    bit chequear_overflow  = 1'b1;
+    bit chequear_underflow = 1'b1;
+    bit chequear_invalid   = 1'b1;   // contra la fórmula del DUT (BUG-003), no el NV de IEEE
+
 	// Volcado CSV de resultados para análisis posterior
-	// csv_ruta se puede sobreescribir con el plusarg +SCB_CSV=<ruta> 
-	// el volcado completo se desactiva con +SCB_CSV_OFF. 
+	// Plusargs desde terminal:
+	//   +SCB_CSV_KNOB=ON|OFF  habilita/deshabilita el volcado (por defecto OFF)
+	//   +SCB_CSV=<ruta>       sobreescribe csv_ruta
+	//   +SCB_RESUMEN=<ruta>   fila única de contadores para el manifest de regresión
 	// Formato: encabezado + una fila por transacción.
 	bit csv_habilitado = 1'b1; // habilita/deshabilita el volcado CSV
-	string csv_ruta    = "fpu_scoreboard_results.csv"; // ruta del archivo CSV de salida
-	string csv_knob    = "OFF"; // valor leído del plusarg SCB_CSV_KNOB
+	string csv_ruta         = "fpu_scoreboard_results.csv"; // ruta del archivo CSV de salida
+	string csv_ruta_resumen = ""; // Se habilita con +SCB_RESUMEN=<ruta>; sin plusarg no se escribe nada.
+	string csv_knob         = "OFF"; // valor leído del plusarg SCB_CSV_KNOB
 	protected int csv_signal_open = 0; // descriptor devuelto por $fopen (0 = fallo)
 
 	// Contadores de clasificación en tres cubos + distribución por opcode.
@@ -57,7 +66,6 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	extern function new(string name="fpu_scoreboard_c", uvm_component parent); // constructor
 	extern virtual function void build_phase(uvm_phase phase); // crea tlm_scb_aimp y obtiene la semilla
 	extern virtual function void start_of_simulation_phase(uvm_phase phase); // abre el CSV de resultados
-	// TODO: flags esperadas, bug_conocido, archivo CSV de salida
 	extern protected function void flags_esperadas_dut( // deriva las banderas esperadas por el DUT
 		input  fpu_op_code_e       op_code_i,
 		input  fpu_ref_resultado_s reference_model_s,
@@ -79,6 +87,7 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	    input bit                 coincide_invalid,
 	    input string              clasificacion
 	);
+	extern protected function void csv_resumen();
 	extern virtual function write(fpu_seq_item_c item_dut); // callback TLM, compara DUT vs referencia
 	extern virtual function void report_phase(uvm_phase phase); // imprime el resumen final
 
@@ -177,12 +186,15 @@ endfunction : es_bug_conocido
 // Function: csv_abrir
 // Abre el archivo CSV de resultados y escribe la fila de encabezado.
 // Se invoca desde start_of_simulation_phase. Plusargs desde terminal:
-//   +SCB_CSV=<ruta>  sobreescribe csv_ruta
-//   +SCB_CSV_OFF     desactiva el volcado por completo
+//   +SCB_CSV_KNOB=ON|OFF  habilita/deshabilita el volcado (por defecto OFF)
+//   +SCB_CSV=<ruta>       sobreescribe csv_ruta
+//   +SCB_RESUMEN=<ruta>   ruta del resumen; se lee ANTES del return temprano
+//                         para que el resumen sobreviva con el volcado apagado
 // Formato: banderas y clasificaión por campo como
 // enteros 0/1, patrones de bits en hex de 8 dígitos SIN prefijo 0x
 // (leer en Python con int(x, 16)), tiempo en unidades del timescale.
 function void fpu_scoreboard_c::csv_abrir();
+    void'($value$plusargs("SCB_RESUMEN=%s", csv_ruta_resumen));
     void'($value$plusargs("SCB_CSV_KNOB=%s",csv_knob));
     csv_habilitado = (csv_knob == "ON");
 
@@ -239,6 +251,26 @@ function void fpu_scoreboard_c::csv_linea(
         coincide_resultado, coincide_overflow, coincide_underflow, coincide_invalid,
         clasificacion));
 endfunction : csv_linea
+
+// Function: csv_resumen
+// Escribe UNA fila SIN encabezado con los contadores finales:
+// transacciones,num_pass,num_bug,num_fail. El Makefile le antepone
+// test y semilla y la anexa al manifest.csv de la regresión.
+function void fpu_scoreboard_c::csv_resumen();
+    int resumen_signal_open;
+
+	if (csv_ruta_resumen == "")
+        return;
+    resumen_signal_open = $fopen(csv_ruta_resumen, "w");
+    if (resumen_signal_open == 0) begin
+        `uvm_warning(get_type_name(), $sformatf(
+            "No se pudo abrir '%s'; resumen de regresion no escrito", csv_ruta_resumen))
+        return;
+    end
+    $fdisplay(resumen_signal_open, $sformatf("%0d,%0d,%0d,%0d",
+        num_transacciones, num_pass, num_bug, num_fail));
+    $fclose(resumen_signal_open);
+endfunction : csv_resumen
 
 // Write
 // Function: write
@@ -312,11 +344,16 @@ function fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	end else begin // si no es de comparación sucedió alguna operación arimética
 		coincide_resultado = (item_dut.fp_result_o  === reference_model_s.resultado);
 		
-		coincide_overflow  = (item_dut.overflow_o   === overflow_esperado);
+		coincide_overflow  = !chequear_overflow     ||
+							 (item_dut.overflow_o   === overflow_esperado);
 		
-		coincide_underflow = (item_dut.underflow_o  === underflow_esperado) || resultado_es_qnan || resultado_es_infinito;
+		// Si el resultado es qNaN/Inf, el DUT marca UF/INV
+        // espurio (inf-inf, overflow vía fp_mul) no derivable del valor.
+		coincide_underflow = !chequear_underflow    ||
+							 (item_dut.underflow_o  === underflow_esperado) || resultado_es_qnan || resultado_es_infinito;
 
-		coincide_invalid   = (item_dut.invalid_o    === invalid_esperado)   || resultado_es_qnan || resultado_es_infinito;
+		coincide_invalid   = !chequear_invalid      ||
+							 (item_dut.invalid_o    === invalid_esperado)   || resultado_es_qnan || resultado_es_infinito;
 	end
 
 	// --- 4. Clasificacion en tres parametros ---
@@ -363,13 +400,18 @@ function void fpu_scoreboard_c::report_phase(uvm_phase phase);
     string separador = "==================================================";
     super.report_phase(phase);
     `uvm_info(get_type_name(), separador, UVM_NONE)
-    `uvm_info(get_type_name(), "  FPU Scoreboard (golden SoftFloat) -- Resumen", UVM_NONE)
+    `uvm_info(get_type_name(), "  FPU Scoreboard (reference SoftFloat) -- Resumen", UVM_NONE)
     `uvm_info(get_type_name(), separador, UVM_NONE)
     `uvm_info(get_type_name(), $sformatf("  Transacciones : %0d", num_transacciones), UVM_NONE)
     `uvm_info(get_type_name(), $sformatf("  PASS          : %0d", num_pass), UVM_NONE)
     `uvm_info(get_type_name(), $sformatf("  BUG-001       : %0d (documentado)", num_bug), UVM_NONE)
     `uvm_info(get_type_name(), $sformatf("  FALLO nuevo   : %0d", num_fail), UVM_NONE)
-    // TODO: hacer salida hacia archivo CSV
+
+	if (csv_habilitado && csv_signal_open != 0) begin
+        $fclose(csv_signal_open);
+        csv_signal_open = 0;
+        `uvm_info(get_type_name(), $sformatf("  CSV: %s", csv_ruta), UVM_NONE)
+    end
 
     `uvm_info(get_type_name(), "  Distribucion por opcode:", UVM_NONE)
     
@@ -384,4 +426,6 @@ function void fpu_scoreboard_c::report_phase(uvm_phase phase);
         `uvm_info(get_type_name(),
                   "  Hay fallos inesperados; revisar los UVM_ERROR del log.", UVM_NONE)
     end
+	
+	csv_resumen();
 endfunction : report_phase
