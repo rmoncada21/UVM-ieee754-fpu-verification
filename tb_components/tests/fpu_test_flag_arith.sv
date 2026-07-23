@@ -14,7 +14,7 @@
  */
 
  class fpu_test_flag_arith_c extends fpu_base_test_c;
-    `uvm_object_utils(fpu_test_flag_arith_c)
+    `uvm_component_utils(fpu_test_flag_arith_c)
     
     // constructor de la clase
     function new(string name = "fpu_test_flag_arith_c", uvm_component parent =  null);
