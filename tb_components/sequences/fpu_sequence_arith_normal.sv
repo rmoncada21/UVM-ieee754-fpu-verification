@@ -44,16 +44,16 @@ task fpu_sequence_arith_normal_c::body();
         item = fpu_seq_item_c::type_id::create($sformatf("item_%0d", i));
 
         start_item(item);
-        // operacion aritmetica y modo de redondeo valido, aleatorios
-        if (!item.randomize() with {
-            op_code_i inside {FADD, FSUB, FMUL, FMADD, FMSUB};
-        })
-            `uvm_error(get_type_name(),
-                $sformatf("Fallo el randomize del item %0d", i))
-        // operandos normales en banda segura (signo y mantisa libres)
-        item.fp_a_i = gen_normal_banda();
-        item.fp_b_i = gen_normal_banda();
-        item.fp_c_i = gen_normal_banda();
+            // operacion aritmetica y modo de redondeo valido, aleatorios
+            if (!item.randomize() with {
+                op_code_i inside {FADD, FSUB, FMUL, FMADD, FMSUB};
+            })
+                `uvm_error(get_type_name(),
+                    $sformatf("Fallo el randomize del item %0d", i))
+            // operandos normales en banda segura (signo y mantisa libres)
+            item.fp_a_i = gen_normal_banda();
+            item.fp_b_i = gen_normal_banda();
+            item.fp_c_i = gen_normal_banda();
         finish_item(item);
 
         `uvm_info(get_type_name(),
