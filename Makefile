@@ -1,19 +1,43 @@
-# usar "make -f Makefile" desde la raíz del repo UVM; este archivo solo define
-# variables y la regla genérica de directorios (no contiene targets de trabajo)
+# target: prerrequisites
+#	command to build target
 
 SHELL := /bin/bash
-FECHA := $(shell date +%d_%H_%M_%S)
+
+
+#############################################################################
+# Identificadores de corrida
+#----------------------------
+# FECHA  : timestamp -> ordenable con ls/sort
+# REG_ID : identificador de la regresión; agrupa corridas bajo reportes/regresiones/<REG_ID>.
+#          Por defecto toma FECHA; se puede etiquetar: make regresion REG_ID=my_regression
+# SEED   : semilla explícita y reproducible; si no se fija se sortea UNA
+#          sola vez por invocación (el guard con origin evita el re-sorteo por expansión)
+FECHA := $(shell date +%Y%m%d_%H%M%S)
+REG_ID   ?= $(FECHA)
+
+ifeq ($(origin SEED), undefined)
+	SEED := $(shell od -An -N4 -tu4 /dev/urandom | tr -d ' ')
+endif
+
 #############################################################################
 # Folders del ambiente UVM
-SIM        := sim
-BIN        := bin
-LOGS       := logs
-LOGS_SIM   := $(LOGS)/sim
-LOGS_TESTS := $(LOGS)/tests
-LOGS_COV   := $(LOGS)/cov
-WARNINGS   := $(LOGS)/warnings
-REPORT_CSV := reportes_csv
-DIRS       := $(BIN) $(LOGS_SIM) $(LOGS_TESTS) $(LOGS_COV) $(WARNINGS) $(REPORT_CSV)
+# sim/      : artefactos de COMPILACIÓN (ejecutable, .daidir, logs de compile)
+# reportes/ : artefactos de EJECUCIÓN (una carpeta por regresión/test/semilla)
+SIM         := sim
+BIN         := bin
+REPORTES    := reportes
+REGRESIONES := $(REPORTES)/regresiones
+REG_DIR     := $(REGRESIONES)/$(REG_ID)
+MANIFEST    := $(REG_DIR)/manifest.csv
+ULTIMA_REG  := $(REPORTES)/ultima
+# LOGS       := logs
+# LOGS_SIM   := $(LOGS)/sim
+# LOGS_TESTS := $(LOGS)/tests
+# LOGS_COV   := $(LOGS)/cov
+# WARNINGS   := $(LOGS)/warnings
+# REPORT_CSV := reportes_csv
+
+DIRS := $(BIN) $(REPORTES)
 
 $(DIRS):
 	mkdir -p $@
@@ -21,9 +45,7 @@ $(DIRS):
 #----------------------------
 # variables generales del entorno de simulación
 #----------------------------
-# SEED   : semilla de simulación (auto -> +ntb_random_seed_automatic)
 # TIMEOUT: YES -> el timeout dentro del ambiente sobreescribe este plusarg, 5000000=5ms
-SEED    := auto
 TIMEOUT := 5000000,YES
 
 #----------------------------
@@ -42,13 +64,14 @@ TIMESCALE := 1ns/1ps
 SVFLAGS   := -Mupdate -full64 -sverilog -ntb_opts uvm-1.2
 FILELIST  := scripts/filelist.f
 EXE_SIM   := $(SIM)/testbench_sim
-LOG_TB    := $(LOGS_SIM)/testbench_compile.log
+LOG_TB    := $(SIM)/testbench_sim_compile.log
+WARNINGS  := $(SIM)/testbench_sim_compile_warnings.log
 MDIR      := $(BIN)
 DFLAGS    := -kdb -debug_acc+all -debug_region+cell+encrypt
 VERBOSITY := UVM_HIGH
 LINT      := TFIPC-L
 COVERAGE  := line+tgl+cond+fsm+branch+assert
-CM_LOG    := $(LOGS_COV)/cm.log
+CM_LOG    := $(SIM)/testbench_sim_compile_coverage.log
 
 #----------------------------
 # reference model (delegado a reference_model/Makefile)
@@ -61,12 +84,6 @@ REF_DIR := reference_model
 REF_OBJ := $(REF_DIR)/build/reference_model.o
 SF_LIB  := third_party/berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
 
-#----------------------------
-# exports hacia sim_make.mk
-#----------------------------
-# sim_make.mk se ejecuta con -C sim; estas variables deben ser visibles allí
-export LOGS_SIM LOGS_TESTS VERBOSITY SEED TIMEOUT
-
 # TARGET en blanco, útil para forzar de ser necesario la sobreescritura de un archivo
 FORCE:
 
@@ -74,8 +91,9 @@ FORCE:
 
 ####################################################################################
 #################### Targets: universales
-all: clean_all build_reference_model_obj testbench
+all: clean build_reference_model_obj testbench
 remake: clean build_reference_model_obj testbench
+
 include scripts/.ansi_code.mk
 include sim/sim_make.mk
 
@@ -85,14 +103,13 @@ _mkdir_folders: | $(DIRS)
 ####################################################################################
 ################### Modelo de referencia C (delegado)
 # construye reference_model.o con GCC y los flags IEEE 754 críticos;
-# crea adems librera estatica softfloat
+# crea además librera estatica softfloat
 # la lógica completa vive en reference_model/{Makefile, make_common.mk}
 build_reference_model_obj:
 	$(MAKE) -C $(REF_DIR) -f Makefile $@
 
 ####################################################################################
 ################### Compilación del top testbench (VCS-UVM)
-# Mejor usar Camino A para compilar (ver si vcs compila con flags C)
 # enlaza el objeto del modelo y softfloat.a como argumentos posicionales
 testbench: _mkdir_folders build_reference_model_obj
 	$(VCS) $(SVFLAGS) -timescale=$(TIMESCALE) \
@@ -108,23 +125,26 @@ testbench: _mkdir_folders build_reference_model_obj
 
 # extrae los warnings del log de compilación a logs/warnings.log
 _grep_warnings:
-	grep -i -C 10 "warning" $(LOG_TB) > $(WARNINGS).log
+	grep -i -C 10 "warning" $(LOG_TB) > $(WARNINGS)
 
 ####################################################################################
 ################### Ejecución de tests (sim/sim_make.mk)
 run_all: testbench_sim all_test
 
-
 ####################################################################################
 ################### Targets: de limpieza
+# clean          : artefactos de compilación (sim/ salvo sim_make.mk, bin/, ucli.key)
+# clean_reportes  : SOLO el historial de corridas (reportes/)
+# clean_all      : ambos + reference_model
 clean:
 	rm -f ucli.key
 	rm -rf $(MDIR)
-	rm -rf $(LOGS)
 	find $(SIM) -mindepth 1 ! -name "sim_make.mk" -delete
 
-clean_all: clean
-	rm -rf $(LOGS)/ $(REPORT_CSV)
+clean_reportes:
+	rm -rf $(REPORTES)
+
+clean_all: clean clean_reportes
 	$(MAKE) -C $(REF_DIR) -f Makefile clean_all
 
 ####################################################################################
