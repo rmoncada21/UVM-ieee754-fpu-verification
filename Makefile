@@ -3,7 +3,6 @@
 
 SHELL := /bin/bash
 
-
 #############################################################################
 # Identificadores de corrida
 #----------------------------
@@ -30,12 +29,10 @@ REGRESIONES := $(REPORTES)/regresiones
 REG_DIR     := $(REGRESIONES)/$(REG_ID)
 MANIFEST    := $(REG_DIR)/manifest.csv
 ULTIMA_REG  := $(REPORTES)/ultima
-# LOGS       := logs
-# LOGS_SIM   := $(LOGS)/sim
-# LOGS_TESTS := $(LOGS)/tests
-# LOGS_COV   := $(LOGS)/cov
-# WARNINGS   := $(LOGS)/warnings
-# REPORT_CSV := reportes_csv
+
+# se hace para la regalde cobertura
+# carpeta que analizan cobertura/scripts: la REG= pedida, o 'ultima' por defecto
+DIR_ANALISIS := $(if $(filter command line,$(origin REG_ID)),$(REG_DIR),$(ULTIMA_REG))
 
 DIRS := $(BIN) $(REPORTES)
 
@@ -154,11 +151,13 @@ help:
 # TODO: ACTUALIZAR PHONY
 .PHONY: \
 	all \
+	remake \
 	_mkdir_folders \
 	build_reference_model_obj \
 	testbench \
 	_grep_warnings \
 	run_all \
 	clean \
+	clean_reportes \
 	clean_all \
 	help

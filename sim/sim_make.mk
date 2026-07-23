@@ -57,7 +57,7 @@ define run_uvm_test
 		-l $$run_dir/sim.log ) \
 		| tee $$run_dir/consola.log; \
 	echo "$(strip $(1)),$(SEED),$$(cat $$run_dir/resumen.csv 2>/dev/null || echo NA,NA,NA,NA),$$run_dir" >> $(MANIFEST); \
-	mkdir -p $(REPORTES);
+	mkdir -p $(REPORTES); ln -sfn regresiones/$(REG_ID) $(ULTIMA_REG)
 endef
 
 ####################################################################################
@@ -97,6 +97,27 @@ run_fpu_test_flag_arith:
 
 # fpu_test_subnormal_arith:
 # 	@$(call run_uvm_test, $(@:run_%=%))
+
+####################################################################################
+################### Regresión multi-semilla
+# make regresion TEST=fpu_test_arith_normal NUM_SEEDS=10 [REG=etiqueta]
+# make regresion TEST=fpu_test_cmp SEEDS="1734829105 998877"   (reproducir exactas)
+regresion:
+	@sem="$(SEEDS)"; \
+	if [ -z "$$sem" ]; then \
+		for i in $$(seq $(NUM_SEEDS)); do \
+			sem="$$sem $$(od -An -N4 -tu4 /dev/urandom | tr -d ' ')"; \
+		done; \
+	fi; \
+	for s in $$sem; do \
+		$(MAKE) run_$(TEST) SEED=$$s REG=$(REG); \
+	done
+
+# todos los TESTS_ACTIVOS x NUM_SEEDS bajo el MISMO id de regresión
+regresion_todos:
+	@for t in $(TESTS_ACTIVOS); do \
+		$(MAKE) regresion TEST=$$t NUM_SEEDS=$(NUM_SEEDS) REG=$(REG) SEEDS="$(SEEDS)"; \
+	done
 
 ####################################################################################
 ################### Regresión multi-semilla
