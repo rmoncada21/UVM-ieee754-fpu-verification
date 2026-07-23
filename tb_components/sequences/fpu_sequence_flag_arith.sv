@@ -1,6 +1,6 @@
 /*
  * File:    fpu_sequence_flag_arith.sv
- * - Project:  FPU RV32F — Verificación funcional UVM
+ * - Project:  FPU RV32F  Verificación funcional UVM
  *
  * Description:
  *   Secuencia del test flag_arith (testplan sec. 2.2.1.2, versión
@@ -10,7 +10,7 @@
  *     FAM_UNDERFLOW : resultado tiny con pérdida de exactitud (solo
  *                     FMUL: con FMADD/FMSUB el producto tiny y c normal
  *                     caen en el caso pendiente TFG-##22 / UDF_MADD).
- *     FAM_INVALID   : operación inválida IEEE — inf−inf, 0×inf, inf×0
+ *     FAM_INVALID   : operación inválida IEEE  inf-inf, 0×inf, inf×0
  *                     y NaN entrante; el DUT la conflaciona con
  *                     overflow/underflow (BUG-003).
  *   El modo de redondeo es aleatorio entre los 5 válidos; las banderas
@@ -42,5 +42,54 @@ task fpu_sequence_flag_arith_c::body();
     fpu_seq_item_c item;
     fpu_familia_flag_e familia;
     logic [C_FP_WIDTH-1:0] fp_a_seq;
+
+    `uvm_info(get_type_name(),
+        $sformatf("Inicio de la secuencia flag_arith: %0d items", num_items_rand),
+        UVM_MEDIUM)
+
+
+    for(int i=0; i<num_items_rand; i++) begin
+        familia = fpu_familia_flag_e'(i%3);
+        item = fpu_seq_item_c::type_id::create($sformatf("item_%0d", i));
+
+        start_item(item);
+
+            if (familia == FAM_UNDERFLOW) begin
+                if (!item.randomize() with { op_code_i == FMUL; }) begin
+                    `uvm_error(get_type_name(),
+                               $sformatf("Falló el randomize del item %0d", i))
+                end
+            end else begin
+                if (!item.randomize() with { op_code_i inside {FADD, FSUB, FMUL, FMADD, FMSUB}; }) begin
+                    `uvm_error(get_type_name(), 
+                               $sformatf("Fallo el randomize del item %0d", i))
+                end
+            end
+
+            // tercer operando por defecto normal en banda segura
+            item.fp_c_i = gen_normal_banda();
+
+            case(item.op_code_i)
+                // resultado supera el máximo finito representable
+                FAM_OVERFLOW : begin
+                    case(item.op_code_i)
+                        default: $display("TODO: seguir");
+                    endcase
+                end
+                // resultado tiny (bajo el minimo normal), casi siempre inexacto
+                FAM_UNDERFLOW : begin
+                    item.fp_a_i = gen_operando(CLASE_NORMAL_UDF_PROD);
+                    item.fp_b_i = gen_operando(CLASE_NORMAL_UDF_PROD);
+                end
+                // operacion invalida IEEE
+                FAM_INVALID : begin
+                    case(item.op_code_i)
+                        default: $display("TODO: seguir");
+                    endcase
+                end 
+            endcase
+
+        finish_item(item);
+    end
 
 endtask : body
