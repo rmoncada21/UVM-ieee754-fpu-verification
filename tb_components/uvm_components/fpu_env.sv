@@ -15,7 +15,7 @@
 class fpu_env_c  extends uvm_env;
 	`uvm_component_utils(fpu_env_c)
 	
-	fpu_agent_c fpu_agent; // agente del ambiente
+	fpu_agent_c      fpu_agent;      // agente del ambiente
 	fpu_scoreboard_c fpu_scoreboard; // scoreboard del ambiente
 
 	// Prototipos de funciones del ambiente

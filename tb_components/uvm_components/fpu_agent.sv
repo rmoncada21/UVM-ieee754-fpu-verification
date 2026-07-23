@@ -18,9 +18,9 @@
 class fpu_agent_c extends uvm_agent;
 	`uvm_component_utils(fpu_agent_c)
 
-	fpu_monitor_c fpu_monitor; // monitor del agente
+	fpu_monitor_c   fpu_monitor;   // monitor del agente
 	fpu_sequencer_c fpu_sequencer; // sequencer del agente (solo activo)
-	fpu_driver_c fpu_driver; // driver del agente (solo activo)
+	fpu_driver_c    fpu_driver;    // driver del agente (solo activo)
 
 	virtual fpu_if bif; // interfaz con el DUT
 
