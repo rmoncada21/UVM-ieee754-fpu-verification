@@ -1,6 +1,6 @@
 /*
  * File:    fpu_sequence_flag_arith.sv
- * - Project:  FPU RV32F  Verificación funcional UVM
+ * - Project:  FPU RV32F ? Verificación funcional UVM
  *
  * Description:
  *   Secuencia del test flag_arith (testplan sec. 2.2.1.2, versión
@@ -10,7 +10,7 @@
  *     FAM_UNDERFLOW : resultado tiny con pérdida de exactitud (solo
  *                     FMUL: con FMADD/FMSUB el producto tiny y c normal
  *                     caen en el caso pendiente TFG-##22 / UDF_MADD).
- *     FAM_INVALID   : operación inválida IEEE  inf-inf, 0×inf, inf×0
+ *     FAM_INVALID   : operación inválida IEEE ? inf-inf, 0×inf, inf×0
  *                     y NaN entrante; el DUT la conflaciona con
  *                     overflow/underflow (BUG-003).
  *   El modo de redondeo es aleatorio entre los 5 válidos; las banderas
@@ -41,7 +41,7 @@ endfunction : new
 task fpu_sequence_flag_arith_c::body();
     fpu_seq_item_c item;
     fpu_familia_flag_e familia;
-    logic [C_FP_WIDTH-1:0] fp_a_seq;
+    logic [C_FP_WIDTH-1:0] operando_a;
 
     `uvm_info(get_type_name(),
         $sformatf("Inicio de la secuencia flag_arith: %0d items", num_items_rand),
@@ -73,7 +73,24 @@ task fpu_sequence_flag_arith_c::body();
                 // resultado supera el máximo finito representable
                 FAM_OVERFLOW : begin
                     case(item.op_code_i)
-                        default: $display("TODO: seguir");
+                        FADD: begin
+                            // exp 254 en ambos y mismo signo |a+b| >=2^128
+                            operando_a  = gen_operando(CLASE_NORMAL_OVF_SUMA);
+                            item.fp_a_i = operando_a;
+                            item.fp_b_i = gen_operando(CLASE_NORMAL_OVF_SUMA, int'(operando_a[C_FP_WIDTH-1]));
+                        end
+                        FSUB: begin
+                            // exp 254 en ambos y mismo signo |a+b| >=2^128
+                            operando_a  = gen_operando(CLASE_NORMAL_OVF_SUMA);
+                            item.fp_a_i = operando_a;
+                            item.fp_b_i = gen_operando(CLASE_NORMAL_OVF_SUMA, operando_a[C_FP_WIDTH-1] ? 0 : 1);
+                        end
+                        // FMUL, FMADD, FMSUB: producto siempre en overflow;
+                        // en FMADD/FMSUB, inf +- c normal se mantiene en inf
+                        default: begin
+                            item.fp_a_i = gen_operando(CLASE_NORMAL_OVF_PROD);
+                            item.fp_b_i = gen_operando(CLASE_NORMAL_OVF_PROD);
+                        end
                     endcase
                 end
                 // resultado tiny (bajo el minimo normal), casi siempre inexacto
