@@ -1,6 +1,6 @@
 /*
  * File:    fpu_sequence_flag_arith.sv
- * - Project:  FPU RV32F ? Verificación funcional UVM
+ * - Project:  FPU RV32F Verificación funcional UVM
  *
  * Description:
  *   Secuencia del test flag_arith (testplan sec. 2.2.1.2, versión
@@ -100,10 +100,32 @@ task fpu_sequence_flag_arith_c::body();
                 end
                 // operacion invalida IEEE
                 FAM_INVALID : begin
-                    case(item.op_code_i)
-                        default: $display("TODO: seguir");
+                    case (item.op_code_i)
+                        FADD : begin // inf + (-inf)
+                            operando_a  = gen_inf();
+                            item.fp_a_i = operando_a;
+                            item.fp_b_i = gen_inf(operando_a[C_FP_WIDTH-1] ? 0 : 1);
+                        end
+                        FSUB : begin // inf - inf (mismo signo)
+                            operando_a  = gen_inf();
+                            item.fp_a_i = operando_a;
+                            item.fp_b_i = gen_inf(int'(operando_a[C_FP_WIDTH-1]));
+                        end
+                        FMUL : begin // 0 x inf
+                            item.fp_a_i = gen_cero();
+                            item.fp_b_i = gen_inf();
+                        end
+                        FMADD : begin // (inf x 0) + c
+                            item.fp_a_i = gen_inf();
+                            item.fp_b_i = gen_cero();
+                        end
+                        default : begin // FMSUB: NaN entrante
+                            item.fp_a_i = gen_qnan();
+                            item.fp_b_i = gen_normal_banda();
+                        end
                     endcase
-                end 
+                end
+
             endcase
 
         finish_item(item);
