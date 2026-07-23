@@ -125,6 +125,10 @@ regresion_todos:
 # make regresion TEST=fpu_test_arith_normal NUM_SEEDS=10 [REG=etiqueta]
 # make regresion TEST=fpu_test_cmp SEEDS="1734829105 998877"   (reproducir exactas)
 # TODO: regresions target
+cobertura:
+	urg -full64 -dir $(DIR_ANALISIS)/*/s*/cov.vdb \
+		-dbname $(DIR_ANALISIS)/cobertura_fusionada \
+		-report $(DIR_ANALISIS)/cobertura_reporte
 
 .PHONY: \
 	testbench_sim \
@@ -134,4 +138,5 @@ regresion_todos:
 	run_fpu_test_rounding \
 	run_fpu_test_special_spec \
 	run_fpu_test_norm_spec \
-	run_fpu_test_subnormal_arith
+	run_fpu_test_subnormal_arith \
+	regresion regresion_todos
