@@ -1,4 +1,3 @@
-// Language: SystemVerilog
 /*
  * File:    fpu_test_arith_normal.sv
  * - Project:  FPU RV32F — Verificación funcional UVM

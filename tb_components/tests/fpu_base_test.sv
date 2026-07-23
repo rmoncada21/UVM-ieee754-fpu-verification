@@ -1,6 +1,6 @@
 /*
  * File:    fpu_base_test.sv
- * - Project:  FPU RV32F  Verificación funcional UVM
+ * Project:  FPU RV32F — Verificación funcional UVM
  *
  * Description:
  *   Test base del ambiente. Instancia fpu_env_c y configura el agente
@@ -20,30 +20,34 @@ class fpu_base_test_c extends uvm_test;
 	`uvm_component_utils(fpu_base_test_c)
 
 	// variables para mover el archivo de salida tr_db.log de raiz a logs
-	uvm_text_tr_database base_datos_tr;
-	uvm_coreservice_t    uvm_servicio;
+	uvm_text_tr_database base_datos_tr; // base de datos de transaction recording redirigida a logs/
+	uvm_coreservice_t    uvm_servicio; // servicio core de UVM, usado para fijar la base de datos por defecto
 
 	// handler/puntero al ambiente
-	fpu_env_c fpu_env;
+	fpu_env_c fpu_env; // ambiente UVM del test
 
 	// Prototipos de funiones del base test
-	extern function new(string name="fpu_base_test_c", uvm_component parent=null);
-	extern virtual function void build_phase(uvm_phase phase);
-	extern virtual function void end_of_elaboration_phase (uvm_phase phase);
-	extern virtual function void start_of_simulation_phase(uvm_phase phase);
-	extern virtual task run_phase(uvm_phase phase);
-	extern virtual function fpu_base_sequence_c crear_secuencia();
+	extern function new(string name="fpu_base_test_c", uvm_component parent=null); // constructor
+	extern virtual function void build_phase(uvm_phase phase); // crea el ambiente y configura el agente como activo
+	extern virtual function void end_of_elaboration_phase (uvm_phase phase); // valida topología y estado del agente
+	extern virtual function void start_of_simulation_phase(uvm_phase phase); // imprime banner y metadatos de la corrida
+	extern virtual task run_phase(uvm_phase phase); // arranca la secuencia sobre el sequencer del agente
+	extern virtual function fpu_base_sequence_c crear_secuencia(); // hook de fábrica para la secuencia del test
 
 endclass :  fpu_base_test_c
 
 // Implementacion de los prototipos
-// constructor
+// Function: new
+// Constructor del test base; delega la inicialización al uvm_test base.
 function fpu_base_test_c::new(string name="fpu_base_test_c", uvm_component parent=null);
 	super.new(name, parent);
 endfunction : new
 
 // build phase
-// instanciar los hijos del componente via factory de UVM
+// Function: build_phase
+// Fase de construcción UVM: redirige la base de datos de transaction
+// recording a logs/tr_db.log, crea el ambiente vía factory, publica la
+// semilla inicial para el scoreboard y configura el agente como activo.
 function void fpu_base_test_c::build_phase(uvm_phase phase);
 	super.build_phase(phase);
 
@@ -71,6 +75,10 @@ function void fpu_base_test_c::build_phase(uvm_phase phase);
 endfunction: build_phase
 
 // EOEP
+// Function: end_of_elaboration_phase
+// Verifica que el agente haya sido creado y reporta si quedó
+// configurado como activo, pasivo o en un estado desconocido (error).
+// Imprime además la topología completa del ambiente UVM.
 function void fpu_base_test_c::end_of_elaboration_phase (uvm_phase phase);
     super.end_of_elaboration_phase(phase);
         
@@ -108,6 +116,10 @@ endfunction : end_of_elaboration_phase
 // como por ejemplos, mostrar seed del test 
 // configurar verbosity, setear timeouts, activar debug
 // ajustes gloables de ejecucion
+// Function: start_of_simulation_phase
+// Fase previa al inicio de la simulación: fija el formato de tiempo y
+// muestra el banner de la corrida con el nombre del test, la semilla
+// inicial y el timeout configurado.
 function void fpu_base_test_c::start_of_simulation_phase(uvm_phase phase);
     super.start_of_simulation_phase(phase);
     $timeformat(0, 6, " s", 12);
@@ -133,6 +145,10 @@ endfunction : start_of_simulation_phase
 
 // RP
 // inicio de la simulacion
+// Task: run_phase
+// Levanta la objeción, obtiene la secuencia del test (vía
+// crear_secuencia(), hook sobreescrito por los tests hijos),
+// randomiza sus knobs y la arranca sobre el sequencer del agente.
 task fpu_base_test_c::run_phase(uvm_phase phase);
 	fpu_base_sequence_c base_sequence;
 		
@@ -151,13 +167,11 @@ endtask : run_phase
 // crear secuencia
 // los test derivados solo sobreescriben esta función para 
 // devolver su suencie derivada de fpu_base_sequence_c
+// Function: crear_secuencia
+// Hook de fábrica (patrón Template Method): devuelve la instancia de
+// secuencia a ejecutar por run_phase. La versión base devuelve la
+// secuencia smoke; los tests hijos la sobreescriben para devolver su
+// propia secuencia derivada de fpu_base_sequence_c.
 function fpu_base_sequence_c fpu_base_test_c::crear_secuencia();
 	return fpu_base_sequence_c::type_id::create("base_sequence");
 endfunction : crear_secuencia
-
-// RP
-// TODO : implementar report_phase
-// virtual function void fpu_base_test_c::report_phase(uvm_phase phase);
-// 	uvm_report_server report_server;
-// 	super.report_phase(phase);
-// endfunction: report_phase

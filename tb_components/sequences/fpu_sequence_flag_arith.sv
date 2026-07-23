@@ -1,6 +1,6 @@
 /*
  * File:    fpu_sequence_flag_arith.sv
- * - Project:  FPU RV32F Verificación funcional UVM
+ * Project:  FPU RV32F — Verificación funcional UVM
  *
  * Description:
  *   Secuencia del test flag_arith (testplan sec. 2.2.1.2, versión
@@ -25,12 +25,14 @@ class fpu_sequence_flag_arith_c extends fpu_base_sequence_c;
     `uvm_object_utils(fpu_sequence_flag_arith_c)
 
     // Prototipos de las funciones de la secuencia
-    extern function new(string name = "fpu_sequence_flag_arith_c");
-    extern virtual task body();
+    extern function new(string name = "fpu_sequence_flag_arith_c"); // constructor
+    extern virtual task body(); // genera y envía las tres familias de estímulo dirigido
 
 endclass : fpu_sequence_flag_arith_c
 
 // Implmentación de las funciones
+// Function: new
+// Constructor de la secuencia; delega la inicialización a la clase base.
 function fpu_sequence_flag_arith_c::new(string name = "fpu_sequence_flag_arith_c");
     super.new(name);
 endfunction : new
@@ -40,13 +42,12 @@ endfunction : new
 // FAM_UNDERFLOW (solo FMUL) y FAM_INVALID
 task fpu_sequence_flag_arith_c::body();
     fpu_seq_item_c item;
-    fpu_familia_flag_e familia;
-    logic [C_FP_WIDTH-1:0] operando_a;
+    fpu_familia_flag_e familia; // familia de estímulo asignada al item actual
+    logic [C_FP_WIDTH-1:0] operando_a; // operando A ya generado, reutilizado para derivar B
 
     `uvm_info(get_type_name(),
         $sformatf("Inicio de la secuencia flag_arith: %0d items", num_items_rand),
         UVM_MEDIUM)
-
 
     for(int i=0; i<num_items_rand; i++) begin
         familia = fpu_familia_flag_e'(i%3);

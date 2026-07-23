@@ -1,6 +1,6 @@
 /*
  * File:    fpu_env.sv
- * - Project:  FPU RV32F — Verificación funcional UVM
+ * Project:  FPU RV32F — Verificación funcional UVM
  *
  * Description:
  *   Ambiente UVM del proyecto. En build_phase instancia el agente
@@ -15,31 +15,27 @@
 class fpu_env_c  extends uvm_env;
 	`uvm_component_utils(fpu_env_c)
 	
-	fpu_agent_c fpu_agent;
-	fpu_scoreboard_c fpu_scoreboard;
-
-	// QUITAR / aun sin uso
-	virtual fpu_if bif;
+	fpu_agent_c fpu_agent; // agente del ambiente
+	fpu_scoreboard_c fpu_scoreboard; // scoreboard del ambiente
 
 	// Prototipos de funciones del ambiente
-	extern function new(string name="fpu_env_c", uvm_component parent);
-	extern virtual function void build_phase(uvm_phase phase);
-	extern virtual function void connect_phase(uvm_phase phase);
-	extern virtual function void start_of_simulation_phase(uvm_phase phase);
+	extern function new(string name="fpu_env_c", uvm_component parent); // constructor
+	extern virtual function void build_phase(uvm_phase phase); // crea agente y scoreboard
+	extern virtual function void connect_phase(uvm_phase phase); // conecta agente con scoreboard
+	extern virtual function void start_of_simulation_phase(uvm_phase phase); // aviso de ambiente listo
 
 endclass: fpu_env_c
 
 // Implementación de funciones
-// constructor
+// Function: new
+// Constructor del ambiente; delega la inicialización al uvm_env base.
 function fpu_env_c::new(string name="fpu_env_c", uvm_component parent);
 	super.new(name, parent);
 endfunction: new
 
 // BP
-// ------------------------------------------------------------
 // Function: build_phase
 // Instancia: agente, configura el vif y crea el scoreboard.
-// ------------------------------------------------------------
 function void fpu_env_c::build_phase(uvm_phase phase);
 	super.build_phase(phase);
 	fpu_agent = fpu_agent_c::type_id::create("fpu_agent", this);
@@ -54,7 +50,10 @@ function void fpu_env_c::build_phase(uvm_phase phase);
 endfunction: build_phase
 
 // CP
-// connect phase, agent, driver, monitor 
+// Function: connect_phase
+// Conecta la salida del agente (item_collected_port) con el
+// analysis_imp del scoreboard, para que este reciba cada transacción
+// capturada por el monitor.
 function void fpu_env_c::connect_phase(uvm_phase phase);
 	super.connect_phase(phase);
 	// conexion por medio del puerto del agente al exterior
@@ -67,6 +66,9 @@ function void fpu_env_c::connect_phase(uvm_phase phase);
 endfunction: connect_phase
 
 // SOSP
+// Function: start_of_simulation_phase
+// Fase previa al inicio de la simulación: reporta que el ambiente
+// quedó armado y los puertos TLM cableados.
 function void fpu_env_c::start_of_simulation_phase(uvm_phase phase);
 	super.start_of_simulation_phase(phase);
 	`uvm_info(this.get_type_name(),

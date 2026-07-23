@@ -1,6 +1,6 @@
 /* 
  * File:    fpu_agent.sv
- * - Project:  FPU RV32F — Verificación funcional UVM
+ * Project:  FPU RV32F — Verificación funcional UVM
  *
  * Description:
  *   Agente UVM del ambiente. Instancia siempre el monitor (activo o
@@ -18,33 +18,34 @@
 class fpu_agent_c extends uvm_agent;
 	`uvm_component_utils(fpu_agent_c)
 
-	fpu_monitor_c fpu_monitor;
-	fpu_sequencer_c fpu_sequencer;
-	fpu_driver_c fpu_driver;
+	fpu_monitor_c fpu_monitor; // monitor del agente
+	fpu_sequencer_c fpu_sequencer; // sequencer del agente (solo activo)
+	fpu_driver_c fpu_driver; // driver del agente (solo activo)
 
-	virtual fpu_if bif;
+	virtual fpu_if bif; // interfaz con el DUT
 
 	// puertos
-	uvm_analysis_port #(fpu_seq_item_c) item_collected_port;
-
-	// ¿sequencer?
-	// uvm_sequencer#(fpu_seq_item_c) agent_seq;
+	uvm_analysis_port #(fpu_seq_item_c) item_collected_port; // salida del agente al ambiente
 
 	// Prototipos de funciones del agente
-	extern function new(string name="fpu_agent_c", uvm_component parent);
-	extern virtual function void build_phase(uvm_phase phase);
-	extern virtual function void connect_phase(uvm_phase phase);
+	extern function new(string name="fpu_agent_c", uvm_component parent); // constructor
+	extern virtual function void build_phase(uvm_phase phase); // crea sub-componentes según is_active
+	extern virtual function void connect_phase(uvm_phase phase); // conecta puertos internos y externos
 
 endclass: fpu_agent_c
 
 // Implementación de funciones
-// constructor
+// Function: new
+// Constructor del agente; delega la inicialización al uvm_agent base.
 function fpu_agent_c::new(string name="fpu_agent_c", uvm_component parent);
 	super.new(name, parent);
 endfunction : new
 
 // BP
-// build_phase
+// Function: build_phase
+// Fase de construcción UVM: crea el monitor incondicionalmente y expone
+// item_collected_port. Si el agente es activo (get_is_active() ==
+// UVM_ACTIVE, valor por defecto), crea además sequencer y driver.
 function void fpu_agent_c::build_phase(uvm_phase phase);
 	super.build_phase(phase);
 	
@@ -60,8 +61,6 @@ function void fpu_agent_c::build_phase(uvm_phase phase);
 			fpu_driver = fpu_driver_c::type_id::create("fpu_driver", this);
 	end
 
-	// agent_seq = uvm_sequencer#(fpu_seq_item_c)::type_id::create("agent_seq", this);
-
 	`uvm_info(this.get_type_name(),
 			"Sequencer, Driver & Monitor creados",
 			UVM_LOW);
@@ -69,7 +68,10 @@ function void fpu_agent_c::build_phase(uvm_phase phase);
 endfunction: build_phase
 
 // CP
-// connect_phase - conectar puertos
+// Function: connect_phase
+// Fase de conexión UVM: enlaza la salida del monitor con el puerto
+// externo del agente y, si el agente es activo, conecta el driver con
+// el sequencer.
 function void fpu_agent_c::connect_phase(uvm_phase phase);
 	super.connect_phase(phase);
 

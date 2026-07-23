@@ -1,6 +1,6 @@
 /*
  * File:    fpu_monitor.sv
- * - Project:  FPU RV32F — Verificación funcional UVM
+ * Project:  FPU RV32F — Verificación funcional UVM
  *
  * Description:
  *   Monitor UVM del agente. En build_phase obtiene la interfaz virtual
@@ -16,26 +16,30 @@
 
 class fpu_monitor_c extends uvm_monitor;
 	`uvm_component_utils(fpu_monitor_c)
-	virtual fpu_if bif;
+	virtual fpu_if bif; // interfaz con el DUT
 
 	// uvm TLM emisor 
 	uvm_analysis_port #(fpu_seq_item_c) tlm_mon_ap; // monitor analysis port = mon_ap
 
 	// Prototipos de funciones del monitor
-	extern function new(string name="fpu_monitor_c", uvm_component parent);
-	extern virtual function void build_phase(uvm_phase phase);
-	extern virtual task run_phase(uvm_phase phase);
+	extern function new(string name="fpu_monitor_c", uvm_component parent); // constructor
+	extern virtual function void build_phase(uvm_phase phase); // obtiene vif y crea tlm_mon_ap
+	extern virtual task run_phase(uvm_phase phase); // lazo principal de muestreo
 
 endclass: fpu_monitor_c
 
 // Implementación de funciones
-// constructor
+// Function: new
+// Constructor del monitor; delega la inicialización al uvm_monitor base.
 function fpu_monitor_c::new(string name="fpu_monitor_c", uvm_component parent);
 	super.new(name, parent);
 	// tlm_mon_ap = new("tlm_mon_ap", this);
 endfunction : new
 
 // BP
+// Function: build_phase
+// Fase de construcción UVM: obtiene la interfaz virtual (vif) desde la
+// config_db y crea el puerto de análisis tlm_mon_ap.
 function void fpu_monitor_c::build_phase(uvm_phase phase);
 	super.build_phase(phase);
 
@@ -54,6 +58,10 @@ function void fpu_monitor_c::build_phase(uvm_phase phase);
 endfunction
 
 // RP
+// Task: run_phase
+// Lazo principal del monitor: en cada flanco de subida de clk (con un
+// delay de 1 unidad de tiempo), captura entradas y salidas del DUT
+// hacia el item reutilizado y lo publica por tlm_mon_ap.
 task fpu_monitor_c::run_phase(uvm_phase phase);
 	fpu_seq_item_c item;
 
@@ -69,11 +77,11 @@ task fpu_monitor_c::run_phase(uvm_phase phase);
 			item.fp_b_i = bif.fp_b_i;
 			item.fp_c_i = bif.fp_c_i;
 			// rastrear las salidas
-			item.fp_result_o = bif.fp_result_o;
+			item.fp_result_o  = bif.fp_result_o;
 			item.cmp_result_o = bif.cmp_result_o;
-			item.overflow_o = bif.overflow_o;
-			item.underflow_o = bif.underflow_o;
-			item.invalid_o = bif.invalid_o;
+			item.overflow_o   = bif.overflow_o;
+			item.underflow_o  = bif.underflow_o;
+			item.invalid_o    = bif.invalid_o;
 			tlm_mon_ap.write(item);
 			// agregar funcin para mostrar los resultados
 	end: forever_loop

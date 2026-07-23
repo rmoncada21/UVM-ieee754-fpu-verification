@@ -1,7 +1,6 @@
-// Language: SystemVerilog
 /*
  * File:    fpu_sequence_arith_normal.sv
- * - Project:  FPU RV32F — Verificación funcional UVM
+ * Project:  FPU RV32F — Verificación funcional UVM
  *
  * Description:
  *   Secuencia del test arith_normal (testplan sec. 2.2.1.1). Envía
@@ -19,12 +18,13 @@ class fpu_sequence_arith_normal_c extends fpu_base_sequence_c;
     `uvm_object_utils(fpu_sequence_arith_normal_c)
 
     // Prototipos de funciones de la secuencia
-    extern function new(string name = "fpu_sequence_arith_normal_c");
-    extern virtual task body();
+    extern function new(string name = "fpu_sequence_arith_normal_c"); // constructor
+    extern virtual task body(); // genera y envía las transacciones aritméticas
 
 endclass : fpu_sequence_arith_normal_c
 
-
+// Function: new
+// Constructor de la secuencia; delega la inicialización a la clase base.
 function fpu_sequence_arith_normal_c::new(string name = "fpu_sequence_arith_normal_c");
     super.new(name);
 endfunction : new

@@ -1,6 +1,6 @@
 /*
  * File:    fpu_scoreboard_c.sv
- * - Project:  FPU RV32F Verificación funcional UVM
+ * Project:  FPU RV32F — Verificación funcional UVM
  *
  * Description:
  *   Scoreboard UVM de la FPU RV32F. Recibe transacciones del monitor
@@ -26,11 +26,11 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	`uvm_component_utils(fpu_scoreboard_c)
 	
 	// semilla obtenida del fpu base test
-	int semilla;
+	int semilla; // semilla de aleatoriedad usada en la corrida
 
 	// uvm_tlm_analysis_fifo ¿?
 	// proviene del monitor, conectado en el env
-	uvm_analysis_imp #(fpu_seq_item_c, fpu_scoreboard_c) tlm_scb_aimp;
+	uvm_analysis_imp #(fpu_seq_item_c, fpu_scoreboard_c) tlm_scb_aimp; // puerto TLM de entrada, dispara write()
 
 	// qNaN canónico RISC-V
 	localparam logic [31:0] C_QNAN = 32'h7FC0_0000;
@@ -39,35 +39,35 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	// csv_ruta se puede sobreescribir con el plusarg +SCB_CSV=<ruta> 
 	// el volcado completo se desactiva con +SCB_CSV_OFF. 
 	// Formato: encabezado + una fila por transacción.
-	bit csv_habilitado = 1'b1;
-	string csv_ruta    = "fpu_scoreboard_results.csv";
-	string csv_knob    = "OFF";
-	protected int csv_signal_open = 0;
+	bit csv_habilitado = 1'b1; // habilita/deshabilita el volcado CSV
+	string csv_ruta    = "fpu_scoreboard_results.csv"; // ruta del archivo CSV de salida
+	string csv_knob    = "OFF"; // valor leído del plusarg SCB_CSV_KNOB
+	protected int csv_signal_open = 0; // descriptor devuelto por $fopen (0 = fallo)
 
 	// Contadores de clasificación en tres cubos + distribución por opcode.
 	// clasificación en tres parametros
     // num_pass / num_bug / num_fail
-	int unsigned num_transacciones;
-	int unsigned num_pass;
-	int unsigned num_bug;
-	int unsigned num_fail;
-	int unsigned conteo_por_opcode[fpu_op_code_e];
+	int unsigned num_transacciones; // total de transacciones procesadas
+	int unsigned num_pass; // transacciones que coinciden con el modelo
+	int unsigned num_bug; // transacciones que calzan con un bug ya documentado
+	int unsigned num_fail; // transacciones con fallo no documentado
+	int unsigned conteo_por_opcode[fpu_op_code_e]; // distribución de transacciones por opcode
 
 	// Prototipos de funciones del scoreboard
-	extern function new(string name="fpu_scoreboard_c", uvm_component parent);
-	extern virtual function void build_phase(uvm_phase phase);
-	extern virtual function void start_of_simulation_phase(uvm_phase phase);
+	extern function new(string name="fpu_scoreboard_c", uvm_component parent); // constructor
+	extern virtual function void build_phase(uvm_phase phase); // crea tlm_scb_aimp y obtiene la semilla
+	extern virtual function void start_of_simulation_phase(uvm_phase phase); // abre el CSV de resultados
 	// TODO: flags esperadas, bug_conocido, archivo CSV de salida
-	extern protected function void flags_esperadas_dut(
+	extern protected function void flags_esperadas_dut( // deriva las banderas esperadas por el DUT
 		input  fpu_op_code_e       op_code_i,
 		input  fpu_ref_resultado_s reference_model_s,
 		output logic               dut_overflow_esperado,
 		output logic               dut_underflow_esperado,
 		output logic               dut_invalid_esperado
 	);
-	extern protected function bit es_bug_conocido(fpu_seq_item_c item_dut);
-	extern protected function void csv_abrir();
-	extern protected function void csv_linea(
+	extern protected function bit es_bug_conocido(fpu_seq_item_c item_dut); // reconoce la firma de BUG-001
+	extern protected function void csv_abrir(); // abre el CSV y escribe el encabezado
+	extern protected function void csv_linea( // escribe una fila del CSV
 	    input fpu_seq_item_c      item_dut,
 	    input fpu_ref_resultado_s reference_model_s,
 	    input logic               overflow_esperado,
@@ -79,18 +79,23 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	    input bit                 coincide_invalid,
 	    input string              clasificacion
 	);
-	extern virtual function write(fpu_seq_item_c item_dut);
-	extern virtual function void report_phase(uvm_phase phase);
+	extern virtual function write(fpu_seq_item_c item_dut); // callback TLM, compara DUT vs referencia
+	extern virtual function void report_phase(uvm_phase phase); // imprime el resumen final
 
 endclass: fpu_scoreboard_c
 
 // Implementación de las funciones
-// Constructor de la clase
+// Function: new
+// Constructor del scoreboard; delega la inicialización al uvm_scoreboard base.
 function fpu_scoreboard_c::new(string name="fpu_scoreboard_c", uvm_component parent);
 	super.new(name, parent);
 endfunction : new
 
 // BP
+// Function: build_phase
+// Fase de construcción UVM: crea el puerto de análisis tlm_scb_aimp
+// (receptor de las transacciones del agente) y obtiene la semilla
+// publicada por el test base vía config_db.
 function void fpu_scoreboard_c::build_phase(uvm_phase phase);
 	super.build_phase(phase);
 	tlm_scb_aimp = new("tlm_scb_aimp", this);
@@ -104,6 +109,9 @@ function void fpu_scoreboard_c::build_phase(uvm_phase phase);
 endfunction :  build_phase;
 
 // SOSP
+// Function: start_of_simulation_phase
+// Fase previa al inicio de la simulación: reporta que el modelo de
+// referencia DPI-C está cargado y abre el archivo CSV de resultados.
 function void fpu_scoreboard_c::start_of_simulation_phase(uvm_phase phase);
 	super.start_of_simulation_phase(phase);
 	`uvm_info(this.get_type_name(),
@@ -128,9 +136,9 @@ function void fpu_scoreboard_c::flags_esperadas_dut(
 	output logic               dut_invalid_esperado
 );
 	bit es_opcode_comparacion; //opcode: FEQ/FLT/FLE
-	bit resultado_es_qnan;
-	bit resultado_es_subnormal;
-	bit resultado_es_cero;
+	bit resultado_es_qnan; // resultado golden es qNaN canónico
+	bit resultado_es_subnormal; // resultado golden con exponente 0 y mantisa != 0
+	bit resultado_es_cero; // resultado golden es ±0
 
 	es_opcode_comparacion  = ( op_code_i == FEQ || op_code_i == FLT || op_code_i == FLE );
 	resultado_es_qnan      = ( reference_model_s.resultado == C_QNAN );
@@ -155,8 +163,8 @@ endfunction : flags_esperadas_dut
 // operación que pasa por fp_mul
 function automatic bit fpu_scoreboard_c::es_bug_conocido(fpu_seq_item_c item_dut);
     bit op_usa_multiplicador;   // el datapath del opcode pasa por fp_mul
-    bit operando_a_subnormal;
-    bit operando_b_subnormal;
+    bit operando_a_subnormal; // fp_a_i es subnormal (exponente 0, mantisa != 0)
+    bit operando_b_subnormal; // fp_b_i es subnormal (exponente 0, mantisa != 0)
 
     op_usa_multiplicador = (item_dut.op_code_i == FMUL)  ||
                            (item_dut.op_code_i == FMADD) ||
@@ -254,13 +262,14 @@ function fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	logic  overflow_esperado;
 	logic  underflow_esperado;
 	logic  invalid_esperado;
-	string clasificacion;
+	string clasificacion; // etiqueta textual final: PASS / BUG / FAIL
 
 	num_transacciones++;
 
 	// deteccion de datos entrantes XXX/ZZZ
 	// $display("op_code_i = %b", item_dut.op_code_i);
 
+	// aborta la simulación si el opcode llega con bits X/Z (dato corrupto)
 	if ($isunknown(item_dut.op_code_i))
     	$fatal("Opcode con X/Z");
 	conteo_por_opcode[item_dut.op_code_i]++;
@@ -303,11 +312,11 @@ function fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	end else begin // si no es de comparación sucedió alguna operación arimética
 		coincide_resultado = (item_dut.fp_result_o  === reference_model_s.resultado);
 		
-		coincide_overflow  = (item_dut.overflow_o === overflow_esperado);
+		coincide_overflow  = (item_dut.overflow_o   === overflow_esperado);
 		
-		coincide_underflow = (item_dut.underflow_o === underflow_esperado) || resultado_es_qnan || resultado_es_infinito;
+		coincide_underflow = (item_dut.underflow_o  === underflow_esperado) || resultado_es_qnan || resultado_es_infinito;
 
-		coincide_invalid   = (item_dut.invalid_o === invalid_esperado) || resultado_es_qnan || resultado_es_infinito;
+		coincide_invalid   = (item_dut.invalid_o    === invalid_esperado)   || resultado_es_qnan || resultado_es_infinito;
 	end
 
 	// --- 4. Clasificacion en tres parametros ---
@@ -350,7 +359,6 @@ endfunction
 // Resumen final. Todas las líneas con uvm_info: cada fallo ya emitió
 // su propio uvm_error en write()
 // Cierra además el CSV y reporta su ruta para el estudio posterior.
-// ------------------------------------------------------------------
 function void fpu_scoreboard_c::report_phase(uvm_phase phase);
     string separador = "==================================================";
     super.report_phase(phase);
