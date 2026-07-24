@@ -102,7 +102,7 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 	// el unico bit descartado tras normalizar es el LSB de 3*sig = 1
 	// -> guard = 1, sticky = 0: empate exacto (testplan sec. 2.2.3)
 	constraint cn_normal_empate_mul {
-		exponente_rand inside {[C_EXP_BANDA_MIN : C_EXP_BANDA_MAX]};
+		exponente_rand inside {[C_EXP_BANDA_MINIMA : C_EXP_BANDA_MAXIMA]};
 		mantisa_rand[0] == 1'b1;
 		mantisa_rand    <= 23'h2AAAAA;
 	}

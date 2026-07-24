@@ -27,7 +27,7 @@ package fpu_types_constraints_pkg;
     localparam logic [C_EXP_WIDTH-1:0] C_EXP_ESPECIAL   = 8'd255; // inf / NaN (s, q)
     
     /* rounding test */
-    localparam logic int C_EXP_SESGO = 127; // sesgo del exponente en binary 32
+    localparam int C_EXP_SESGO = 127; // sesgo del exponente en binary 32
 
     // banda segura para arimética normal (tesplan sec. 2.2.1.1):
     // operandos normales y sin resultados de over/underflow para

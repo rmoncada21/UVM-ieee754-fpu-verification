@@ -91,9 +91,9 @@ endtask :  body
 // item_constraints.
 function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_operando(
 		fpu_clase_operando_e clase, int signo, int exponente);
-	num_gen.activar_clase(clase);
-	num_gen.signo_forzado     = signo;
-	num_gen.exponente_forzado = exponente;
+	item_constraints.activar_clase(clase);
+	item_constraints.signo_forzado     = signo;
+	item_constraints.exponente_forzado = exponente;
 	
 	if (!item_constraints.randomize())
 		`uvm_error(get_type_name(),
