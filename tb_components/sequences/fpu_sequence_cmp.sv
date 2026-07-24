@@ -75,18 +75,93 @@ function fpu_sequence_cmp_c::new(string name = "fpu_sequence_cmp_c");
 	super.new(name);
 endfunction : new
 
+// Task: body
+// Recorrido determinista {FEQ, FLT, FLE} × 5 escenarios (CMP_CROSS,
+// CMP_IGUAL, CMP_OPUESTO, CMP_ADYACENTE, CMP_CERO_SUB); ver el
+// desglose de cada escenario en el encabezado del archivo.
 task fpu_sequence_cmp_c::body();
-    fpu_seq_item_c       item;
+	fpu_seq_item_c       item;
 	fpu_op_code_e        op_fam;
-	fpu_escenario_cmp_e  esc;
+	fpu_escenario_cmp_e  escenario;
 	fpu_clase_operando_e clase_a;
 	fpu_clase_operando_e clase_b;
 	fpu_clase_operando_e clase;
 	int                  vuelta;
 	int                  signo;
-    
-    `uvm_info(get_type_name(),
-	$sformatf("Inicio de secuencia cmp: %0d items", num_items_rand),
-	UVM_MEDIUM)
-    
+
+	`uvm_info(get_type_name(),
+		$sformatf("Inicio de secuencia cmp: %0d items", num_items_rand),
+		UVM_MEDIUM)
+
+	for (int i = 0; i < num_items_rand; i++) begin
+		// familia deterministica: operacion y escenario; la vuelta es el
+		// sub-indice interno de cada escenario
+		op_fam    = ops_cmp[i % C_NUM_OPS_CMP];
+		escenario = fpu_escenario_cmp_e'((i / C_NUM_OPS_CMP) % C_NUM_ESC_CMP);
+		vuelta    = i / C_ITEMS_VUELTA;
+
+		item = fpu_seq_item_c::type_id::create($sformatf("item_%0d", i));
+
+		start_item(item);
+            // operacion fijada por la familia; r_mode_i y fp_c_i quedan
+            // aleatorios: el DUT los ignora en comparaciones
+            if (!item.randomize() with { op_code_i == op_fam; })
+                `uvm_error(get_type_name(),
+                    $sformatf("Fallo el randomize del item %0d", i))
+
+            case (escenario)
+                // cross determinista clase_a × clase_b (36 parejas)
+                CMP_CROSS : begin
+                    clase_a = C_CLASES_CMP[vuelta % C_NUM_CLASES_CMP];
+                    clase_b = C_CLASES_CMP[(vuelta / C_NUM_CLASES_CMP)
+                                        % C_NUM_CLASES_CMP];
+                    item.fp_a_i = gen_operando(clase_a);
+                    item.fp_b_i = gen_operando(clase_b);
+                end
+                // patron identico: FEQ = 1 (salvo NaN), FLT = 0, FLE = 1
+                CMP_IGUAL : begin
+                    clase = C_CLASES_CMP[vuelta % C_NUM_CLASES_CMP];
+                    signo = (vuelta / C_NUM_CLASES_CMP) % 2;
+                    item.fp_a_i = gen_operando(clase, signo);
+                    item.fp_b_i = item.fp_a_i;
+                end
+                // misma magnitud, signo opuesto: ±0, ±x, ±inf
+                CMP_OPUESTO : begin
+                    clase = C_CLASES_CMP[vuelta % C_NUM_CLASES_CMP];
+                    signo = (vuelta / C_NUM_CLASES_CMP) % 2;
+                    item.fp_a_i = gen_operando(clase, signo);
+                    item.fp_b_i = item.fp_a_i ^ C_MASCARA_SIGNO;
+                end
+                // vecino a ±1 ULP: la decision cae en la mantisa
+                CMP_ADYACENTE : begin
+                    item.fp_a_i = gen_normal();
+                    item.fp_b_i = ((vuelta % 2) == 0) ? (item.fp_a_i + 32'd1)
+                                                    : (item.fp_a_i - 32'd1);
+                end
+                // ±0 contra subnormal del mismo signo, en ambos ordenes
+                CMP_CERO_SUB : begin
+                    signo = (vuelta / 2) % 2;
+                    if ((vuelta % 2) == 0) begin
+                        item.fp_a_i = gen_cero(signo);
+                        item.fp_b_i = gen_subnormal(signo);
+                    end
+                    else begin
+                        item.fp_a_i = gen_subnormal(signo);
+                        item.fp_b_i = gen_cero(signo);
+                    end
+                end
+                // inalcanzable con % C_NUM_ESC_CMP; defensivo
+                default : `uvm_error(get_type_name(),
+                    $sformatf("Escenario de comparacion desconocido: %0d", escenario))
+            endcase
+		finish_item(item);
+
+		`uvm_info(get_type_name(),
+			$sformatf("Item %0d enviado: fam=%s vuelta=%0d op=%s a=%8h b=%8h",
+				i, escenario.name(), vuelta, item.op_code_i.name(),
+				item.fp_a_i, item.fp_b_i),
+			UVM_HIGH)
+	end
+	`uvm_info(get_type_name(), "Fin de secuencia cmp", UVM_MEDIUM)
+
 endtask : body
