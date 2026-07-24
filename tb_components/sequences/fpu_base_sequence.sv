@@ -126,7 +126,7 @@ endfunction : gen_normal
 // Genera un operando normal en la banda segura de exponente
 // [70, 184], con el signo indicado.
 function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_normal_banda(int signo);
-	return gen_operando(CLASE_NORMAL, signo);
+	return gen_operando(CLASE_NORMAL_BANDA, signo);
 endfunction : gen_normal_banda
 
 // Function: gen_inf
