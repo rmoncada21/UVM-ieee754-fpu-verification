@@ -71,7 +71,7 @@ endfunction : new
 // desglose completo de cada una en el encabezado del archivo.
 task fpu_sequence_subnormal_arith_c::body();
 	fpu_seq_item_c         item;
-	fpu_familia_sub_e      fam;
+	fpu_familia_sub_e      familia_sub;
 	fpu_op_code_e          op_fam;
 	int                    vuelta;
 	int                    suma_exp;
@@ -83,4 +83,133 @@ task fpu_sequence_subnormal_arith_c::body();
 	`uvm_info(get_type_name(),
 		$sformatf("Inicio de secuencia subnormal_arith: %0d items", num_items_rand),
 		UVM_MEDIUM)
+
+	for (int i = 0; i < num_items_rand; i++) begin
+		// familia deterministica; la vuelta indexa las variantes internas
+		familia_sub = fpu_familia_sub_e'(i % C_NUM_FAM_SUB);
+		vuelta      = i / C_NUM_FAM_SUB;
+
+		item = fpu_seq_item_c::type_id::create($sformatf("item_%0d", i));
+
+		start_item(item);
+            case (familia_sub)
+                // -------- FMUL: subnormal × normal (patron BUG-001) --------
+                SUB_MUL_NORM : begin
+                    if (!item.randomize() with { op_code_i == FMUL; })
+                        `uvm_error(get_type_name(),
+                            $sformatf("Fallo el randomize del item %0d", i))
+                    signo       = (vuelta / 3) % 2;
+                    item.fp_a_i = gen_subnormal(signo);
+                    case (vuelta % 3)
+                        // b = +1.0: el producto es el propio subnormal, exacto
+                        0 : item.fp_b_i = gen_operando(CLASE_POTENCIA_DOS, 0,
+                                                    C_EXP_SESGO);
+                        // b alto: el producto es normal; el DUT devuelve cero
+                        // sin bandera alguna (patron TC-125)
+                        1 : item.fp_b_i = gen_operando(CLASE_NORMAL, -1,
+                                                    C_EXP_MUL_ALTO);
+                        // b libre: exploracion del rango completo
+                        default : item.fp_b_i = gen_normal();
+                    endcase
+                    // fp_c_i queda aleatorio: el DUT no lo consume en FMUL
+                end
+                // -------- FMADD/FMSUB: el patron embebido --------
+                SUB_MADD_NORM : begin
+                    op_fam = ((vuelta % 2) == 0) ? FMADD : FMSUB;
+                    if (!item.randomize() with { op_code_i == op_fam; })
+                        `uvm_error(get_type_name(),
+                            $sformatf("Fallo el randomize del item %0d", i))
+                    signo       = (vuelta / 4) % 2;
+                    item.fp_a_i = gen_subnormal(signo);
+                    item.fp_b_i = gen_operando(CLASE_NORMAL, -1, C_EXP_MUL_ALTO);
+                    // c = ±0 deja el resultado esperado igual al producto:
+                    // el flush del multiplicador queda desnudo
+                    if (((vuelta / 2) % 2) == 0)
+                        item.fp_c_i = gen_cero();
+                    else
+                        item.fp_c_i = gen_normal_banda();
+                end
+                // -------- FMUL: producto subnormal INEXACTO (UF real) --------
+                SUB_UDF_INEXAC : begin
+                    if (!item.randomize() with { op_code_i == FMUL; })
+                        `uvm_error(get_type_name(),
+                            $sformatf("Fallo el randomize del item %0d", i))
+                    suma_exp = C_EXP_SUMA_SUB_MIN + (vuelta % C_NUM_SUMA_SUB);
+                    exp_a    = suma_exp / 2;
+                    exp_b    = suma_exp - exp_a;
+                    item.fp_a_i = gen_operando(CLASE_NORMAL_IMPAR, -1, exp_a);
+                    item.fp_b_i = gen_operando(CLASE_NORMAL_IMPAR, -1, exp_b);
+                end
+                // -------- FMUL: producto subnormal EXACTO (UF debe ser 0) ----
+                SUB_UDF_EXACTO : begin
+                    if (!item.randomize() with { op_code_i == FMUL; })
+                        `uvm_error(get_type_name(),
+                            $sformatf("Fallo el randomize del item %0d", i))
+                    suma_exp = C_EXP_SUMA_SUB_MIN + (vuelta % C_VUELTAS_SUB);
+                    exp_a    = suma_exp / 2;
+                    exp_b    = suma_exp - exp_a;
+                    item.fp_a_i = gen_operando(CLASE_POTENCIA_DOS, -1, exp_a);
+                    item.fp_b_i = gen_operando(CLASE_POTENCIA_DOS, -1, exp_b);
+                end
+                // -------- FMUL: inf × subnormal --------
+                SUB_INF : begin
+                    if (!item.randomize() with { op_code_i == FMUL; })
+                        `uvm_error(get_type_name(),
+                            $sformatf("Fallo el randomize del item %0d", i))
+                    signo = (vuelta / 4) % 2; // signo del subnormal
+                    if ((vuelta % 2) == 0) begin
+                        item.fp_a_i = gen_inf((vuelta / 2) % 2);
+                        item.fp_b_i = gen_subnormal(signo);
+                    end
+                    else begin
+                        item.fp_a_i = gen_subnormal(signo);
+                        item.fp_b_i = gen_inf((vuelta / 2) % 2);
+                    end
+                end
+                // -------- FADD/FSUB: subnormales en el sumador --------
+                SUB_SUMA : begin
+                    case (vuelta % 4)
+                        0, 3    : op_fam = FADD;
+                        default : op_fam = FSUB;
+                    endcase
+                    if (!item.randomize() with { op_code_i == op_fam; })
+                        `uvm_error(get_type_name(),
+                            $sformatf("Fallo el randomize del item %0d", i))
+                    signo = (vuelta / 4) % 2;
+                    case (vuelta % 4)
+                        // suma y resta exactas de subnormales del mismo signo
+                        0, 1 : begin
+                            item.fp_a_i = gen_subnormal(signo);
+                            item.fp_b_i = gen_subnormal(signo);
+                        end
+                        // normal minimo menos su vecino inferior: el resultado
+                        // es el subnormal minimo, exacto (underflow gradual)
+                        2 : begin
+                            op_base     = gen_operando(CLASE_NORMAL, signo,
+                                                    C_EXP_MIN_NORMAL);
+                            item.fp_a_i = op_base;
+                            item.fp_b_i = op_base - 32'd1;
+                        end
+                        // control: resultado normal, subnormal absorbido (NX)
+                        default : begin
+                            item.fp_a_i = gen_subnormal(signo);
+                            item.fp_b_i = gen_normal_banda();
+                        end
+                    endcase
+                end
+                // inalcanzable con % C_NUM_FAM_SUB; defensivo
+                default : `uvm_error(get_type_name(),
+                    $sformatf("Familia de subnormales desconocida: %0d", familia_sub))
+            endcase
+
+		finish_item(item);
+
+		`uvm_info(get_type_name(),
+			$sformatf("Item %0d enviado: familia_sub=%s vuelta=%0d op=%s a=%8h b=%8h c=%8h rm=%s",
+				i, familia_sub.name(), vuelta, item.op_code_i.name(), item.fp_a_i,
+				item.fp_b_i, item.fp_c_i, item.r_mode_i.name()),
+			UVM_HIGH)
+	end
+
+	`uvm_info(get_type_name(), "Fin de secuencia subnormal_arith", UVM_MEDIUM)
 endtask : body
