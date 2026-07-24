@@ -119,4 +119,27 @@ task fpu_sequence_known_bugs_c::body();
 	`uvm_info(get_type_name(),
 		$sformatf("Inicio de secuencia known_bugs: %0d vectores", num_items_rand),
 		UVM_MEDIUM)
+    
+    for (int i = 0; i < num_items_rand; i++) begin
+		vec  = C_VECTORES[i];
+		item = fpu_seq_item_c::type_id::create($sformatf("item_%0d", i));
+
+		start_item(item);
+		    // vector byte-exacto: se fijan los cinco campos directamente, sin
+		    // randomize (esta familia no tiene campos libres)
+		    item.op_code_i = vec.op;
+		    item.r_mode_i  = vec.rm;
+		    item.fp_a_i    = vec.a;
+		    item.fp_b_i    = vec.b;
+		    item.fp_c_i    = vec.c;
+		finish_item(item);
+
+		`uvm_info(get_type_name(),
+			$sformatf("Vector %0d enviado: %s op=%s a=%8h b=%8h c=%8h rm=%s",
+				i, vec.bug.name(), item.op_code_i.name(), item.fp_a_i,
+				item.fp_b_i, item.fp_c_i, item.r_mode_i.name()),
+			UVM_HIGH)
+	end
+
+	`uvm_info(get_type_name(), "Fin de secuencia known_bugs", UVM_MEDIUM)
 endtask : body
