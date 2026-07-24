@@ -74,7 +74,7 @@ endfunction : new
 
 // Function: exponente_de
 // extrae el campo exponente (sesgado) de un operando binary32
-function int fpu_sequence_rounding_c:(logic [C_FP_WIDTH-1:0] operando);
+function int fpu_sequence_rounding_c::exponente_de(logic [C_FP_WIDTH-1:0] operando);
 	return int'(operando[C_FP_WIDTH-2 -: C_EXP_WIDTH]);
 endfunction : exponente_de
 
