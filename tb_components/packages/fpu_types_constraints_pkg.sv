@@ -97,6 +97,26 @@ package fpu_types_constraints_pkg;
     } fpu_estimulo_red_e;
     localparam int C_NUM_EST_RED = 2;
 
+    /* compare */
+    // clases del cross de comparacion (testplan sec. 2.2.4). El testplan
+    // pide {normal, ±0, ±inf, qNaN, sNaN}; se agrega CLASE_SUBNORMAL
+    // porque el orden entre ±0 y un subnormal es una rama propia del RTL
+    // (ambos con exponente 0) que ninguna otra clase ejercita
+    localparam int C_NUM_CLASES_CMP = 6;
+    localparam fpu_clase_operando_e C_CLASES_CMP[C_NUM_CLASES_CMP] = '{
+        CLASE_CERO, CLASE_SUBNORMAL, CLASE_NORMAL,
+        CLASE_INF,  CLASE_QNAN,      CLASE_SNAN
+    };
+    // escenarios de estimulo del test cmp (testplan sec. 2.2.4)
+    typedef enum int {
+        CMP_CROSS     = 0, // cross determinista clase_a × clase_b
+        CMP_IGUAL     = 1, // b = a (patron identico): unica via a FEQ = 1
+        CMP_OPUESTO   = 2, // b = a con signo invertido: ±0, ±x, ±inf
+        CMP_ADYACENTE = 3, // b = a ± 1 ULP: la decision cae en la mantisa
+        CMP_CERO_SUB  = 4  // ±0 contra subnormal del mismo signo
+    } fpu_escenario_cmp_e;
+    localparam int C_NUM_ESC_CMP = 5;
+
 endpackage
 
 `endif // FPU_TYPES_CONSTRAINTS_PKG
