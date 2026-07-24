@@ -81,11 +81,11 @@ run_fpu_test_arith_normal:
 run_fpu_test_flag_arith:
 	@$(call run_uvm_test, $(@:run_%=%))
 
-# fpu_test_special_spec:
-# 	@$(call run_uvm_test, $(@:run_%=%))
+fpu_test_special_spec:
+	@$(call run_uvm_test, $(@:run_%=%))
 
-# fpu_test_norm_spec :
-# 	@$(call run_uvm_test, $(@:run_%=%))
+fpu_test_norm_spec :
+	@$(call run_uvm_test, $(@:run_%=%))
 
 # fpu_test_rounding:
 # 	@$(call run_uvm_test, $(@:run_%=%))
