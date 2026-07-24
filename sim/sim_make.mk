@@ -64,7 +64,8 @@ endef
 ####################################################################################
 ################### Ejecutar los tests
 
-all_test: run_fpu_base_test run_fpu_test_arith_normal run_fpu_test_flag_arith
+all_test: run_fpu_base_test run_fpu_test_arith_normal run_fpu_test_flag_arith \
+		  run_fpu_test_special_spec run_fpu_test_norm_spec
 
 # testbench_sim:
 # 	./$(EXE_SIM) \
@@ -81,22 +82,22 @@ run_fpu_test_arith_normal:
 run_fpu_test_flag_arith:
 	@$(call run_uvm_test, $(@:run_%=%))
 
-fpu_test_special_spec:
+run_fpu_test_special_spec:
 	@$(call run_uvm_test, $(@:run_%=%))
 
-fpu_test_norm_spec :
+run_fpu_test_norm_spec:
 	@$(call run_uvm_test, $(@:run_%=%))
 
-# fpu_test_rounding:
+# run_fpu_test_rounding:
 # 	@$(call run_uvm_test, $(@:run_%=%))
 
-# fpu_test_cmp:
+# run_fpu_test_cmp:
 # 	@$(call run_uvm_test, $(@:run_%=%))
 
-# fpu_test_known_bugs:
+# run_fpu_test_known_bugs:
 # 	@$(call run_uvm_test, $(@:run_%=%))
 
-# fpu_test_subnormal_arith:
+# run_fpu_test_subnormal_arith:
 # 	@$(call run_uvm_test, $(@:run_%=%))
 
 ####################################################################################

@@ -30,7 +30,7 @@
  */
 
  class fpu_sequence_norm_spec_c extends fpu_base_sequence_c;
-    `uvm_objects_utils(fpu_sequence_norm_spec_c)
+    `uvm_object_utils(fpu_sequence_norm_spec_c)
     // piso duro: una pasada completa del cross posicion × clase = 12
 	// familias. Convive con el soft [100:200] de la base; si alguien lo
 	// baja de 12 a proposito, el randomize falla ruidosamente en vez de
