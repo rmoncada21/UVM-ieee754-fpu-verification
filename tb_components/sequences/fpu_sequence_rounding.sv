@@ -52,7 +52,7 @@ class fpu_sequence_rounding_c extends fpu_base_sequence_c;
 	// signo aleatorio del par ya lo porta el operando a)
 	localparam logic [C_FP_WIDTH-1:0] C_FP_UNO_Y_MEDIO = 32'h3FC00000;
 
-	// piso duro: una pasada completa del cross op × modo × tipo = 50
+	// pasada completa del cross op × modo × tipo = 50
 	// familias. Convive con el soft [100:200] de la base; si alguien lo
 	// baja de 50 a proposito, el randomize falla ruidosamente en vez de
 	// degradar la cobertura en silencio.
@@ -74,7 +74,7 @@ endfunction : new
 
 // Function: exponente_de
 // extrae el campo exponente (sesgado) de un operando binary32
-function int fpu_sequence_rounding_c::exponente_de(logic [C_FP_WIDTH-1:0] operando);
+function int fpu_sequence_rounding_c:(logic [C_FP_WIDTH-1:0] operando);
 	return int'(operando[C_FP_WIDTH-2 -: C_EXP_WIDTH]);
 endfunction : exponente_de
 

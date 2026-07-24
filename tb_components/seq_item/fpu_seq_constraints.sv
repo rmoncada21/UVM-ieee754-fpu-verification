@@ -97,6 +97,15 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
     }
 
 	/* rounding */
+
+	// potencia de dos: mantisa 0, exponente normal; combinada con
+	// exponente_forzado produce el ±medio ULP exacto de los empates
+	// dirigidos del test rounding (testplan sec. 2.2.3)
+	constraint cn_potencia_dos {
+		exponente_rand inside {[C_EXP_MIN_NORMAL : C_EXP_MAX_NORMAL]};
+		mantisa_rand   == '0;
+	}
+
 	// empate en FMUL contra +1.5: mantisa impar y acotada tal que
 	// 3*sig cabe en 25 bits (sig = 2^23 + m < 2^25/3  <=>  m <= 'h2AAAAA);
 	// el unico bit descartado tras normalizar es el LSB de 3*sig = 1
@@ -105,14 +114,6 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 		exponente_rand inside {[C_EXP_BANDA_MINIMA : C_EXP_BANDA_MAXIMA]};
 		mantisa_rand[0] == 1'b1;
 		mantisa_rand    <= 23'h2AAAAA;
-	}
-
-	// potencia de dos: mantisa 0, exponente normal; combinada con
-	// exponente_forzado produce el ±medio ULP exacto de los empates
-	// dirigidos del test rounding (testplan sec. 2.2.3)
-	constraint cn_potencia_dos {
-		exponente_rand inside {[C_EXP_MIN_NORMAL : C_EXP_MAX_NORMAL]};
-		mantisa_rand   == '0;
 	}
 
    /* OTROS */
