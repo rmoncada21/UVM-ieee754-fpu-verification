@@ -39,4 +39,11 @@
 		num_items_rand >= C_NUM_POS_ESP * C_NUM_CLASES_ESP;
 	}
 
+    // Prototipos de funciones de la secuencia
+	extern function new(string name = "fpu_sequence_norm_spec_c");
+	extern virtual task body();
  endclass : fpu_sequence_norm_spec_c
+
+function fpu_sequence_norm_spec_c::new(string name = "fpu_sequence_norm_spec_c");
+	super.new(name);
+endfunction : new
