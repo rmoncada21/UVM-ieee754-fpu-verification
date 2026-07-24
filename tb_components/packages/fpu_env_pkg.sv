@@ -23,6 +23,7 @@ package fpu_env_pkg;
 	`include "tb_components/sequences/fpu_sequence_special_spec.sv"
 	`include "tb_components/sequences/fpu_sequence_norm_spec.sv"
 	`include "tb_components/sequences/fpu_sequence_rounding.sv"
+	`include "tb_components/sequences/fpu_sequence_cmp.sv"
 
 	// uvm component
 	`include "tb_components/uvm_components/fpu_driver.sv"
@@ -38,6 +39,7 @@ package fpu_env_pkg;
 	`include "tb_components/tests/fpu_test_special_spec.sv"
 	`include "tb_components/tests/fpu_test_norm_spec.sv"
 	`include "tb_components/tests/fpu_test_rounding.sv"
+	`include "tb_components/tests/fpu_test_cmp.sv"
 
 
 endpackage
