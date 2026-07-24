@@ -88,8 +88,8 @@ run_fpu_test_special_spec:
 run_fpu_test_norm_spec:
 	@$(call run_uvm_test, $(@:run_%=%))
 
-# run_fpu_test_rounding:
-# 	@$(call run_uvm_test, $(@:run_%=%))
+run_fpu_test_rounding:
+	@$(call run_uvm_test, $(@:run_%=%))
 
 # run_fpu_test_cmp:
 # 	@$(call run_uvm_test, $(@:run_%=%))
