@@ -22,9 +22,9 @@ class fpu_test_subnormal_arith_c extends fpu_base_test_c;
 		super.new(name, parent);
 	endfunction : new
 
-	/* Function: crear_secuencia
-	devuelve la secuencia subnormal_arith; el run_phase heredado de
-	fpu_base_test_c se encarga de randomizarla y arrancarla */
+	// Function: crear_secuencia
+	// devuelve la secuencia subnormal_arith; el run_phase heredado de
+	// fpu_base_test_c se encarga de randomizarla y arrancarla
 	virtual function fpu_base_sequence_c crear_secuencia();
 		return fpu_sequence_subnormal_arith_c::type_id::create("subnormal_arith_sequence");
 	endfunction : crear_secuencia

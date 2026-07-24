@@ -20,9 +20,9 @@ class fpu_test_cmp_c extends fpu_base_test_c;
 		super.new(name, parent);
 	endfunction : new
 
-	/* Function: crear_secuencia
-	devuelve la secuencia cmp; el run_phase heredado de fpu_base_test_c
-	se encarga de randomizarla y arrancarla */
+	// Function: crear_secuencia
+	// devuelve la secuencia cmp; el run_phase heredado de fpu_base_test_c
+	// se encarga de randomizarla y arrancarla
 	virtual function fpu_base_sequence_c crear_secuencia();
 		return fpu_sequence_cmp_c::type_id::create("cmp_sequence");
 	endfunction : crear_secuencia
