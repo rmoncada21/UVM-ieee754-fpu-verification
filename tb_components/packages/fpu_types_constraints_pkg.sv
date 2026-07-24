@@ -54,26 +54,35 @@ package fpu_types_constraints_pkg;
         CLASE_NORMAL_UDF_PROD = 9   // normal con exp en [1, 63] underflow en producto
      } fpu_clase_operando_e;
 
+    /* flag arith */
     typedef enum int{
         FAM_OVERFLOW  = 0, // resultado supera el máxximo finito
         FAM_UNDERFLOW = 1, // resultado tiny con perdida de exactitud 
         FAM_INVALID   = 2  // operación invalida IEEE (0*inf, inf-inf, NaN entrante)
     } fpu_familia_flag_e;
 
+    /* special spec */
     // clases "especiales" del testplan sec. 2.2.2 (cero, inf, NaN; sin
     // subnormales: estos van al test dedicado de subnormales). El orden
     // es fijo: define el recorrido determinista de special_spec y de
     // norm_spec sobre el cross de clases.
     localparam int C_NUM_CLASES_ESP = 4;
     localparam fpu_clase_operando_e C_CLASES_ESP[C_NUM_CLASES_ESP] = '{
-        CLASE_CERO,
-        CLASE_INF,
-        CLASE_QNAN,
-        CLASE_SNAN
+        CLASE_CERO, CLASE_INF,
+        CLASE_QNAN, CLASE_SNAN
     };
 
-endpackage
+    /* norm spec */
+    // posicion del operando especial en el test norm_spec (testplan
+    // sec. 2.2.2): exactamente uno de los tres operandos lleva la
+    // clase especial; los otros dos van en banda segura
+    typedef enum int {
+        POS_ESP_A = 0, // especial en fp_a_i
+        POS_ESP_B = 1, // especial en fp_b_i
+        POS_ESP_C = 2  // especial en fp_c_i (solo FMADD/FMSUB)
+    } fpu_posicion_esp_e;
+    localparam int C_NUM_POS_ESP = 3;
 
-// import fpu_types_constraints_pkg::*;
+endpackage
 
 `endif // FPU_TYPES_CONSTRAINTS_PKG
