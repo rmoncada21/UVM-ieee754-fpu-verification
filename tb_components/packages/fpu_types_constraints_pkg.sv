@@ -39,8 +39,6 @@ package fpu_types_constraints_pkg;
     localparam logic [C_EXP_WIDTH-1:0] C_EXP_OVF_PROD_MIN = 8'd191;
     localparam logic [C_EXP_WIDTH-1:0] C_EXP_UDF_PROD_MAX = 8'd63;
 
-
-
     // clasificacion IEEE 754 de un operando binary32
      typedef enum int {
         CLASE_CERO      = 0,    // ±0
@@ -61,6 +59,18 @@ package fpu_types_constraints_pkg;
         FAM_UNDERFLOW = 1, // resultado tiny con perdida de exactitud 
         FAM_INVALID   = 2  // operación invalida IEEE (0*inf, inf-inf, NaN entrante)
     } fpu_familia_flag_e;
+
+    // clases "especiales" del testplan sec. 2.2.2 (cero, inf, NaN; sin
+    // subnormales: estos van al test dedicado de subnormales). El orden
+    // es fijo: define el recorrido determinista de special_spec y de
+    // norm_spec sobre el cross de clases.
+    localparam int C_NUM_CLASES_ESP = 4;
+    localparam fpu_clase_operando_e C_CLASES_ESP[C_NUM_CLASES_ESP] = '{
+        CLASE_CERO,
+        CLASE_INF,
+        CLASE_QNAN,
+        CLASE_SNAN
+    };
 
 endpackage
 
