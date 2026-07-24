@@ -17,7 +17,9 @@ MOSTRAR_EXE_ABS:
 	echo "$(EXE_ABS)"
 
 # tests activos; agregar aquí conforme se integren los del testplan
-TESTS_ACTIVOS := fpu_base_test fpu_test_arith_normal fpu_test_flag_arith
+TESTS_ACTIVOS := fpu_base_test fpu_test_arith_normal fpu_test_flag_arith \
+				 fpu_test_special_spec fpu_test_norm_spec \
+				 fpu_test_rounding fpu_test_cmp
 
 # knobs de regresión multi-semilla
 NUM_SEEDS ?= 1
@@ -65,7 +67,8 @@ endef
 ################### Ejecutar los tests
 
 all_test: run_fpu_base_test run_fpu_test_arith_normal run_fpu_test_flag_arith \
-		  run_fpu_test_special_spec run_fpu_test_norm_spec
+		  run_fpu_test_special_spec run_fpu_test_norm_spec \
+		  run_fpu_test_rounding run_fpu_test_cmp
 
 # testbench_sim:
 # 	./$(EXE_SIM) \
