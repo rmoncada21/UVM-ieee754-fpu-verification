@@ -100,8 +100,8 @@ run_fpu_test_cmp:
 # run_fpu_test_known_bugs:
 # 	@$(call run_uvm_test, $(@:run_%=%))
 
-# run_fpu_test_subnormal_arith:
-# 	@$(call run_uvm_test, $(@:run_%=%))
+run_fpu_test_subnormal_arith:
+	@$(call run_uvm_test, $(@:run_%=%))
 
 ####################################################################################
 ################### Regresión multi-semilla
