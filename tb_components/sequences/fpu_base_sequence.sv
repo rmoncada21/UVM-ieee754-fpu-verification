@@ -34,7 +34,8 @@ class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
 
 	// Prototipos de generdores de operandos IEEE 754
 	// signo positivo:0 - negativo: -1
-	extern protected function logic [C_FP_WIDTH-1:0] gen_operando( fpu_clase_operando_e clase, int signo = -1); // núcleo común de los generadores
+	// extern protected function logic [C_FP_WIDTH-1:0] gen_operando( fpu_clase_operando_e clase, int signo = -1);
+	extern protected function logic [C_FP_WIDTH-1:0] gen_operando( fpu_clase_operando_e clase, int signo = -1, int exponente = -1);  // núcleo común de los generadores
 	extern protected function logic [C_FP_WIDTH-1:0] gen_cero(int signo = -1); // genera cero
 	extern protected function logic [C_FP_WIDTH-1:0] gen_subnormal(int signo = -1); // genera subnormal
 	extern protected function logic [C_FP_WIDTH-1:0] gen_normal(int signo = -1); // genera normal
@@ -89,9 +90,10 @@ endtask :  body
 // el sombreado entre signo_rand de la secuencia y signo_rand de
 // item_constraints.
 function logic [C_FP_WIDTH-1:0] fpu_base_sequence_c::gen_operando(
-		fpu_clase_operando_e clase, int signo);
-	item_constraints.activar_clase(clase);
-	item_constraints.signo_forzado = signo;
+		fpu_clase_operando_e clase, int signo, int exponente);
+	num_gen.activar_clase(clase);
+	num_gen.signo_forzado     = signo;
+	num_gen.exponente_forzado = exponente;
 	
 	if (!item_constraints.randomize())
 		`uvm_error(get_type_name(),
