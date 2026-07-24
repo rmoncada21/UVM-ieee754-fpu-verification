@@ -116,6 +116,15 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 		mantisa_rand    <= 23'h2AAAAA;
 	}
 
+	/* subnormal */
+	// normal con mantisa impar: el producto de dos mantisas impares es impar,
+	// asi que al caer en rango subnormal siempre se descarta al menos el LSB
+	// -> inexactitud garantizada, no probable (testplan sec. 2.2.5)
+	constraint cn_normal_impar {
+		exponente_rand inside {[C_EXP_MIN_NORMAL : C_EXP_MAX_NORMAL]};
+		mantisa_rand[0] == 1'b1;
+	}
+
    /* OTROS */
 	// ±inf : exponente 255, mantisa 0
 	constraint cn_inf {
@@ -161,6 +170,7 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 		cn_normal_udf_prod.constraint_mode(0);
 		cn_potencia_dos.constraint_mode(0);
 		cn_normal_empate_mul.constraint_mode(0);
+		cn_normal_impar.constraint_mode(0);
 	endfunction : desactivar_clases
 
 	// Function: activar_clase
@@ -183,6 +193,8 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 			/*rounding*/
 			CLASE_POTENCIA_DOS    : cn_potencia_dos.constraint_mode(1);
 			CLASE_NORMAL_EMPATE_MUL : cn_normal_empate_mul.constraint_mode(1);
+			/* subnormal */
+			CLASE_NORMAL_IMPAR      : cn_normal_impar.constraint_mode(1);
 			default : `uvm_warning(get_type_name(),
 				$sformatf("Clase de operando desconocida: %0d", clase))
 		endcase

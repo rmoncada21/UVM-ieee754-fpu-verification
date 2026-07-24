@@ -56,8 +56,11 @@ package fpu_types_constraints_pkg;
         CLASE_NORMAL_OVF_PROD = 8,  // normal con exp en [191, 254] - overflow en producto
         CLASE_NORMAL_UDF_PROD = 9,  // normal con exp en [1, 63] underflow en producto
         /*rounding*/
-        CLASE_POTENCIA_DOS = 10, // mantisa 0, exponente normal (via exponente_forzado)
+        CLASE_POTENCIA_DOS = 10,     // mantisa 0, exponente normal (via exponente_forzado)
         CLASE_NORMAL_EMPATE_MUL = 11 // mantisa impar <= 'h2AAAAA: empate exacto contra 1.5
+        /* subnormal */
+        CLASE_NORMAL_EMPATE_MUL = 11, // mantisa impar <= 'h2AAAAA: empate exacto contra 1.5
+        CLASE_NORMAL_IMPAR = 12       // normal con mantisa impar (producto tiny inexacto garantizado)
      } fpu_clase_operando_e;
 
     /* flag arith */
@@ -116,6 +119,31 @@ package fpu_types_constraints_pkg;
         CMP_CERO_SUB  = 4  // ±0 contra subnormal del mismo signo
     } fpu_escenario_cmp_e;
     localparam int C_NUM_ESC_CMP = 5;
+
+    /* subnormal */
+    // exponentes dirigidos del test subnormal_arith (testplan sec. 2.2.5).
+    // exp = 200: cualquier subnormal multiplicado por un normal con este
+    // exponente da un producto NORMAL (2^-76 .. 2^-52), asi que el flush
+    // del DUT es visible sin ambiguedad y sin bandera (patron TC-125)
+    localparam int C_EXP_MUL_ALTO = 200;
+    // suma de exponentes sesgados de un producto: el exponente real es
+    // exp_a + exp_b - 254. Suma 105 -> 2^-149 (subnormal minimo);
+    // suma 127 -> 2^-127 (subnormal alto); suma 128 -> 2^-126 (normal
+    // minimo: control positivo, el DUT debe acertarlo)
+    localparam int C_EXP_SUMA_SUB_MIN  = 105;
+    localparam int C_EXP_SUMA_SUB_MAX  = 127;
+    localparam int C_EXP_SUMA_NORM_MIN = 128;
+    localparam int C_NUM_SUMA_SUB = C_EXP_SUMA_SUB_MAX - C_EXP_SUMA_SUB_MIN + 1;
+    // familias de estimulo del test subnormal_arith (testplan sec. 2.2.5)
+    typedef enum int {
+        SUB_MUL_NORM   = 0, // FMUL: subnormal × normal (patron BUG-001)
+        SUB_MADD_NORM  = 1, // FMADD/FMSUB: el mismo patron embebido
+        SUB_UDF_INEXAC = 2, // FMUL: producto subnormal con perdida (UF real)
+        SUB_UDF_EXACTO = 3, // FMUL: producto subnormal exacto (UF debe ser 0)
+        SUB_INF        = 4, // FMUL: inf × subnormal
+        SUB_SUMA       = 5  // FADD/FSUB: subnormales en el sumador
+    } fpu_familia_sub_e;
+    localparam int C_NUM_FAM_SUB = 6;
 
 endpackage
 
