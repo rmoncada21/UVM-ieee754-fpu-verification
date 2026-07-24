@@ -20,6 +20,7 @@ package fpu_env_pkg;
 	`include "tb_components/sequences/fpu_base_sequence.sv"
 	`include "tb_components/sequences/fpu_sequence_arith_normal.sv"
 	`include "tb_components/sequences/fpu_sequence_flag_arith.sv"
+	`include "tb_components/sequences/fpu_sequence_special_spec.sv"
 
 	// uvm component
 	`include "tb_components/uvm_components/fpu_driver.sv"
@@ -32,11 +33,9 @@ package fpu_env_pkg;
 	`include "tb_components/tests/fpu_base_test.sv"
 	`include "tb_components/tests/fpu_test_arith_normal.sv"
 	`include "tb_components/tests/fpu_test_flag_arith.sv"
+	`include "tb_components/tests/fpu_test_special_spec.sv"
 
 
 endpackage
-// import uvm_pkg::*;
-// import fpu_types_pkg::*;
-// import fpu_dpic_ref_model_pkg::*;
-// import fpu_types_constraints_pkg::*;
-`endif
+
+`endif // FPU_ENV_PKG

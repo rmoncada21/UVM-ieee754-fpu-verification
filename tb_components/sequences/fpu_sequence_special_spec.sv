@@ -41,3 +41,56 @@ class fpu_sequence_special_spec_c extends fpu_base_sequence_c;
 	extern virtual task body();
 
 endclass : fpu_sequence_special_spec_c
+
+
+function fpu_sequence_special_spec_c::new(string name = "fpu_sequence_special_spec_c");
+	super.new(name);
+endfunction : new
+
+// Task: body
+// Familia deterministica: digitos en base 4 del indice (clase_a,
+// clase_b, clase_c) sobre C_CLASES_ESP, recorriendo el cross completo
+// de pares (a, b) cada 16 items.
+task fpu_sequence_special_spec_c::body();
+	fpu_seq_item_c       item;
+	fpu_clase_operando_e clase_a;
+	fpu_clase_operando_e clase_b;
+	fpu_clase_operando_e clase_c;
+
+	`uvm_info(get_type_name(),
+		$sformatf("Inicio de secuencia special_spec: %0d items", num_items_rand),
+		UVM_MEDIUM)
+
+	for (int i = 0; i < num_items_rand; i++) begin
+		// familia deterministica: digitos en base 4 del indice; el cross
+		// completo de clases especiales se recorre cada 64 items
+		clase_a = C_CLASES_ESP[i % C_NUM_CLASES_ESP];
+		clase_b = C_CLASES_ESP[(i / C_NUM_CLASES_ESP) % C_NUM_CLASES_ESP];
+		clase_c = C_CLASES_ESP[(i / (C_NUM_CLASES_ESP * C_NUM_CLASES_ESP))
+			% C_NUM_CLASES_ESP];
+
+		item = fpu_seq_item_c::type_id::create($sformatf("item_%0d", i));
+
+		start_item(item);
+			// operacion aritmetica y modo de redondeo valido, aleatorios
+			if (!item.randomize() with {
+					op_code_i inside {FADD, FSUB, FMUL, FMADD, FMSUB};
+				})
+				`uvm_error(get_type_name(),
+					$sformatf("Fallo el randomize del item %0d", i))
+			// operandos especiales de la familia; signo y payload libres
+			item.fp_a_i = gen_operando(clase_a);
+			item.fp_b_i = gen_operando(clase_b);
+			item.fp_c_i = gen_operando(clase_c);
+		finish_item(item);
+
+		`uvm_info(get_type_name(),
+			$sformatf("Item %0d enviado: fam=(%s,%s,%s) op=%s a=%8h b=%8h c=%8h rm=%s",
+				i, clase_a.name(), clase_b.name(), clase_c.name(),
+				item.op_code_i.name(), item.fp_a_i, item.fp_b_i,
+				item.fp_c_i, item.r_mode_i.name()),
+			UVM_HIGH)
+	end
+
+	`uvm_info(get_type_name(), "Fin de secuencia special_spec", UVM_MEDIUM)
+endtask : body
