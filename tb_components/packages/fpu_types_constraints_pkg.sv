@@ -25,6 +25,9 @@ package fpu_types_constraints_pkg;
     localparam logic [C_EXP_WIDTH-1:0] C_EXP_MIN_NORMAL = 8'd1;   // normal: menor
     localparam logic [C_EXP_WIDTH-1:0] C_EXP_MAX_NORMAL = 8'd254; // normal: mayor
     localparam logic [C_EXP_WIDTH-1:0] C_EXP_ESPECIAL   = 8'd255; // inf / NaN (s, q)
+    
+    /* rounding test */
+    localparam logic int C_EXP_SESGO = 127; // sesgo del exponente en binary 32
 
     // banda segura para arimética normal (tesplan sec. 2.2.1.1):
     // operandos normales y sin resultados de over/underflow para
@@ -51,7 +54,10 @@ package fpu_types_constraints_pkg;
 		CLASE_NORMAL_BANDA = 6,     // normal en banda segura [70,184]
         CLASE_NORMAL_OVF_SUMA = 7,  // normal con exp = 254 overflow en suma/resta
         CLASE_NORMAL_OVF_PROD = 8,  // normal con exp en [191, 254] - overflow en producto
-        CLASE_NORMAL_UDF_PROD = 9   // normal con exp en [1, 63] underflow en producto
+        CLASE_NORMAL_UDF_PROD = 9,  // normal con exp en [1, 63] underflow en producto
+        /*rounding*/
+        CLASE_POTENCIA_DOS = 10, // mantisa 0, exponente normal (via exponente_forzado)
+        CLASE_NORMAL_EMPATE_MUL = 11 // mantisa impar <= 'h2AAAAA: empate exacto contra 1.5
      } fpu_clase_operando_e;
 
     /* flag arith */
@@ -82,6 +88,14 @@ package fpu_types_constraints_pkg;
         POS_ESP_C = 2  // especial en fp_c_i (solo FMADD/FMSUB)
     } fpu_posicion_esp_e;
     localparam int C_NUM_POS_ESP = 3;
+
+    /*rounding*/
+    // tipos de estimulo del test rounding (testplan sec. 2.2.3)
+    typedef enum int {
+        RED_ALEATORIO = 0, // operandos banda aleatorios: inexacto generico
+        RED_EMPATE    = 1  // empate exacto construido (guard = 1, sticky = 0)
+    } fpu_estimulo_red_e;
+    localparam int C_NUM_EST_RED = 2;
 
 endpackage
 
