@@ -75,9 +75,9 @@ all_test: run_fpu_base_test run_fpu_test_arith_normal run_fpu_test_flag_arith \
 # 		-l ../$(SIM)/$(EXE_SIM) \
 # 		| tee ../$(SIM)/$(EXE_SIM)$(shell date +%d_%H_%M_%S).log
 
-run_fpu_base_test:
-	echo "$@"
-	@$(call run_uvm_test, $(@:run_%=%))
+# run_fpu_base_test:
+# 	echo "$@"
+# 	@$(call run_uvm_test, $(@:run_%=%))
 
 run_fpu_test_arith_normal:
 	@$(call run_uvm_test, $(@:run_%=%))

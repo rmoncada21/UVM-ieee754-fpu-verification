@@ -11,7 +11,8 @@ SHELL := /bin/bash
 #          Por defecto toma FECHA; se puede etiquetar: make regresion REG_ID=my_regression
 # SEED   : semilla explícita y reproducible; si no se fija se sortea UNA
 #          sola vez por invocación (el guard con origin evita el re-sorteo por expansión)
-FECHA := $(shell date +%Y%m%d_%H%M%S)
+# FECHA := $(shell date +%Y%m%d_%H%M%S)
+FECHA := $(shell date +%Y%m%d_%H)
 REG_ID   ?= $(FECHA)
 
 ifeq ($(origin SEED), undefined)
