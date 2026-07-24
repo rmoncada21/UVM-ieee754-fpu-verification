@@ -25,13 +25,26 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 	// knob de estado: -1 = signo aleatorio, 0 = positivo, 1 = negativo
 	int signo_forzado = -1;
 
+	// knob de estado: -1 = exponente aleatorio, >= 0 = valor exacto del
+	// campo exponente (sesgado); lo usan los generadores dirigidos que
+	// necesitan una potencia de dos con exponente calculado (rounding)
+	int exponente_forzado = -1;
+
 	// signo forzado: siempre activa; solo restringe cuando signo_forzado >= 0
 	constraint cn_signo_forzado {
 		if (signo_forzado >= 0) signo_rand == signo_forzado[0];
 	}
+	
+	/*rounding*/
+	// exponente forzado: siempre activa; solo restringe cuando
+	// exponente_forzado >= 0. Si el valor pedido contradice la clase
+	// activa, el randomize falla ruidosamente (mejor que degradar)
+	constraint cn_exponente_forzado {
+		if (exponente_forzado >= 0)
+			exponente_rand == exponente_forzado[C_EXP_WIDTH-1:0];
+	}
 
 	/*Arith normal*/
-
 	// Constraints por clase IEEE 754 (desactivadas por defecto)
 	// ±0 : exponente 0, mantisa 0
 	constraint cn_cero {
@@ -83,6 +96,25 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 		};
     }
 
+	/* rounding */
+	// empate en FMUL contra +1.5: mantisa impar y acotada tal que
+	// 3*sig cabe en 25 bits (sig = 2^23 + m < 2^25/3  <=>  m <= 'h2AAAAA);
+	// el unico bit descartado tras normalizar es el LSB de 3*sig = 1
+	// -> guard = 1, sticky = 0: empate exacto (testplan sec. 2.2.3)
+	constraint cn_normal_empate_mul {
+		exponente_rand inside {[C_EXP_BANDA_MIN : C_EXP_BANDA_MAX]};
+		mantisa_rand[0] == 1'b1;
+		mantisa_rand    <= 23'h2AAAAA;
+	}
+
+	// potencia de dos: mantisa 0, exponente normal; combinada con
+	// exponente_forzado produce el ±medio ULP exacto de los empates
+	// dirigidos del test rounding (testplan sec. 2.2.3)
+	constraint cn_potencia_dos {
+		exponente_rand inside {[C_EXP_MIN_NORMAL : C_EXP_MAX_NORMAL]};
+		mantisa_rand   == '0;
+	}
+
    /* OTROS */
 	// ±inf : exponente 255, mantisa 0
 	constraint cn_inf {
@@ -126,6 +158,8 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 		cn_normal_ovf_suma.constraint_mode(0);
 		cn_normal_ovf_prod.constraint_mode(0);
 		cn_normal_udf_prod.constraint_mode(0);
+		cn_potencia_dos.constraint_mode(0);
+		cn_normal_empate_mul.constraint_mode(0);
 	endfunction : desactivar_clases
 
 	// Function: activar_clase
@@ -145,6 +179,9 @@ class fpu_seq_constraints_c extends fpu_seq_item_c;
 			CLASE_NORMAL_OVF_SUMA : cn_normal_ovf_suma.constraint_mode(1);
 			CLASE_NORMAL_OVF_PROD : cn_normal_ovf_prod.constraint_mode(1);
 			CLASE_NORMAL_UDF_PROD : cn_normal_udf_prod.constraint_mode(1);
+			/*rounding*/
+			CLASE_POTENCIA_DOS    : cn_potencia_dos.constraint_mode(1);
+			CLASE_NORMAL_EMPATE_MUL : cn_normal_empate_mul.constraint_mode(1);
 			default : `uvm_warning(get_type_name(),
 				$sformatf("Clase de operando desconocida: %0d", clase))
 		endcase
