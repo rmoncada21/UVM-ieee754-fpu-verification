@@ -57,9 +57,8 @@ package fpu_types_constraints_pkg;
         CLASE_NORMAL_UDF_PROD = 9,  // normal con exp en [1, 63] underflow en producto
         /*rounding*/
         CLASE_POTENCIA_DOS = 10,     // mantisa 0, exponente normal (via exponente_forzado)
-        CLASE_NORMAL_EMPATE_MUL = 11 // mantisa impar <= 'h2AAAAA: empate exacto contra 1.5
-        /* subnormal */
         CLASE_NORMAL_EMPATE_MUL = 11, // mantisa impar <= 'h2AAAAA: empate exacto contra 1.5
+        /* subnormal */
         CLASE_NORMAL_IMPAR = 12       // normal con mantisa impar (producto tiny inexacto garantizado)
      } fpu_clase_operando_e;
 
