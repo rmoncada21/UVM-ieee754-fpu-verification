@@ -25,6 +25,6 @@
     // devuelve la secuencia cmp; el run_phase heredado de fpu_base_test_c
     // se encarga de randomizarla y arrancarla
     function fpu_base_sequence_c crear_secuencia();
-        return fpu_base_sequence_c::type_id::create("flag_arith_sequence");
+        return fpu_sequence_flag_arith_c::type_id::create("flag_arith_sequence");
     endfunction : crear_secuencia
  endclass : fpu_test_flag_arith_c
