@@ -1,4 +1,3 @@
-// Language: SystemVerilog
 /*
  * File:    fpu_scoreboard_c.sv
  * Project:  FPU RV32F  Verificación funcional UVM
