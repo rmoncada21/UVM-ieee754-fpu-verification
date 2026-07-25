@@ -1,6 +1,7 @@
+// Language: SystemVerilog
 /*
  * File:    fpu_scoreboard_c.sv
- * Project:  FPU RV32F  Verificación funcional UVM
+ * Project:  FPU RV32F  Verificación funcional UVM
  *
  * Description:
  *   Scoreboard UVM de la FPU RV32F. Recibe transacciones del monitor
@@ -59,6 +60,7 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	int unsigned num_pass; // transacciones que coinciden con el modelo
 	int unsigned num_bug; // transacciones que calzan con un bug ya documentado
 	int unsigned num_fail; // transacciones con fallo no documentado
+	int unsigned num_fail_1ulp; // subconjunto de num_fail a exactamente 1 ULP (firma del sesgo del sumador)
 	int unsigned conteo_por_opcode[fpu_op_code_e]; // distribución de transacciones por opcode
 
 	// Prototipos de funciones del scoreboard
@@ -73,6 +75,10 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 		output logic               dut_invalid_esperado
 	);
 	extern protected function bit es_bug_conocido(fpu_seq_item_c item_dut); // reconoce la firma de BUG-001
+	extern protected function longint unsigned distancia_ulp( // distancia ordinal DUT vs referencia en ULPs
+		input logic [31:0] valor_dut,
+		input logic [31:0] valor_referencia
+	);
 	extern protected function void csv_abrir(); // abre el CSV y escribe el encabezado
 	extern protected function void csv_linea( // escribe una fila del CSV
 	    input fpu_seq_item_c      item_dut,
@@ -84,7 +90,8 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	    input bit                 coincide_overflow,
 	    input bit                 coincide_underflow,
 	    input bit                 coincide_invalid,
-	    input string              clasificacion
+	    input string              clasificacion,
+	    input longint unsigned    dist_ulp
 	);
 	extern protected function void csv_resumen();
 	extern virtual function write(fpu_seq_item_c item_dut); // callback TLM, compara DUT vs referencia
@@ -182,6 +189,30 @@ function automatic bit fpu_scoreboard_c::es_bug_conocido(fpu_seq_item_c item_dut
     return op_usa_multiplicador && (operando_a_subnormal || operando_b_subnormal);
 endfunction : es_bug_conocido
 
+// Function: distancia_ulp
+// Distancia entre dos patrones binary32 en pasos de la escala ordinal
+// signo-magnitud: negativo -> -(bits[30:0]), positivo -> +(bits[30:0]).
+// La escala es monotónica en toda la recta extendida (±0 colapsan en 0,
+// ±Inf son los extremos), así que |orden_dut - orden_referencia| cuenta
+// los representables entre ambos: la distancia en ULPs. En un FAIL,
+// dist_ulp = 0 delata discrepancia solo de signo del cero; con NaN
+// mediría distancia de payload y no se interpreta.
+function automatic longint unsigned fpu_scoreboard_c::distancia_ulp(
+	input logic [31:0] valor_dut,
+	input logic [31:0] valor_referencia
+);
+	longint orden_dut;        // posición ordinal del resultado del DUT
+	longint orden_referencia; // posición ordinal del resultado del modelo
+
+	orden_dut        = valor_dut[31]        ? -longint'(valor_dut[30:0])
+	                                        :  longint'(valor_dut[30:0]);
+	orden_referencia = valor_referencia[31] ? -longint'(valor_referencia[30:0])
+	                                        :  longint'(valor_referencia[30:0]);
+
+	return (orden_dut >= orden_referencia) ? unsigned'(orden_dut - orden_referencia)
+	                                       : unsigned'(orden_referencia - orden_dut);
+endfunction : distancia_ulp
+
 // Function: csv_abrir
 // Abre el archivo CSV de resultados y escribe la fila de encabezado.
 // Se invoca desde start_of_simulation_phase. Plusargs desde terminal:
@@ -213,7 +244,7 @@ function void fpu_scoreboard_c::csv_abrir();
     $fdisplay(csv_signal_open,
         {"idx,tiempo,op,rm,fp_a,fp_b,fp_c,dut_res,dut_cmp,ref_result,",
 		 "dut_ov,dut_uf,dut_inv,ref_ov,ref_uf,ref_inv,",
-         "ok_res,ok_ov,ok_uf,ok_inv,clasificacion"});
+         "ok_res,ok_ov,ok_uf,ok_inv,clasificacion,dist_ulp"});
     `uvm_info(get_type_name(),
         $sformatf("Volcado CSV de resultados en '%s'", csv_ruta), UVM_LOW)
 endfunction : csv_abrir
@@ -235,12 +266,13 @@ function void fpu_scoreboard_c::csv_linea(
     input bit                 coincide_overflow,
     input bit                 coincide_underflow,
     input bit                 coincide_invalid,
-    input string              clasificacion
+    input string              clasificacion,
+    input longint unsigned    dist_ulp
 );
     if (!csv_habilitado || csv_signal_open == 0)
         return;
     $fdisplay(csv_signal_open, $sformatf(
-        "%0d,%0d,%s,%s,%08h,%08h,%08h,%08h,%0b,%08h,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%s",
+        "%0d,%0d,%s,%s,%08h,%08h,%08h,%08h,%0b,%08h,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%0b,%s,%0d",
         num_transacciones, $time,
         item_dut.op_code_i.name(), item_dut.r_mode_i.name(),
         item_dut.fp_a_i, item_dut.fp_b_i, item_dut.fp_c_i,
@@ -248,7 +280,7 @@ function void fpu_scoreboard_c::csv_linea(
         item_dut.overflow_o, item_dut.underflow_o, item_dut.invalid_o,
         overflow_esperado, underflow_esperado, invalid_esperado,
         coincide_resultado, coincide_overflow, coincide_underflow, coincide_invalid,
-        clasificacion));
+        clasificacion, dist_ulp));
 endfunction : csv_linea
 
 // Function: csv_resumen
@@ -295,6 +327,7 @@ function fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	logic  invalid_esperado;
 	string clasificacion; // etiqueta textual final: PASS / BUG / FAIL
 
+	longint unsigned dist_ulp; // distancia DUT vs referencia en ULPs (0 = bit-exacto o solo signo de cero)
 	num_transacciones++;
 
 	// deteccion de datos entrantes XXX/ZZZ
@@ -355,6 +388,11 @@ function fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 							 (item_dut.invalid_o    === invalid_esperado)   || resultado_es_qnan || resultado_es_infinito;
 	end
 
+	// distancia en ULPs del resultado (en comparaciones el resultado es
+	// un bit: la métrica no aplica y se registra 0)
+	dist_ulp = es_opcode_comparacion ? 0
+	         : distancia_ulp(item_dut.fp_result_o, reference_model_s.resultado);
+
 	// --- 4. Clasificacion en tres parametros ---
 	if(coincide_resultado && coincide_overflow && coincide_underflow && coincide_invalid)  begin
 		num_pass++;
@@ -373,13 +411,15 @@ function fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	else begin
         num_fail++;      // fallo inesperado: debería quedar en 0
         clasificacion = "FAIL";
+        // subconjunto a exactamente 1 ULP: firma del sesgo del sumador
+        if (dist_ulp == 1) num_fail_1ulp++;
         // imprimir mensaje
 		`uvm_error("FPU_SCOREBOARD", $sformatf(
-            {"MISMATCH opcode=%s rm=%s fp_a=%08h fp_b=%08h fp_c=%08h | DUT=%08h reference=%08h",
+            {"MISMATCH opcode=%s rm=%s fp_a=%08h fp_b=%08h fp_c=%08h | DUT=%08h reference=%08h dist_ulp=%0d",
              " | flags DUT overflow=%0b underflow=%0b invalid=%0b esperadas overflow=%0b underflow=%0b invalid=%0b"},
             item_dut.op_code_i.name(), item_dut.r_mode_i.name(),
             item_dut.fp_a_i, item_dut.fp_b_i, item_dut.fp_c_i,
-            item_dut.fp_result_o, reference_model_s.resultado,
+            item_dut.fp_result_o, reference_model_s.resultado, dist_ulp,
             item_dut.overflow_o, item_dut.underflow_o, item_dut.invalid_o,
             overflow_esperado, underflow_esperado, invalid_esperado))
     end
@@ -388,7 +428,7 @@ function fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	csv_linea(item_dut, reference_model_s,
               overflow_esperado, underflow_esperado, invalid_esperado,
               coincide_resultado, coincide_overflow, coincide_underflow, coincide_invalid,
-              clasificacion);
+              clasificacion, dist_ulp);
 endfunction
 
 // Function: report_phase
@@ -405,6 +445,7 @@ function void fpu_scoreboard_c::report_phase(uvm_phase phase);
     `uvm_info(get_type_name(), $sformatf("  PASS          : %0d", num_pass), UVM_NONE)
     `uvm_info(get_type_name(), $sformatf("  BUG-001       : %0d (documentado)", num_bug), UVM_NONE)
     `uvm_info(get_type_name(), $sformatf("  FALLO nuevo   : %0d", num_fail), UVM_NONE)
+    `uvm_info(get_type_name(), $sformatf("    a 1 ULP     : %0d", num_fail_1ulp), UVM_NONE)
 
 	if (csv_habilitado && csv_signal_open != 0) begin
         $fclose(csv_signal_open);
