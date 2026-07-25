@@ -1,4 +1,3 @@
-// Language: SystemVerilog
 /*
  * File:    fpu_test_subnormal_arith.sv
  * - Project:  FPU RV32F — Verificación funcional UVM
@@ -17,8 +16,7 @@
 class fpu_test_subnormal_arith_c extends fpu_base_test_c;
 	`uvm_component_utils(fpu_test_subnormal_arith_c)
 
-	function new(string name = "fpu_test_subnormal_arith_c",
-	             uvm_component parent = null);
+	function new(string name = "fpu_test_subnormal_arith_c", uvm_component parent = null);
 		super.new(name, parent);
 	endfunction : new
 
