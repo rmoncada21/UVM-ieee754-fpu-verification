@@ -42,7 +42,7 @@ define run_uvm_test
 	mkdir -p $$run_dir; \
 	if [ ! -f $(MANIFEST) ]; then \
 		echo "test,semilla,transacciones,num_pass,num_bug,num_fail,ruta" > $(MANIFEST); \
-		{ echo "regresion  : $(REG)"; \
+		{ echo "regresion  : $(REG_ID)"; \
 		  echo "fecha      : $$(date -Iseconds)"; \
 		  echo "commit UVM : $$(git rev-parse --short HEAD 2>/dev/null || echo NA)"; \
 		  echo "commit DUT : $$(git -C dut/ALU-FPU-ieee754 rev-parse --short HEAD 2>/dev/null || echo NA)"; \
@@ -105,7 +105,7 @@ run_fpu_test_known_bugs:
 
 ####################################################################################
 ################### Regresión multi-semilla
-# make regresion TEST=fpu_test_arith_normal NUM_SEEDS=10 [REG=etiqueta]
+# make regresion TEST=fpu_test_arith_normal NUM_SEEDS=10 [REG_ID=etiqueta]
 # make regresion TEST=fpu_test_cmp SEEDS="1734829105 998877"   (reproducir exactas)
 regresion:
 	@sem="$(SEEDS)"; \
@@ -115,18 +115,18 @@ regresion:
 		done; \
 	fi; \
 	for s in $$sem; do \
-		$(MAKE) run_$(TEST) SEED=$$s REG=$(REG); \
+		$(MAKE) run_$(TEST) SEED=$$s REG_ID=$(REG_ID); \
 	done
 
 # todos los TESTS_ACTIVOS x NUM_SEEDS bajo el MISMO id de regresión
 regresion_todos:
 	@for t in $(TESTS_ACTIVOS); do \
-		$(MAKE) regresion TEST=$$t NUM_SEEDS=$(NUM_SEEDS) REG=$(REG) SEEDS="$(SEEDS)"; \
+		$(MAKE) regresion TEST=$$t NUM_SEEDS=$(NUM_SEEDS) REG_ID=$(REG_ID) SEEDS="$(SEEDS)"; \
 	done
 
 ####################################################################################
 ################### Regresión multi-semilla
-# make regresion TEST=fpu_test_arith_normal NUM_SEEDS=10 [REG=etiqueta]
+# make regresion TEST=fpu_test_arith_normal NUM_SEEDS=10 [REG_ID=etiqueta]
 # make regresion TEST=fpu_test_cmp SEEDS="1734829105 998877"   (reproducir exactas)
 # TODO: regresions target
 cobertura:
