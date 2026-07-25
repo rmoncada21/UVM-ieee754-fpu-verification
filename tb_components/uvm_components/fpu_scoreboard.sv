@@ -93,7 +93,7 @@ class fpu_scoreboard_c extends uvm_scoreboard;
 	    input longint unsigned    dist_ulp
 	);
 	extern protected function void csv_resumen();
-	extern virtual function write(fpu_seq_item_c item_dut); // callback TLM, compara DUT vs referencia
+	extern virtual function void write(fpu_seq_item_c item_dut); // callback TLM, compara DUT vs referencia
 	extern virtual function void report_phase(uvm_phase phase); // imprime el resumen final
 
 endclass: fpu_scoreboard_c
@@ -307,7 +307,7 @@ endfunction : csv_resumen
 // Callback del analysis_imp - monitor; UVM lo invoca por cada transacción que
 // publica el monitor. Cinco pasos: reference -> banderas esperadas ->
 // comparación EXACTA (sin tolerancia de 1 ULP) -> clasificación -> volcado CSV.
-function fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
+function void fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 	fpu_ref_resultado_s reference_model_s; // respuesta completa (resultado + flag) del modelo
 
 	bit es_opcode_comparacion; // opcode: FEQ/FLT/FLE
@@ -334,7 +334,8 @@ function fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
 
 	// aborta la simulación si el opcode llega con bits X/Z (dato corrupto)
 	if ($isunknown(item_dut.op_code_i))
-    	$fatal("Opcode con X/Z");
+		`uvm_fatal(get_type_name(), $sformatf(
+			"Opcode con X/Z en la transaccion %0d", num_transacciones))
 	conteo_por_opcode[item_dut.op_code_i]++;
 	es_opcode_comparacion = ( item_dut.op_code_i == FEQ ) || 
 							( item_dut.op_code_i == FLT ) || 
@@ -428,7 +429,7 @@ function fpu_scoreboard_c::write(fpu_seq_item_c item_dut);
               overflow_esperado, underflow_esperado, invalid_esperado,
               coincide_resultado, coincide_overflow, coincide_underflow, coincide_invalid,
               clasificacion, dist_ulp);
-endfunction
+endfunction : write
 
 // Function: report_phase
 // Resumen final. Todas las líneas con uvm_info: cada fallo ya emitió
