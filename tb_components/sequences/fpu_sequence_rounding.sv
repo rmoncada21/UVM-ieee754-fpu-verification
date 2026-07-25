@@ -14,7 +14,7 @@
  *     RED_ALEATORIO: tres operandos en banda segura; el resultado es
  *       inexacto casi siempre, distingue RTZ/RDN/RUP entre sí (y de
  *       RNE) y ejercita el doble redondeo de FMADD/FMSUB bajo cada
- *       modo de usuario (BUG-002: el golden lo replica).
+ *       modo de usuario (dato de entrada) (BUG-002: el golden lo replica).
  *     RED_EMPATE: empate exacto garantizado (guard = 1, sticky = 0),
  *       único estímulo donde RNE y RMM difieren  sin él la columna
  *       RMM del cross sería vacua (un empate aleatorio ocurre con
@@ -26,7 +26,7 @@
  *         FMADD/FMSUB: a = ±1.0 (producto = ±b exacto, la primera
  *           etapa RNE no redondea) y c = ±medio ULP del producto: el
  *           empate cae solo en la segunda etapa, que redondea con el
- *           modo de usuario.
+ *           modo de usuario (dato de entrada).
  *   La banda segura mantiene todo normal: la saturación por modo en
  *   overflow/underflow ya la cubre flag_arith, y no hay subnormales
  *   (BUG-001 fuera) ni el caso pendiente TFG-##22. La aleatoriedad
@@ -140,7 +140,7 @@ task fpu_sequence_rounding_c::body();
                         end
                         // FMADD, FMSUB: a = ±1.0 -> producto = ±b exacto;
                         // c = ±medio ULP del producto -> el empate cae solo
-                        // en la segunda etapa (modo de usuario)
+                        // en la segunda etapa (modo de usuario (dato de entrada))
                         default : begin
                             item.fp_a_i = gen_operando(CLASE_POTENCIA_DOS, -1,
                                 C_EXP_SESGO);
