@@ -62,13 +62,14 @@ TIMESCALE := 1ns/1ps
 SVFLAGS   := -Mupdate -full64 -sverilog -ntb_opts uvm-1.2
 FILELIST  := scripts/filelist.f
 EXE_SIM   := $(SIM)/testbench_sim
+EXE_VDB   := $(SIM)/testbench_sim.vdb
 LOG_TB    := $(SIM)/testbench_sim_compile.log
 WARNINGS  := $(SIM)/testbench_sim_compile_warnings.log
 MDIR      := $(BIN)
 DFLAGS    := -kdb -debug_acc+all -debug_region+cell+encrypt
 VERBOSITY := UVM_HIGH
 LINT      := TFIPC-L
-COVERAGE  := line+tgl+cond+fsm+branch+assert
+COVERAGE  := line+tgl+cond+branch+assert
 CM_LOG    := $(SIM)/testbench_sim_compile_coverage.log
 
 #----------------------------
@@ -117,7 +118,7 @@ testbench: _mkdir_folders build_reference_model_obj
 	-Mdir=$(MDIR) $(MSG_FORMAT) \
 	$(DFLAGS) \
 	+lint=$(LINT) \
-	-cm $(COVERAGE) -cm_log $(CM_LOG) \
+	-cm $(COVERAGE) -cm_dir $(EXE_VDB) -cm_log $(CM_LOG) \
 	$(RECURSIVE)
 	@mv -f vc_hdrs.h .fsm.sch.verilog.xml $(SIM) 2>/dev/null || true
 

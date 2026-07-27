@@ -19,13 +19,12 @@ MOSTRAR_EXE_ABS:
 # tests activos; agregar aquí conforme se integren los del testplan
 TESTS_ACTIVOS := fpu_base_test fpu_test_arith_normal fpu_test_flag_arith \
 				 fpu_test_special_spec fpu_test_norm_spec fpu_test_rounding \
-				 fpu_test_cmp fpu_test_subnormal_arith run_fpu_test_known_bugs
+				 fpu_test_cmp fpu_test_subnormal_arith fpu_test_known_bugs
 
 # knobs de regresión multi-semilla
+# se sobreesciben desde el cli
 NUM_SEEDS ?= 1
-TEST      ?= fpu_base_test fpu_test_arith_normal fpu_test_flag_arith \
-        	 fpu_test_special_spec fpu_test_norm_spec fpu_test_rounding \
-        	 fpu_test_cmp fpu_test_subnormal_arith run_fpu_test_known_bugs
+TEST      ?= fpu_base_test
 SEEDS     ?= 
 
 # run_fpu_base_test run_fpu_test_arith_normal run_fpu_test_flag_arith 
@@ -75,9 +74,8 @@ all_test: run_fpu_base_test run_fpu_test_arith_normal run_fpu_test_flag_arith \
 # 		-l ../$(SIM)/$(EXE_SIM) \
 # 		| tee ../$(SIM)/$(EXE_SIM)$(shell date +%d_%H_%M_%S).log
 
-# run_fpu_base_test:
-# 	echo "$@"
-# 	@$(call run_uvm_test, $(@:run_%=%))
+run_fpu_base_test:
+	@$(call run_uvm_test, $(@:run_%=%))
 
 run_fpu_test_arith_normal:
 	@$(call run_uvm_test, $(@:run_%=%))
@@ -108,32 +106,35 @@ run_fpu_test_known_bugs:
 # make regresion TEST=fpu_test_arith_normal NUM_SEEDS=10 [REG_ID=etiqueta]
 # make regresion TEST=fpu_test_cmp SEEDS="1734829105 998877"   (reproducir exactas)
 regresion:
-	@sem="$(SEEDS)"; \
-	if [ -z "$$sem" ]; then \
+	@local_seeds="$(SEEDS)"; \
+	if [ -z "$$local_seeds" ]; then \
 		for i in $$(seq $(NUM_SEEDS)); do \
-			sem="$$sem $$(od -An -N4 -tu4 /dev/urandom | tr -d ' ')"; \
+			local_seeds="$$local_seeds $$(od -An -N4 -tu4 /dev/urandom | tr -d ' ')"; \
 		done; \
 	fi; \
-	for s in $$sem; do \
-		$(MAKE) run_$(TEST) SEED=$$s REG_ID=$(REG_ID); \
+	for seed in $$local_seeds; do \
+		$(MAKE) run_$(TEST) SEED=$$seed REG_ID=$(REG_ID); \
 	done
 
 # todos los TESTS_ACTIVOS x NUM_SEEDS bajo el MISMO id de regresión
+# make regresion_todos NUM_SEEDS=3
+# seeds usadas para analisis de datos
+# make regresion_todos SEEDS="469078601 1238983584 4170956088"
 regresion_todos:
-	@for t in $(TESTS_ACTIVOS); do \
-		$(MAKE) regresion TEST=$$t NUM_SEEDS=$(NUM_SEEDS) REG_ID=$(REG_ID) SEEDS="$(SEEDS)"; \
+	@for test in $(TESTS_ACTIVOS); do \
+		$(MAKE) regresion TEST=$$test NUM_SEEDS=$(NUM_SEEDS) REG_ID=$(REG_ID) SEEDS="$(SEEDS)"; \
 	done
 
 ####################################################################################
 ################### Regresión multi-semilla
-# make regresion TEST=fpu_test_arith_normal NUM_SEEDS=10 [REG_ID=etiqueta]
-# make regresion TEST=fpu_test_cmp SEEDS="1734829105 998877"   (reproducir exactas)
 # TODO: regresions target
 cobertura:
 	urg -full64 -dir $(DIR_ANALISIS)/*/s*/cov.vdb \
 		-dbname $(DIR_ANALISIS)/cobertura_fusionada \
 		-report $(DIR_ANALISIS)/cobertura_reporte
-
+# verdi -dir sim/testbench_sim.vdb -cov -covdir reportes/regresiones/20260726_171711/fpu_test_arith_normal/s1238983584/cov.vdb/
+# verdi -cov -covdir sim/testbench_sim.vdb
+# verdi -cov -covdir sim/testbench_sim.vdb/ -covdir reportes/regresiones/20260726_223229/fpu_test_arith_normal/s1238983584/cov.vdb
 .PHONY: \
 	testbench_sim \
 	run_fpu_base_test \
