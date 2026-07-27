@@ -26,6 +26,7 @@ endif
 SIM         := sim
 BIN         := bin
 REPORTES    := reportes
+VERDI_LOGS  := verdi_logs
 REGRESIONES := $(REPORTES)/regresiones
 REG_DIR     := $(REGRESIONES)/$(REG_ID)
 MANIFEST    := $(REG_DIR)/manifest.csv
@@ -35,7 +36,7 @@ ULTIMA_REG  := $(REPORTES)/ultima
 # carpeta que analizan cobertura/scripts: la REG= pedida, o 'ultima' por defecto
 DIR_ANALISIS := $(if $(filter command line,$(origin REG_ID)),$(REG_DIR),$(ULTIMA_REG))
 
-DIRS := $(BIN) $(REPORTES)
+DIRS := $(BIN) $(REPORTES) $(VERDI_LOGS)
 
 $(DIRS):
 	mkdir -p $@

@@ -11,6 +11,7 @@ images/
 sim/**
 !sim/sim_make.mk
 vectors/
+verdi_logs
 zfolder_*/
 
 ## quitar al finalizar el ambiente

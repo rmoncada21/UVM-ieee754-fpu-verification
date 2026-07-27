@@ -145,3 +145,9 @@ cobertura:
 	run_fpu_test_norm_spec \
 	run_fpu_test_subnormal_arith \
 	regresion regresion_todos
+
+
+coverage_verdi:
+	(cd verdi_logs && verdi -cov \
+  		-covdir ../sim/testbench_sim.vdb/ \
+  		-covdir ../reportes/regresiones/20260726_223229/fpu_test_arith_normal/s1238983584/cov.vdb)
