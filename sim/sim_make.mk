@@ -129,7 +129,8 @@ regresion_todos:
 ################### Regresión multi-semilla
 # TODO: regresions target
 cobertura:
-	urg -full64 -dir $(DIR_ANALISIS)/*/s*/cov.vdb \
+	urg -full64 \
+		-dir $(EXE_VDB) $(DIR_ANALISIS)/*/s*/cov.vdb \
 		-dbname $(DIR_ANALISIS)/cobertura_fusionada \
 		-report $(DIR_ANALISIS)/cobertura_reporte
 # verdi -dir sim/testbench_sim.vdb -cov -covdir reportes/regresiones/20260726_171711/fpu_test_arith_normal/s1238983584/cov.vdb/
