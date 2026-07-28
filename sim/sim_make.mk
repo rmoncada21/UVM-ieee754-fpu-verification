@@ -26,10 +26,10 @@ TESTS_ACTIVOS := fpu_base_test fpu_test_arith_normal fpu_test_flag_arith \
 # se sobreesciben desde el cli
 NUM_SEEDS ?= 1
 TEST      ?= fpu_base_test
-SEEDS     ?= 
+SEEDS     ?= "469078601 1238983584 4170956088"
 
 # knobs de targets de cobertura
-COV_DIR   ?=
+COV_DIR   ?= reportes
 
 ####################################################################################
 ################### #1. FUNCIÓN MODULAR (Macro)
@@ -120,14 +120,16 @@ regresion_all:
 		$(MAKE) regresion TEST=$$test NUM_SEEDS=$(NUM_SEEDS) REG_ID=$(REG_ID) SEEDS="$(SEEDS)"; \
 	done
 
+regresion_mas_reportes_html: regresion_all cobertura_urg_fusionada
+
 ####################################################################################
 ################### Cobertura de código con verdi
 # make verdi COV_DIR=./reportes/regresionas/FECHA/TEST/seed/cov.vdb # para cobertura individual
 # make verdi COV_DIR=./reportes/regresionas/FECHA/cobertura_fusionada.vdb
 ifeq ($(findstring cobertura_fusionada.vdb,$(COV_DIR)),)
-	VERDI_DEPS := cobertura_urg_simple
+VERDI_DEPS := cobertura_urg_simple
 else
-	VERDI_DEPS :=
+VERDI_DEPS :=
 endif
 
 verdi: $(VERDI_DEPS)
