@@ -91,7 +91,12 @@ FORCE:
 
 ####################################################################################
 #################### Targets: universales
-all: clean build_reference_model_obj testbench
+# make all: modelo de referencia + UVM
+# 		    limpieza de artefactos de compilación y ejecución
+# 			construcción del modelo de referencia
+#			compilación y ejecución UVM (todos los test) 
+# make remake: 
+all: clean_all build_reference_model_obj run_all
 remake: clean build_reference_model_obj testbench
 
 include scripts/.ansi_code.mk
@@ -107,6 +112,11 @@ _mkdir_folders: | $(DIRS)
 # la lógica completa vive en reference_model/{Makefile, make_common.mk}
 build_reference_model_obj:
 	$(MAKE) -C $(REF_DIR) -f Makefile $@
+
+####################################################################################
+################### Ejecución de tests (sim/sim_make.mk)
+# compila y ejcuta todos los tests bajo 1 misma semilla aleatoria
+run_all: testbench regresion_all cobertura_urg
 
 ####################################################################################
 ################### Compilación del top testbench (VCS-UVM)
@@ -128,24 +138,27 @@ _grep_warnings:
 	grep -i -C 10 "warning" $(LOG_TB) > $(WARNINGS)
 
 ####################################################################################
-################### Ejecución de tests (sim/sim_make.mk)
-run_all: testbench_sim all_test
-
-####################################################################################
 ################### Targets: de limpieza
 # clean          : artefactos de compilación (sim/ salvo sim_make.mk, bin/, ucli.key)
-# clean_reportes  : SOLO el historial de corridas (reportes/)
-# clean_all      : ambos + reference_model
-clean:
+# clean_reportes : SOLO el historial de corridas (reportes/)
+# clean_all      : limpieza completa UVM + reference_model
+
+clean_all: clean clean_verdi clean_reportes
+	$(MAKE) -C $(REF_DIR) -f Makefile clean_all
+
+clean: clean_sim clean_verdi clean_reportes
+
+clean_sim:
 	rm -f ucli.key
 	rm -rf $(MDIR)
 	find $(SIM) -mindepth 1 ! -name "sim_make.mk" -delete
 
+clean_verdi:
+	rm -rf novas.* vdCovLog
+	rm -rf $(VERDI_LOGS)
+
 clean_reportes:
 	rm -rf $(REPORTES)
-
-clean_all: clean clean_reportes
-	$(MAKE) -C $(REF_DIR) -f Makefile clean_all
 
 ####################################################################################
 help:
@@ -160,7 +173,7 @@ help:
 	testbench \
 	_grep_warnings \
 	run_all \
-	clean \
-	clean_reportes \
 	clean_all \
+	clean \
+	clean_sim clean_verdi clean_reportes \
 	help

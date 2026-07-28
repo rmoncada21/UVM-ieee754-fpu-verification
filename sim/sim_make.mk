@@ -65,14 +65,9 @@ endef
 ####################################################################################
 ################### Ejecutar los tests
 
-all_test: run_fpu_base_test run_fpu_test_arith_normal run_fpu_test_flag_arith \
-		  run_fpu_test_special_spec run_fpu_test_norm_spec run_fpu_test_rounding \
-		  run_fpu_test_cmp run_fpu_test_subnormal_arith
-
-# testbench_sim:
-# 	./$(EXE_SIM) \
-# 		-l ../$(SIM)/$(EXE_SIM) \
-# 		| tee ../$(SIM)/$(EXE_SIM)$(shell date +%d_%H_%M_%S).log
+# run_all_test: run_fpu_base_test run_fpu_test_arith_normal run_fpu_test_flag_arith \
+# 		  run_fpu_test_special_spec run_fpu_test_norm_spec run_fpu_test_rounding \
+# 		  run_fpu_test_cmp run_fpu_test_subnormal_arith run_fpu_test_known_bugs
 
 run_fpu_base_test:
 	@$(call run_uvm_test, $(@:run_%=%))
@@ -117,27 +112,40 @@ regresion:
 	done
 
 # todos los TESTS_ACTIVOS x NUM_SEEDS bajo el MISMO id de regresión
-# make regresion_todos NUM_SEEDS=3
+# make regresion_all NUM_SEEDS=3
 # seeds usadas para analisis de datos
-# make regresion_todos SEEDS="469078601 1238983584 4170956088"
-regresion_todos:
+# make regresion_all SEEDS="469078601 1238983584 4170956088"
+regresion_all:
 	@for test in $(TESTS_ACTIVOS); do \
 		$(MAKE) regresion TEST=$$test NUM_SEEDS=$(NUM_SEEDS) REG_ID=$(REG_ID) SEEDS="$(SEEDS)"; \
 	done
 
 ####################################################################################
-################### Regresión multi-semilla
-# TODO: regresions target
-cobertura:
+################### Cobertura de código con verdi
+# análsis de cobertura con verdi gui
+# verdi -cov -covdir sim/testbench_sim.vdb
+# verdi -cov -covdir sim/testbench_sim.vdb/ -covdir reportes/ultima.vdb
+cobertura_verdi:
+	(cd verdi_logs && verdi -cov \
+  		-covdir ../sim/testbench_sim.vdb/ \
+  		-covdir ../reportes/regresiones/20260727_213108/fpu_test_arith_normal/s1238983584/cov.vdb)
+
+cobertura_urg_simple:
+	urg \
+    	-dir sim/testbench_sim.vdb \
+    	-dir reportes/regresiones/20260727_213108/fpu_test_arith_normal/s1238983584/cov.vdb
+# cobertura fusionada por fecha
+# pasar carpeta de la fecha
+cobertura_urg:
 	urg -full64 \
 		-dir $(EXE_VDB) $(DIR_ANALISIS)/*/s*/cov.vdb \
-		-dbname $(DIR_ANALISIS)/cobertura_fusionada \
+		-dbname $(DIR_ANALISIS)/cobertura_fusionada.vdb \
 		-report $(DIR_ANALISIS)/cobertura_reporte
-# verdi -dir sim/testbench_sim.vdb -cov -covdir reportes/regresiones/20260726_171711/fpu_test_arith_normal/s1238983584/cov.vdb/
-# verdi -cov -covdir sim/testbench_sim.vdb
-# verdi -cov -covdir sim/testbench_sim.vdb/ -covdir reportes/regresiones/20260726_223229/fpu_test_arith_normal/s1238983584/cov.vdb
+
+
+
 .PHONY: \
-	testbench_sim \
+	run_all_test \
 	run_fpu_base_test \
 	run_fpu_test_arith_normal \
 	run_fpu_test_cmp \
@@ -145,10 +153,4 @@ cobertura:
 	run_fpu_test_special_spec \
 	run_fpu_test_norm_spec \
 	run_fpu_test_subnormal_arith \
-	regresion regresion_todos
-
-
-coverage_verdi:
-	(cd verdi_logs && verdi -cov \
-  		-covdir ../sim/testbench_sim.vdb/ \
-  		-covdir ../reportes/regresiones/20260726_223229/fpu_test_arith_normal/s1238983584/cov.vdb)
+	regresion regresion_all

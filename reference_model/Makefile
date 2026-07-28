@@ -104,6 +104,7 @@ build_testfloat_vectors: | $(REF_VECTORS) $(LOGS_VECTORS)
 ####################################################################################
 ################### Targets: de limpieza
 clean_all: clean clean_berkeley clean_build_reference
+
 # clean local, borra archivo locales al modelo de referencia
 clean: clean_bin clean_logs clean_vectors
 
@@ -114,6 +115,7 @@ clean_logs:
 	rm -rf $(LOGS_DIRS)
 clean_vectors:
 	rm -rf $(REF_VECTORS)
+
 clean_build_reference:
 	rm -rf $(REF_BUILD)
 
