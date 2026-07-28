@@ -12,6 +12,7 @@
 #   salidas/ultima -> regresiones/<REG_ID>     -> symlink a la más reciente
 #
 
+# variable que contiene la dirección absoluta de testbench_sim
 EXE_ABS := $(abspath $(EXE_SIM))
 MOSTRAR_EXE_ABS:
 	echo "$(EXE_ABS)"
@@ -21,15 +22,14 @@ TESTS_ACTIVOS := fpu_base_test fpu_test_arith_normal fpu_test_flag_arith \
 				 fpu_test_special_spec fpu_test_norm_spec fpu_test_rounding \
 				 fpu_test_cmp fpu_test_subnormal_arith fpu_test_known_bugs
 
-# knobs de regresión multi-semilla
+# knobs de targets de regresión
 # se sobreesciben desde el cli
 NUM_SEEDS ?= 1
 TEST      ?= fpu_base_test
 SEEDS     ?= 
 
-# run_fpu_base_test run_fpu_test_arith_normal run_fpu_test_flag_arith 
-# run_fpu_test_cmp run_fpu_test_rounding run_fpu_test_special_spec
-# run_fpu_test_norm_spec run_fpu_test_subnormal_arith
+# knobs de targets de cobertura
+COV_DIR   ?=
 
 ####################################################################################
 ################### #1. FUNCIÓN MODULAR (Macro)
@@ -99,7 +99,7 @@ run_fpu_test_known_bugs:
 ####################################################################################
 ################### Regresión multi-semilla
 # make regresion TEST=fpu_test_arith_normal NUM_SEEDS=10 [REG_ID=etiqueta]
-# make regresion TEST=fpu_test_cmp SEEDS="1734829105 998877"   (reproducir exactas)
+# make regresion TEST=fpu_test_cmp SEEDS="469078601 1238983584 4170956088"   (reproducir exactas)
 regresion:
 	@local_seeds="$(SEEDS)"; \
 	if [ -z "$$local_seeds" ]; then \
@@ -122,25 +122,34 @@ regresion_all:
 
 ####################################################################################
 ################### Cobertura de código con verdi
-# análsis de cobertura con verdi gui
-# verdi -cov -covdir sim/testbench_sim.vdb
-# verdi -cov -covdir sim/testbench_sim.vdb/ -covdir reportes/ultima.vdb
-cobertura_verdi:
-	(cd verdi_logs && verdi -cov \
-  		-covdir ../sim/testbench_sim.vdb/ \
-  		-covdir ../reportes/regresiones/20260727_213108/fpu_test_arith_normal/s1238983584/cov.vdb)
+# make verdi COV_DIR=./reportes/regresionas/FECHA/TEST/seed/cov.vdb # para cobertura individual
+# make verdi COV_DIR=./reportes/regresionas/FECHA/cobertura_fusionada.vdb
+ifeq ($(findstring cobertura_fusionada.vdb,$(COV_DIR)),)
+	VERDI_DEPS := cobertura_urg_simple
+else
+	VERDI_DEPS :=
+endif
 
+verdi: $(VERDI_DEPS)
+	(cd verdi_logs && verdi -cov \
+		-covdir ../$(EXE_VDB) \
+		-covdir ../$(COV_DIR))
+
+# make cobertura_urg_simple COV_DIR=./reportes/regresionas/FECHA/cobertura_fusionada.vdb
 cobertura_urg_simple:
-	urg \
-    	-dir sim/testbench_sim.vdb \
-    	-dir reportes/regresiones/20260727_213108/fpu_test_arith_normal/s1238983584/cov.vdb
-# cobertura fusionada por fecha
-# pasar carpeta de la fecha
-cobertura_urg:
+	urg -full64 \
+    	-dir $(EXE_VDB) \
+    	-dir $(COV_DIR) \
+		-report $(COV_DIR:/cov.vdb/=)/cov_reporte_tml
+
+# cobertura fusionada por fecha. Toma la carpeta llamda ultima/ como entrada
+# cobertura_fusionada.vdb     : consumida por verdi
+# cobertura_fusionada_reporte : salida principal - un html de lectura con nevagador
+cobertura_urg_fusionada:
 	urg -full64 \
 		-dir $(EXE_VDB) $(DIR_ANALISIS)/*/s*/cov.vdb \
 		-dbname $(DIR_ANALISIS)/cobertura_fusionada.vdb \
-		-report $(DIR_ANALISIS)/cobertura_reporte
+		-report $(DIR_ANALISIS)/cobertura_fusionada_reporte_html
 
 
 
@@ -153,4 +162,12 @@ cobertura_urg:
 	run_fpu_test_special_spec \
 	run_fpu_test_norm_spec \
 	run_fpu_test_subnormal_arith \
-	regresion regresion_all
+	regresion regresion_all \
+	verdi \
+	cobertura_urg_simple \
+	cobertura_urg_fusionada
+
+
+# análsis de cobertura con verdi gui
+# verdi -cov -covdir sim/testbench_sim.vdb
+# verdi -cov -covdir sim/testbench_sim.vdb/ -covdir reportes/ultima.vdb

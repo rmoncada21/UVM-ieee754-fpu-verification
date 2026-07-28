@@ -34,7 +34,7 @@ ULTIMA_REG  := $(REPORTES)/ultima
 
 # se hace para la regalde cobertura
 # carpeta que analizan cobertura/scripts: la REG= pedida, o 'ultima' por defecto
-DIR_ANALISIS := $(if $(filter command line,$(origin REG_ID)),$(REG_DIR),$(ULTIMA_REG))
+DIR_ANALISIS := $(if $(filter command line,$(origin REG_ID)) , $(REG_DIR),$(ULTIMA_REG))
 
 DIRS := $(BIN) $(REPORTES) $(VERDI_LOGS)
 
@@ -116,7 +116,7 @@ build_reference_model_obj:
 ####################################################################################
 ################### Ejecución de tests (sim/sim_make.mk)
 # compila y ejcuta todos los tests bajo 1 misma semilla aleatoria
-run_all: testbench regresion_all cobertura_urg
+run_all: testbench regresion_all cobertura_urg_fusionada
 
 ####################################################################################
 ################### Compilación del top testbench (VCS-UVM)
