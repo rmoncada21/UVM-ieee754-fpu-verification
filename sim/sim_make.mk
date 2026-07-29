@@ -120,7 +120,7 @@ regresion_all:
 		$(MAKE) regresion TEST=$$test NUM_SEEDS=$(NUM_SEEDS) REG_ID=$(REG_ID) SEEDS="$(SEEDS)"; \
 	done
 
-regresion_mas_reportes_html: regresion_all cobertura_urg_fusionada
+regresion_mas_reportes_html: regresion_all cobertura_urg_individual_all cobertura_urg_fusionada
 
 ####################################################################################
 ################### Cobertura de código con verdi
@@ -142,7 +142,16 @@ cobertura_urg_individual:
 	urg -full64 \
     	-dir $(EXE_VDB) \
     	-dir $(COV_DIR) \
-		-report $(COV_DIR:/cov.vdb/=)/cov_reporte_tml
+		-report $(COV_DIR:/cov.vdb=)/cov_reporte_tml
+
+# reporte html individual (urg) de cada test/semilla de la regresión
+# resuelta por DIR_ANALISIS (REG_ID pedido, o 'ultima' por defecto)
+# make cobertura_urg_individual_all
+# make cobertura_urg_individual_all REG_ID=20260728_203146
+cobertura_urg_individual_all:
+	@for vdb in $(DIR_ANALISIS)/*/s*/cov.vdb; do \
+		$(MAKE) cobertura_urg_individual COV_DIR=$$vdb; \
+	done
 
 # cobertura fusionada por fecha. Toma la carpeta llamda ultima/ como entrada
 # cobertura_fusionada.vdb     : consumida por verdi
