@@ -26,7 +26,7 @@ TESTS_ACTIVOS := fpu_base_test fpu_test_arith_normal fpu_test_flag_arith \
 # se sobreesciben desde el cli
 NUM_SEEDS ?= 1
 TEST      ?= fpu_base_test
-SEEDS     ?= "469078601 1238983584 4170956088"
+SEEDS     ?= 469078601 1238983584 4170956088
 
 # knobs de targets de cobertura
 COV_DIR   ?= reportes
@@ -127,7 +127,7 @@ regresion_mas_reportes_html: regresion_all cobertura_urg_fusionada
 # make verdi COV_DIR=./reportes/regresionas/FECHA/TEST/seed/cov.vdb # para cobertura individual
 # make verdi COV_DIR=./reportes/regresionas/FECHA/cobertura_fusionada.vdb
 ifeq ($(findstring cobertura_fusionada.vdb,$(COV_DIR)),)
-VERDI_DEPS := cobertura_urg_simple
+VERDI_DEPS := cobertura_urg_individual
 else
 VERDI_DEPS :=
 endif
@@ -137,8 +137,8 @@ verdi: $(VERDI_DEPS)
 		-covdir ../$(EXE_VDB) \
 		-covdir ../$(COV_DIR))
 
-# make cobertura_urg_simple COV_DIR=./reportes/regresionas/FECHA/cobertura_fusionada.vdb
-cobertura_urg_simple:
+# make cobertura_urg_individual COV_DIR=./reportes/regresiones/FECHA/seed/cov.vdb
+cobertura_urg_individual:
 	urg -full64 \
     	-dir $(EXE_VDB) \
     	-dir $(COV_DIR) \
@@ -153,8 +153,6 @@ cobertura_urg_fusionada:
 		-dbname $(DIR_ANALISIS)/cobertura_fusionada.vdb \
 		-report $(DIR_ANALISIS)/cobertura_fusionada_reporte_html
 
-
-
 .PHONY: \
 	run_all_test \
 	run_fpu_base_test \
@@ -166,7 +164,7 @@ cobertura_urg_fusionada:
 	run_fpu_test_subnormal_arith \
 	regresion regresion_all \
 	verdi \
-	cobertura_urg_simple \
+	cobertura_urg_individual \
 	cobertura_urg_fusionada
 
 
