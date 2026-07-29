@@ -32,6 +32,10 @@ SEEDS     ?= 469078601 1238983584 4170956088
 COV_DIR   ?= reportes
 
 ####################################################################################
+################### #0. Target general 
+regresion_mas_reportes_html: regresion_all cobertura_urg_individual_all cobertura_urg_fusionada
+
+####################################################################################
 ################### #1. FUNCIÓN MODULAR (Macro)
 # $(1): Nombre del test extraído del target
 
@@ -120,8 +124,6 @@ regresion_all:
 		$(MAKE) regresion TEST=$$test NUM_SEEDS=$(NUM_SEEDS) REG_ID=$(REG_ID) SEEDS="$(SEEDS)"; \
 	done
 
-regresion_mas_reportes_html: regresion_all cobertura_urg_individual_all cobertura_urg_fusionada
-
 ####################################################################################
 ################### Cobertura de código con verdi
 # make verdi COV_DIR=./reportes/regresionas/FECHA/TEST/seed/cov.vdb # para cobertura individual
@@ -174,8 +176,8 @@ cobertura_urg_fusionada:
 	regresion regresion_all \
 	verdi \
 	cobertura_urg_individual \
+	cobertura_urg_individual_all \
 	cobertura_urg_fusionada
-
 
 # análsis de cobertura con verdi gui
 # verdi -cov -covdir sim/testbench_sim.vdb

@@ -116,7 +116,7 @@ build_reference_model_obj:
 ####################################################################################
 ################### Ejecución de tests (sim/sim_make.mk)
 # compila y ejcuta todos los tests bajo 1 misma semilla aleatoria
-run_all: testbench regresion_all cobertura_urg_fusionada
+run_all: testbench regresion_mas_reportes_html
 
 ####################################################################################
 ################### Compilación del top testbench (VCS-UVM)
@@ -143,10 +143,11 @@ _grep_warnings:
 # clean_reportes : SOLO el historial de corridas (reportes/)
 # clean_all      : limpieza completa UVM + reference_model
 
-clean_all: clean clean_verdi clean_reportes
+clean_all: clean_local
 	$(MAKE) -C $(REF_DIR) -f Makefile clean_all
 
-clean: clean_sim clean_verdi clean_reportes
+clean: clean_sim clean_verdi
+clean_local: clean clean_reportes
 
 clean_sim:
 	rm -f ucli.key
@@ -175,5 +176,6 @@ help:
 	run_all \
 	clean_all \
 	clean \
+	clean_local \
 	clean_sim clean_verdi clean_reportes \
 	help
