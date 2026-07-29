@@ -34,7 +34,7 @@ ULTIMA_REG  := $(REPORTES)/ultima
 
 # se hace para la regalde cobertura
 # carpeta que analizan cobertura/scripts: la REG= pedida, o 'ultima' por defecto
-DIR_ANALISIS := $(if $(filter command line,$(origin REG_ID)) , $(REG_DIR),$(ULTIMA_REG))
+DIR_ANALISIS := $(if $(filter command line,$(origin REG_ID)),$(REG_DIR),$(ULTIMA_REG))
 
 DIRS := $(BIN) $(REPORTES) $(VERDI_LOGS)
 
@@ -123,15 +123,15 @@ run_all: testbench regresion_mas_reportes_html
 # enlaza el objeto del modelo y softfloat.a como argumentos posicionales
 testbench: _mkdir_folders build_reference_model_obj
 	$(VCS) $(SVFLAGS) -timescale=$(TIMESCALE) \
-	-f $(FILELIST) \
-	$(REF_OBJ) $(SF_LIB) \
-	-o $(EXE_SIM) -l $(LOG_TB) \
-	-Mdir=$(MDIR) $(MSG_FORMAT) \
-	$(DFLAGS) \
-	+lint=$(LINT) \
-	-cm $(COVERAGE) -cm_dir $(EXE_VDB) -cm_log $(CM_LOG) \
-	$(RECURSIVE)
-	@mv -f vc_hdrs.h .fsm.sch.verilog.xml $(SIM) 2>/dev/null || true
+		-f $(FILELIST) \
+		$(REF_OBJ) $(SF_LIB) \
+		-o $(EXE_SIM) -l $(LOG_TB) \
+		-Mdir=$(MDIR) $(MSG_FORMAT) \
+		$(DFLAGS) \
+		+lint=$(LINT) \
+		-cm $(COVERAGE) -cm_dir $(EXE_VDB) -cm_log $(CM_LOG) \
+		$(RECURSIVE)
+		@mv -f vc_hdrs.h .fsm.sch.verilog.xml $(SIM) 2>/dev/null || true
 
 # extrae los warnings del log de compilación a logs/warnings.log
 _grep_warnings:
