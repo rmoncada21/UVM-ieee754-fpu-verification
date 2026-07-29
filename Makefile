@@ -96,7 +96,7 @@ FORCE:
 # 			construcción del modelo de referencia
 #			compilación y ejecución UVM (todos los test) 
 # make remake: 
-all: clean_all build_reference_model_obj run_all
+all: clean_all build_reference_model_obj testbench regresion_mas_reportes_html
 remake: clean build_reference_model_obj testbench
 
 include scripts/.ansi_code.mk
@@ -112,11 +112,6 @@ _mkdir_folders: | $(DIRS)
 # la lógica completa vive en reference_model/{Makefile, make_common.mk}
 build_reference_model_obj:
 	$(MAKE) -C $(REF_DIR) -f Makefile $@
-
-####################################################################################
-################### Ejecución de tests (sim/sim_make.mk)
-# compila y ejcuta todos los tests bajo 1 misma semilla aleatoria
-run_all: testbench regresion_mas_reportes_html
 
 ####################################################################################
 ################### Compilación del top testbench (VCS-UVM)
