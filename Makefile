@@ -158,7 +158,48 @@ clean_reportes:
 
 ####################################################################################
 help:
-	echo "TODO HELP FUNCTION"
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)══════════════════════════════════════════════════════════════$(RESET)'
+	@echo -e '$(BLANCO_BRILLANTE) Ambiente UVM — FPU RV32F   ·   make help$(RESET)'
+	@echo -e '$(CIAN_BRILLANTE)══════════════════════════════════════════════════════════════$(RESET)'
+	@echo -e '$(NEGRO_BRILLANTE) Ejecutar desde la raíz del repo. Sustituir los marcadores <...>$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)FLUJO A$(RESET) — ejecución completa'
+	@echo -e '$(NEGRO_BRILLANTE)  Todo con las 3 semillas por defecto + reportes HTML (individual y fusionado)$(RESET)'
+	@echo -e '$(VERDE)    make all$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)FLUJO B$(RESET) — en dos partes'
+	@echo -e '$(NEGRO_BRILLANTE)  Recompila (conserva historial) y corre regresión + reportes$(RESET)'
+	@echo -e '$(VERDE)    make remake$(RESET)'
+	@echo -e '$(VERDE)    make regresion_mas_reportes_html$(RESET)'
+	@echo -e '$(NEGRO_BRILLANTE)  Abrir Verdi:$(RESET)'
+	@echo -e '$(VERDE)    make verdi COV_DIR=./reportes/regresiones/<REG_ID>/<test_name>/s<SEED>/cov.vdb$(RESET)'
+	@echo -e '$(VERDE)    make verdi COV_DIR=./reportes/regresiones/<REG_ID>/cobertura_fusionada.vdb$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)FLUJO C$(RESET) — paso a paso (control de semillas)'
+	@echo -e '$(NEGRO_BRILLANTE)  Recompilar:$(RESET)'
+	@echo -e '$(VERDE)    make remake$(NEGRO_BRILLANTE)                     # = clean + build_reference_model_obj + testbench$(RESET)'
+	@echo -e '$(NEGRO_BRILLANTE)    # equivalente explícito:$(RESET)'
+	@echo -e '$(VERDE)    make clean_all$(RESET)'
+	@echo -e '$(VERDE)    make build_reference_model_obj$(RESET)'
+	@echo -e '$(VERDE)    make testbench$(RESET)'
+	@echo ""
+	@echo -e '$(AMARILLO_BRILLANTE)  Rama 1$(RESET) — regresión por test individual:'
+	@echo -e '$(VERDE)    make regresion TEST=<NAME_TEST> SEEDS= NUM_SEEDS=N$(NEGRO_BRILLANTE)        # N semillas aleatorias$(RESET)'
+	@echo -e '$(VERDE)    make regresion TEST=<NAME_TEST> SEEDS="SEED1 SEED2 SEEDN"$(RESET)'
+	@echo -e '$(VERDE)    make cobertura_urg_individual COV_DIR=./reportes/regresiones/<REG_ID>/<test_name>/s<SEED>/cov.vdb$(RESET)'
+	@echo -e '$(VERDE)    make verdi COV_DIR=./reportes/regresiones/<REG_ID>/<test_name>/s<SEED>/cov.vdb$(RESET)'
+	@echo ""
+	@echo -e '$(AMARILLO_BRILLANTE)  Rama 2$(RESET) — regresión completa (todos los tests):'
+	@echo -e '$(VERDE)    make regresion_all SEEDS="SEED1 SEED2"$(NEGRO_BRILLANTE)    # semillas específicas$(RESET)'
+	@echo -e '$(VERDE)    make regresion_all SEEDS= NUM_SEEDS=5$(NEGRO_BRILLANTE)     # N semillas aleatorias$(RESET)'
+	@echo -e '$(VERDE)    make cobertura_urg_individual_all$(RESET)'
+	@echo -e '$(VERDE)    make cobertura_urg_fusionada$(RESET)'
+	@echo -e '$(VERDE)    make verdi COV_DIR=./reportes/regresiones/<REG_ID>/cobertura_fusionada.vdb$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)Knobs$(RESET)  TEST   SEEDS="s1 s2 ..."   NUM_SEEDS   REG_ID   COV_DIR'
+	@echo -e '$(NEGRO_BRILLANTE)  NUM_SEEDS solo aplica si SEEDS queda vacío  (SEEDS= NUM_SEEDS=N)$(RESET)'
+	@echo ""
 
 # TODO: ACTUALIZAR PHONY
 .PHONY: \

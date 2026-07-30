@@ -6,6 +6,7 @@ include make_common.mk
 include standalone_tests/runner/make_runner.mk
 include standalone_tests/driver/make_driver.mk
 include standalone_tests/replayer/make_replayer.mk
+include ../scripts/.ansi_code.mk
 
 # revisar solo syntaxis
 # make src/nombre_archivo.c_syntax
@@ -132,7 +133,48 @@ clean_berkeley_testfloat:
 
 ####################################################################################
 help:
-	echo "TODO HELP FUNCTION"
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)══════════════════════════════════════════════════════════════$(RESET)'
+	@echo -e '$(BLANCO_BRILLANTE) Modelo de referencia — SoftFloat/TestFloat   ·   make help$(RESET)'
+	@echo -e '$(CIAN_BRILLANTE)══════════════════════════════════════════════════════════════$(RESET)'
+	@echo -e '$(NEGRO_BRILLANTE) Ejecutar desde reference_model/  (o  make -C reference_model <target>)$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)FLUJO COMPLETO$(RESET)'
+	@echo -e '$(NEGRO_BRILLANTE)  Librerías + modelo + los tres módulos (runner, driver, replayer)$(RESET)'
+	@echo -e '$(VERDE)    make all$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)1) CONSTRUCCIÓN$(RESET) — librerías y modelo'
+	@echo -e '$(NEGRO_BRILLANTE)  Librerías Berkeley (softfloat.a + testfloat) y objeto del modelo$(RESET)'
+	@echo -e '$(VERDE)    make build_all$(RESET)'
+	@echo -e '$(NEGRO_BRILLANTE)  Solo el objeto del modelo (reference_model.o)$(RESET)'
+	@echo -e '$(VERDE)    make build_reference_model_obj$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)2) VECTORES Y VERIFICACIÓN N1$(RESET)'
+	@echo -e '$(NEGRO_BRILLANTE)  softfloat.a vs slowfloat (testsoftfloat)$(RESET)'
+	@echo -e '$(VERDE)    make test_build_berkeleys_libraries$(RESET)'
+	@echo -e '$(NEGRO_BRILLANTE)  Generar vectores .tf en vectors/$(RESET)'
+	@echo -e '$(VERDE)    make build_testfloat_vectors$(NEGRO_BRILLANTE)        # knobs: TF_LEVEL, TF_SEED$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)3) TESTS$(RESET) — módulos standalone'
+	@echo -e '$(AMARILLO_BRILLANTE)  Runner$(RESET) — validación cruzada  (tf_gen | runner):'
+	@echo -e '$(VERDE)    make all_runner$(NEGRO_BRILLANTE)          # compile + run_matrix + valgrind + sanitizers$(RESET)'
+	@echo -e '$(VERDE)    make runner_run_matrix$(NEGRO_BRILLANTE)   # solo la matriz op×modo$(RESET)'
+	@echo -e '$(AMARILLO_BRILLANTE)  Driver$(RESET) — casos dirigidos (autojuez):'
+	@echo -e '$(VERDE)    make all_driver$(RESET)'
+	@echo -e '$(VERDE)    make driver_run$(RESET)'
+	@echo -e '$(AMARILLO_BRILLANTE)  Replayer$(RESET) — auditoría  (tf_gen | replayer | tf_ver):'
+	@echo -e '$(VERDE)    make all_replayer$(RESET)'
+	@echo -e '$(VERDE)    make replayer_run_matrix$(RESET)'
+	@echo -e '$(VERDE)    make replayer_testfloat_sweep$(NEGRO_BRILLANTE)   # genera csv/$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)LIMPIEZA$(RESET)'
+	@echo -e '$(VERDE)    make clean$(NEGRO_BRILLANTE)                  # bin + logs + vectors (locales al modelo)$(RESET)'
+	@echo -e '$(VERDE)    make clean_berkeley$(NEGRO_BRILLANTE)         # objetos/.a de softfloat y testfloat$(RESET)'
+	@echo -e '$(VERDE)    make clean_build_reference$(NEGRO_BRILLANTE)  # build/ (reference_model.o)$(RESET)'
+	@echo -e '$(VERDE)    make clean_all$(NEGRO_BRILLANTE)              # todo lo anterior$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)Knobs$(RESET)  TF_LEVEL (1|2)   TF_SEED   RUNNER_TRACE (0|N|all)   ARCH_TARGET'
+	@echo ""
 
 # TODO: ACTUALIZAR PHONY
 .PHONY: \

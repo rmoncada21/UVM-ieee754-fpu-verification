@@ -144,7 +144,7 @@ cobertura_urg_individual:
 	urg -full64 \
     	-dir $(EXE_VDB) \
     	-dir $(COV_DIR) \
-		-report $(COV_DIR:/cov.vdb=)/cov_reporte_tml
+		-report $(COV_DIR:/cov.vdb=)/cov_reporte_html
 
 # reporte html individual (urg) de cada test/semilla de la regresión
 # resuelta por DIR_ANALISIS (REG_ID pedido, o 'ultima' por defecto)

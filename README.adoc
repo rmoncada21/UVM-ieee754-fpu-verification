@@ -111,14 +111,14 @@ Dentro de este proyecto, los archivos RTL se ubican en `dut/`.
 
 [source,text]
 ----
-├── tb_components/                 ← ambiente UVM completo
-│   ├── interface/
-│   ├── packages/
-│   ├── sequences/
-│   ├── tests/
-│   ├── types/
-│   ├── uvm_components/
-├── testbench_top.sv
+├── tb_components/                ← ambiente UVM completo
+│   ├── interface/                ← fpu_if
+│   ├── packages/                 ← tipos, constraints y declaraciones DPI-C
+│   ├── seq_item/                 ← fpu_seq_item + constraints
+│   ├── sequences/                ← secuencia base + hijas + sequencer
+│   ├── tests/                    ← test base + tests hijos
+│   └── uvm_components/           ← agent, driver, monitor, env, scoreboard
+├── testbench.sv                  ← top del testbench
 ----
 
 [cols="2,4", options="header"]
@@ -150,46 +150,212 @@ Dentro de este proyecto, los archivos RTL se ubican en `dut/`.
 | Coordinación de secuencias complejas multi-operación.
 |===
 
----
-
-== Bugs conocidos del DUT
-
-[cols="1,2,4", options="header"]
-|===
-| ID | Operación | Descripción
-
-| `BUG-001`
-| `FMUL` — subnormal × normal
-| El producto se trunca a cero sin activar la bandera `underflow_o`. Anclado como regresión permanente en el scoreboard.
-|===
+NOTE: Solo se muestran algunos componentes del test. Para mas información, observa el documento escrito del proyecto.
 
 ---
+
+// == Bugs conocidos del DUT
+
+// [cols="1,2,4", options="header"]
+// |===
+// | ID | Operación | Descripción
+
+// | `BUG-001`
+// | `FMUL` — subnormal × normal
+// | El producto se trunca a cero sin activar la bandera `underflow_o`. Anclado como regresión permanente en el scoreboard.
+// |===
+
+// ---
 
 
 == Estructura del repositorio
 
-[source]
+[source,text]
 ----
-├── coverage/                   # Scripts Python para análisis de cobertura
-├── documentacion/              # Documentación del TFG
-├── dut/                        # Código fuente del DUT (fp_alu y submódulos)
-│   ├── fp_alu.sv
-│   ├── fp_adder.sv
-│   ├── fp_*.sv
-│   └── ...
-├── ref_model_softfloat/        # Berkeley SoftFloat (modelo de referencia DPI-C)
-├── scripts/                    # Makefile / scripts de simulación
-├── tb_components/              # Ambiente UVM
-│   ├── interface/
-│   ├── packages/
-│   ├── sequences/
-│   ├── tests/
-│   ├── types/
-│   ├── uvm_components/
-├──.gitignore
-├──.gitmessage.txt
-├──.Makefile
-└── README.adoc
+.
+├── bin/                          # Artefactos de compilación (redireccionado por Mdir)
+├── documentacion/                # Convención de código y material del proyecto
+│   └── codigo_convencion.md
+│   └── makefile_REF_doc.md
+│   └── makefile_UVM_doc.md
+├── dut/                          # Submódulo del DUT — RTL, solo lectura
+│   └── ALU-FPU-ieee754/
+│       ├── ALU_FP/               # Top fp_alu.sv + testbench original
+│       ├── Comparadores/         # fp_feq, fp_flt, fp_fle
+│       ├── Operaciones_comb/     # fp_madd, fp_msub
+│       ├── Sumador_restador/     # fp_adder y sus etapas (align, normalize, round, pack)
+│       ├── multiplicador/        # fp_mul
+│       └── fp_unpack/            # fp_unpack
+├── reference_model/              # Modelo de referencia en C (Berkeley SoftFloat)
+│   ├── src/reference_model.c
+│   ├── include/reference_model.h
+│   ├── build/reference_model.o
+│   ├── Makefile
+│   ├── make_common.mk
+│   └── standalone_tests/         # Ejecutables de auditoría del modelo
+│       ├── driver/               # Casos dirigidos (autojuez)
+│       ├── replayer/             # Auditoria  tf_gen | replayer | tf_ver
+│       └── runner/               # Validacion cruzada  tf_gen | runner
+├── tb_components/                # Ambiente UVM
+│   ├── interface/                # fpu_if
+│   ├── packages/                 # Tipos, constraints y declaraciones DPI-C
+│   ├── seq_item/                 # fpu_seq_item + constraints
+│   ├── sequences/                # Secuencia base + hijas + sequencer
+│   ├── tests/                    # Test base + tests hijos
+│   └── uvm_components/           # agent, driver, monitor, env, scoreboard
+├── scripts/                      # filelist.f (orden de compilación)
+├── sim/                          # Artefactos de compilación (ejecutable, VDB, logs) + sim_make.mk
+├── reportes/                     # Salidas de ejecución
+│   ├── regresiones/<REG_ID>/     # Una carpeta por regresión (tests, manifest, info)
+│   └── ultima -> regresiones/<REG_ID>
+├── verdi_logs/                   # Logs de Verdi
+├── Makefile                      # Orquestación VCS-UVM (ver «Flujo de simulación (UVM)»)
+├── README.adoc
+└── README.md
+----
+
+NOTE: La estuctura completa solo se puede apreciar directamente en el directorio donde se ejecuten las pruebas, esto debido a que algunas carpetas estan añadidas al .gitignore.
+
+---
+
+== Flujo de simulación (UVM)
+
+Todos los comandos se ejecutan desde la raíz del repositorio. Los marcadores `<...>` se sustituyen por valores concretos. La misma referencia está disponible en consola con `make help`.
+Para mas información consultar `docs/makefile_UVM_doc.md`.
+=== Ejecución completa
+
+Corre toda la simulación con las tres semillas por defecto (469078601 1238983584 4170956088) y genera los reportes HTML de cobertura (individuales y fusionado):
+
+[source,bash]
+----
+make all
+----
+
+=== En dos partes
+
+Recompila conservando el historial de corridas y luego ejecuta la regresión con reportes:
+
+[source,bash]
+----
+make remake
+make regresion_mas_reportes_html
+----
+
+Abrir la cobertura en Verdi:
+
+[source,bash]
+----
+make verdi COV_DIR=./reportes/regresiones/<REG_ID>/<test_name>/s<SEED>/cov.vdb
+make verdi COV_DIR=./reportes/regresiones/<REG_ID>/cobertura_fusionada.vdb
+----
+
+=== Paso a paso (control de semillas)
+
+Recompilación (equivalente explícito de `make remake`):
+
+[source,bash]
+----
+make clean_all
+make build_reference_model_obj
+make testbench
+----
+
+Regresión por test individual:
+
+[source,bash]
+----
+make regresion TEST=<NAME_TEST> SEEDS= NUM_SEEDS=N       # N semillas aleatorias
+make regresion TEST=<NAME_TEST> SEEDS="SEED1 SEED2 SEEDN"
+make cobertura_urg_individual COV_DIR=./reportes/regresiones/<REG_ID>/<test_name>/s<SEED>/cov.vdb
+----
+
+Regresión completa (todos los tests):
+
+[source,bash]
+----
+make regresion_all SEEDS="SEED1 SEED2"   # semillas específicas
+make regresion_all SEEDS= NUM_SEEDS=5    # N semillas aleatorias
+make cobertura_urg_individual_all
+make cobertura_urg_fusionada
+----
+
+[cols="1,4", options="header"]
+|===
+| Knob | Uso
+
+| `TEST`
+| Test a ejecutar en `regresion`.
+
+| `SEEDS`
+| Lista de semillas fijas (`"s1 s2 ..."`). Por defecto, las tres semillas de análisis.
+
+| `NUM_SEEDS`
+| Cantidad de semillas aleatorias; solo aplica si `SEEDS` queda vacío (`SEEDS= NUM_SEEDS=N`).
+
+| `REG_ID`
+| Etiqueta de la regresión (por defecto, un identificador temporal).
+
+| `COV_DIR`
+| VDB de cobertura a procesar con `urg` / `verdi`.
+|===
+
+---
+
+== Flujo del modelo de referencia
+
+El modelo de referencia (Berkeley SoftFloat / TestFloat) tiene su propio `Makefile` en `reference_model/`. Los comandos se ejecutan desde ese directorio, o con `make -C reference_model <target>` desde la raíz. Referencia rápida en consola con `make help`.
+
+Para mas información consultar `docs/makefile_REF_doc.md`.
+
+=== Construcción
+
+Librerías Berkeley (`softfloat.a` + TestFloat) y objeto del modelo enlazable por el ambiente UVM:
+
+[source,bash]
+----
+make build_all                    # librerías + reference_model.o
+make build_reference_model_obj    # solo el objeto del modelo
+----
+
+=== Vectores y verificación N1
+
+[source,bash]
+----
+make test_build_berkeleys_libraries   # softfloat.a vs slowfloat (testsoftfloat)
+make build_testfloat_vectors          # vectores .tf  (knobs: TF_LEVEL, TF_SEED)
+----
+
+=== Tests standalone
+
+[cols="1,4", options="header"]
+|===
+| Módulo | Flujo
+
+| Runner
+| Validación cruzada `tf_gen \| runner`. `make all_runner` (compilación + matriz + valgrind + sanitizers) o `make runner_run_matrix`.
+
+| Driver
+| Casos dirigidos (autojuez). `make all_driver` o `make driver_run`.
+
+| Replayer
+| Auditoría `tf_gen \| replayer \| tf_ver`. `make all_replayer`, `make replayer_run_matrix` o `make replayer_testfloat_sweep` (salida CSV).
+|===
+
+Ejecución conjunta (construcción + los tres módulos):
+
+[source,bash]
+----
+make all
+----
+
+Limpieza:
+
+[source,bash]
+----
+make clean                  # bin + logs + vectors (locales al modelo)
+make clean_berkeley         # objetos/.a de softfloat y testfloat
+make clean_build_reference  # build/ (reference_model.o)
+make clean_all              # todo lo anterior
 ----
 
 ---
@@ -221,8 +387,8 @@ El proyecto sigue la convención de código SystemVerilog documentada en `docs/c
 |===
 | Herramienta | Rol
 
-| Synopsys VCS
-| Simulador SystemVerilog + UVM
+| Synopsys
+| Simulador VCS SystemVerilog + UVM + Verdi
 
 | Berkeley SoftFloat
 | Modelo de referencia bit-exact IEEE 754 (DPI-C)
@@ -237,5 +403,3 @@ El proyecto sigue la convención de código SystemVerilog documentada en `docs/c
 NOTE: GitHub
 
 ---
-
-// == Créditos (Agregar al final)
