@@ -25,7 +25,7 @@ class fpu_base_sequence_c extends uvm_sequence #(fpu_seq_item_c);
 	protected fpu_seq_constraints_c item_constraints; // contenedor de constraints por clase
 	// cantidad de items; soft para que los derivados lo redefinan
 	constraint cn_num_items {
-		soft num_items_rand inside { [100:200] };
+		soft num_items_rand inside { [1000:2000] };
 	}
 	
 	// Prototipos de funiones del base sequence
