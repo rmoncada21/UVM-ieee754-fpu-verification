@@ -38,7 +38,7 @@ _testfloat_test:
 ####################################################################################
 ################### N0: Build de librerías (internas, externas) y herramientas
 # construye las librerías berkeley y el objeto del modelo de referencia
-build_all: build_berkeley_softfloat build_berkeley_testfloat $(REF_OBJ)
+build_all: build_berkeley_softfloat build_berkeley_testfloat build_reference_model_obj
 
 #---------------------------- Librerías
 # construir la librerias berkeley con especializacion RISC-V, 

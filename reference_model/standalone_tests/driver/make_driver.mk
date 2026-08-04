@@ -93,7 +93,7 @@ help_driver:
 
 # TODO: PHONY DRIVER
 .PHONY: \
-	driver_all \
+	all_driver \
 	driver_compile \
 	driver_run \
 	driver_valgrind_all \

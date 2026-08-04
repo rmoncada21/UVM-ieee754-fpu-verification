@@ -7,7 +7,7 @@ FECHA := $(shell date +%d_%H_%M_%S)
 REF_BIN       = bin
 REF_SRC       = src
 REF_INC       = include
-REF_LOGS      = logs
+REF_LOGS_F    = logs
 RUN_LOGS      = $(REF_STAND)/runner/logs
 DRV_LOGS      = $(REF_STAND)/driver/logs
 REP_LOGS      = $(REF_STAND)/replayer/logs
@@ -15,14 +15,14 @@ RUN_LOGS_F    = $(REF_STAND)/runner/logs/$(FECHA)
 DRV_LOGS_F    = $(REF_STAND)/driver/logs/$(FECHA)
 REP_LOGS_F    = $(REF_STAND)/replayer/logs/$(FECHA)
 REF_BUILD     = build
-REF_VECTORS   = vectors
+REF_VECTORS   = vectores
 REF_CSV       = csv
 
 # Folders logs
 REF_STAND     = standalone_tests
 LOGS_BUILD    := $(REF_LOGS_F)/build
 LOGS_TFSOFT   := $(REF_LOGS_F)/testsoftfloat
-LOGS_VECTORS  := $(REF_LOGS_F)/vectores 
+LOGS_VECTORS  := $(REF_LOGS_F)/vectores
 RUN_BIN       := $(REF_STAND)/runner/bin
 LOGS_RUN_C    := $(RUN_LOGS_F)/compile
 LOGS_RUN_SAN  := $(RUN_LOGS_F)/sanitizers
@@ -36,11 +36,12 @@ LOGS_REP_C    := $(REP_LOGS_F)/compile
 LOGS_REP_SAN  := $(REP_LOGS_F)/sanitizers
 LOGS_REP_VAL  := $(REP_LOGS_F)/valgrind
 
-LOG_DIRS      := $(LOGS_BUILD) $(LOGS_TFSOFT) $(LOGS_VECTORS) \
+LOG_DIRS      := $(REF_LOGS_F) $(LOGS_BUILD) $(LOGS_TFSOFT) $(LOGS_VECTORS) \
 				 $(RUN_LOGS) $(DRV_LOGS) $(REP_LOGS) \
 				 $(RUN_BIN) $(LOGS_RUN_C) $(LOGS_RUN_SAN) $(LOGS_RUN_VAL)   \
 				 $(DRV_BIN) $(LOGS_DRV_C) $(LOGS_DRV_SAN) $(LOGS_DRV_VAL)    \
 				 $(REP_BIN) $(LOGS_REP_C) $(LOGS_REP_SAN) $(LOGS_REP_VAL)
+
 DIRS          := $(REF_BUILD) $(REF_VECTORS) $(REF_CSV) $(LOG_DIRS)
 
 $(DIRS):
