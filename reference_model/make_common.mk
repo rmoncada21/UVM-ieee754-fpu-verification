@@ -1,46 +1,82 @@
 # usar "make -f make_ref_soft.mk" si se encuentra dentro del directorio de golde_model/
 
 SHELL := /bin/bash
-FECHA := $(shell date +%d_%H_%M_%S)
+# FECHA := $(shell date +%Y%m%d_%H%M%S)
+FECHA := $(shell date +%Y%m%d_%H)
 #############################################################################
 # Folders del ambiente
 REF_BIN       = bin
 REF_SRC       = src
 REF_INC       = include
-REF_LOGS_F    = logs
+REF_LOGS_F    = reportes
+REF_STAND     = standalone_tests
+
 RUN_LOGS      = $(REF_STAND)/runner/logs
 DRV_LOGS      = $(REF_STAND)/driver/logs
 REP_LOGS      = $(REF_STAND)/replayer/logs
-RUN_LOGS_F    = $(REF_STAND)/runner/logs/$(FECHA)
-DRV_LOGS_F    = $(REF_STAND)/driver/logs/$(FECHA)
-REP_LOGS_F    = $(REF_STAND)/replayer/logs/$(FECHA)
+
+TFSOFT_LOGS_F = $(REF_LOGS_F)/$(FECHA)/n1_testsoftfloat
+RUNN_LOGS_F   = $(REF_LOGS_F)/$(FECHA)/n2_runner
+DRV_LOGS_F    = $(REF_LOGS_F)/$(FECHA)/n3_driver
+REP_LOGS_F    = $(REF_LOGS_F)/$(FECHA)/n4_replayer
+
 REF_BUILD     = build
-REF_VECTORS   = vectores
+REF_VECTORS   = $(REF_LOGS_F)/$(FECHA)/vectores
 REF_CSV       = csv
+ULTIMA        = $(REF_LOGS_F)/ultima
 
 # Folders logs
-REF_STAND     = standalone_tests
+# testfloat
 LOGS_BUILD    := $(REF_LOGS_F)/build
-LOGS_TFSOFT   := $(REF_LOGS_F)/testsoftfloat
-LOGS_VECTORS  := $(REF_LOGS_F)/vectores
-RUN_BIN       := $(REF_STAND)/runner/bin
-LOGS_RUN_C    := $(RUN_LOGS_F)/compile
-LOGS_RUN_SAN  := $(RUN_LOGS_F)/sanitizers
-LOGS_RUN_VAL  := $(RUN_LOGS_F)/valgrind
-DRV_BIN       := $(REF_STAND)/driver/bin
-LOGS_DRV_C    := $(DRV_LOGS_F)/compile
-LOGS_DRV_SAN  := $(DRV_LOGS_F)/sanitizers
-LOGS_DRV_VAL  := $(DRV_LOGS_F)/valgrind
-REP_BIN       := $(REF_STAND)/replayer/bin
-LOGS_REP_C    := $(REP_LOGS_F)/compile
-LOGS_REP_SAN  := $(REP_LOGS_F)/sanitizers
-LOGS_REP_VAL  := $(REP_LOGS_F)/valgrind
+# LOGS_VECTORS  := $(REF_LOGS_F)/vectores # TODO: quitar
+LOGS_TFSOFT   := $(REF_LOGS_F)
+# runner
+RUN_BIN         := $(REF_STAND)/runner/bin
+LOGS_RUN_C      := $(RUNN_LOGS_F)/run
+LOGS_RUN_SAN    := $(RUNN_LOGS_F)/sanitizers
+LOGS_RUN_ASAN   := $(LOGS_RUN_SAN)/asan
+LOGS_RUN_MSAN   := $(LOGS_RUN_SAN)/msan
+LOGS_RUN_UBSAN  := $(LOGS_RUN_SAN)/ubsan
+LOGS_RUN_VAL    := $(RUNN_LOGS_F)/valgrind
+LOGS_RUN_VAL_ME := $(LOGS_RUN_VAL)/memcheck
+LOGS_RUN_VAL_MA := $(LOGS_RUN_VAL)/massif
+LOGS_RUN_VAL_CA := $(LOGS_RUN_VAL)/callgrind
 
-LOG_DIRS      := $(REF_LOGS_F) $(LOGS_BUILD) $(LOGS_TFSOFT) $(LOGS_VECTORS) \
+## driver
+DRV_BIN         := $(REF_STAND)/driver/bin
+LOGS_DRV_C      := $(DRV_LOGS_F)/run
+LOGS_DRV_SAN    := $(DRV_LOGS_F)/sanitizers
+LOGS_DRV_ASAN   := $(LOGS_DRV_SAN)/asan
+LOGS_DRV_MSAN   := $(LOGS_DRV_SAN)/msan
+LOGS_DRV_UBSAN  := $(LOGS_DRV_SAN)/ubsan
+LOGS_DRV_VAL    := $(DRV_LOGS_F)/valgrind
+LOGS_DRV_VAL_ME := $(LOGS_DRV_VAL)/memcheck
+LOGS_DRV_VAL_MA := $(LOGS_DRV_VAL)/massif
+LOGS_DRV_VAL_CA := $(LOGS_DRV_VAL)/callgrind
+
+# replayer
+REP_BIN         := $(REF_STAND)/replayer/bin
+LOGS_REP_C      := $(REP_LOGS_F)/run
+LOGS_REP_SAN    := $(REP_LOGS_F)/sanitizers
+LOGS_REP_ASAN   := $(LOGS_REP_SAN)/asan
+LOGS_REP_MSAN   := $(LOGS_REP_SAN)/msan
+LOGS_REP_UBSAN  := $(LOGS_REP_SAN)/ubsan
+LOGS_REP_VAL    := $(REP_LOGS_F)/valgrind
+LOGS_REP_VAL_ME := $(LOGS_REP_VAL)/memcheck
+LOGS_REP_VAL_MA := $(LOGS_REP_VAL)/massif
+LOGS_REP_VAL_CA := $(LOGS_REP_VAL)/callgrind
+
+LOG_DIRS      := $(REF_LOGS_F) $(LOGS_BUILD) $(TFSOFT_LOGS_F) \
 				 $(RUN_LOGS) $(DRV_LOGS) $(REP_LOGS) \
-				 $(RUN_BIN) $(LOGS_RUN_C) $(LOGS_RUN_SAN) $(LOGS_RUN_VAL)   \
-				 $(DRV_BIN) $(LOGS_DRV_C) $(LOGS_DRV_SAN) $(LOGS_DRV_VAL)    \
-				 $(REP_BIN) $(LOGS_REP_C) $(LOGS_REP_SAN) $(LOGS_REP_VAL)
+				 $(RUN_BIN) $(LOGS_RUN_C) $(LOGS_RUN_SAN) $(LOGS_RUN_VAL) \
+				 $(DRV_BIN) $(LOGS_DRV_C) $(LOGS_DRV_SAN) $(LOGS_DRV_VAL) \
+				 $(REP_BIN) $(LOGS_REP_C) $(LOGS_REP_SAN) $(LOGS_REP_VAL) \
+				 $(LOGS_RUN_VAL_ME) $(LOGS_RUN_VAL_MA) $(LOGS_RUN_VAL_CA) \
+				 $(LOGS_DRV_VAL_ME) $(LOGS_DRV_VAL_MA) $(LOGS_DRV_VAL_CA) \
+				 $(LOGS_REP_VAL_ME) $(LOGS_REP_VAL_MA) $(LOGS_REP_VAL_CA) \
+				 $(LOGS_RUN_ASAN) $(LOGS_RUN_MSAN) $(LOGS_RUN_UBSAN) \
+				 $(LOGS_DRV_ASAN) $(LOGS_DRV_MSAN) $(LOGS_DRV_UBSAN) \
+				 $(LOGS_REP_ASAN) $(LOGS_REP_MSAN) $(LOGS_REP_UBSAN)
 
 DIRS          := $(REF_BUILD) $(REF_VECTORS) $(REF_CSV) $(LOG_DIRS)
 

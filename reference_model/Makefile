@@ -1,6 +1,9 @@
 ####################################################################################
 #################### Targets: universales
-all: build_all all_runner all_driver all_replayer
+all: build_all remake
+
+remake: build_testfloat_vectors test_build_berkeleys_libraries \
+		all_runner all_driver all_replayer
 
 include make_common.mk
 include standalone_tests/runner/make_runner.mk
@@ -38,7 +41,7 @@ _testfloat_test:
 ####################################################################################
 ################### N0: Build de librerías (internas, externas) y herramientas
 # construye las librerías berkeley y el objeto del modelo de referencia
-build_all: build_berkeley_softfloat build_berkeley_testfloat build_reference_model_obj
+build_all: build_testfloat_vectors build_berkeley_softfloat build_berkeley_testfloat build_reference_model_obj
 
 #---------------------------- Librerías
 # construir la librerias berkeley con especializacion RISC-V, 
@@ -63,12 +66,13 @@ build_reference_model_obj: $(REF_OBJ)
 # testear softfloat vs testfloat de berkeley
 # opciones: -all2 -all1 f32_add f32_sub ...
 # Compara el softfloat.a generado contra slowfloat (FP íntegro de berkeley)
-test_build_berkeleys_libraries:
+test_build_berkeleys_libraries: | $(TFSOFT_LOGS_F)
 	for op in $(TF_OPS_ALL); do \
 		for pair in $(ROUND_MODE_PAIR); do \
 			echo "";\
 			rm=$${pair##*:}; \
-			$(TF_SOFTFLOAT) -level 1 $$rm $$op; \
+			$(TF_SOFTFLOAT) -level 1 $$rm $$op 2>&1 \
+			| tee $(TFSOFT_LOGS_F)/tf_soft_$${op}_$${rm/-/}.rpt ; \
 		done; \
 	done
 
@@ -77,7 +81,8 @@ test_build_berkeleys_libraries:
 # TODO: crear mas vectores con otro modo de redondeo
 # cambiar nombre con respecto a la operación y modo de redondeo
 # $(TF_GEN) -rnear_even $$op > $(REF_VECTORS)/$$op.tf;
-build_testfloat_vectors: | $(REF_VECTORS) $(LOGS_VECTORS)
+# build_testfloat_vectors: | $(REF_VECTORS) $(LOGS_VECTORS)
+build_testfloat_vectors: | $(REF_VECTORS)
 	{ echo -e "\n== vectores level=$(TF_LEVEL) seed=$(TF_SEED) fecha=$(FECHA) =="; \
 	for op in $(OPS_ARITH) f32_mulAdd; do \
 	  for par in $(ROUND_MODE_PAIR); do \
@@ -91,7 +96,7 @@ build_testfloat_vectors: | $(REF_VECTORS) $(LOGS_VECTORS)
 	  out_file=$(REF_VECTORS)/$${op}_l$(TF_LEVEL)_s$(TF_SEED).tf; \
 	  $(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$op > $$out_file || exit 1; \
 	  echo "$$out_file ($$(wc -l < $$out_file) vectores)"; \
-	done; } 2>&1 | tee $(LOGS_VECTORS)/$@_$(FECHA).log
+	done; } 2>&1 | tee $(REF_VECTORS)/$@_$(FECHA).log
 
 ####################################################################################
 ################### N2: make_runner.mk
@@ -179,6 +184,7 @@ help:
 # TODO: ACTUALIZAR PHONY
 .PHONY: \
 	all \
+	remake \
 	build_all \
 	build_berkeley_softfloat \
 	build_berkeley_testfloat \
