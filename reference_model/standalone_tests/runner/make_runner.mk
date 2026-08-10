@@ -153,15 +153,15 @@ runner_run_asan: $(RUNNER_ASAN) | $(LOGS_RUN_ASAN)
 			rm=$${pair##*:}; \
 			echo -e "\n========== runner $$rm $$op =========="; \
 			$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
-			|	./$< $$rm $$op 2>&1 \
+			|	ASAN_OPTIONS=log_path=$(LOGS_RUN_ASAN)/$@_$${op}_$${rm/-/}.out ./$< $$rm $$op 2>&1 \
 			| tee $(LOGS_RUN_ASAN)/$@_$${op}_$${rm/-/}.log || exit 1; \
 		done ; \
 	done ; \
 	for op in $(OPS_CMP); do \
 		echo -e "\n========== runner $$op =========="; \
 		$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
-		|	./$< $$rm $$op 2>&1 \
-		| tee $(LOGS_RUN_ASAN)/$@_$${op}.log || exit 1; \
+		|	ASAN_OPTIONS=log_path=$(LOGS_RUN_ASAN)/$@_$${op}_$${rm/-/}.out ./$< $$rm $$op 2>&1 \
+		| tee $(LOGS_RUN_ASAN)/$@_$${op}_$${rm/-/}.log || exit 1; \
 	done
 
 #### memory
@@ -176,15 +176,15 @@ runner_run_msan: $(RUNNER_MSAN) | $(LOGS_RUN_MSAN)
 			rm=$${pair##*:}; \
 			echo -e "\n========== runner $$rm $$op =========="; \
 			$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
-			|	./$< $$rm $$op 2>&1 \
+			|	MSAN_OPTIONS=log_path=$(LOGS_RUN_MSAN)/$@_$${op}_$${rm/-/}.out ./$< $$rm $$op 2>&1 \
 			| tee $(LOGS_RUN_MSAN)/$@_$${op}_$${rm/-/}.log || exit 1; \
 		done ; \
 	done ; \
 	for op in $(OPS_CMP); do \
 		echo -e "\n========== runner $$op =========="; \
 		$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
-		|	./$< $$rm $$op 2>&1 \
-		| tee $(LOGS_RUN_MSAN)/$@_$${op}.log || exit 1; \
+		|	MSAN_OPTIONS=log_path=$(LOGS_RUN_MSAN)/$@_$${op}_$${rm/-/}.out ./$< $$rm $$op 2>&1 \
+		| tee $(LOGS_RUN_MSAN)/$@_$${op}_$${rm/-/}.log || exit 1; \
 	done
 
 
@@ -200,15 +200,15 @@ runner_run_ubsan: $(RUNNER_UBSAN) | $(LOGS_RUN_UBSAN)
 			rm=$${pair##*:}; \
 			echo -e "\n========== runner $$rm $$op =========="; \
 			$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
-			|	./$< $$rm $$op 2>&1 \
+			|	UBSAN_OPTIONS=log_path=$(LOGS_RUN_UBSAN)/$@_$${op}_$${rm/-/}.out ./$< $$rm $$op 2>&1 \
 			| tee $(LOGS_RUN_UBSAN)/$@_$${op}_$${rm/-/}.log || exit 1; \
 		done ; \
 	done ; \
 	for op in $(OPS_CMP); do \
 		echo -e "\n========== runner $$op =========="; \
 		$(TF_GEN) -level $(TF_LEVEL) -seed $(TF_SEED) $$rm $$op \
-		|	./$< $$rm $$op 2>&1 \
-		| tee $(LOGS_RUN_UBSAN)/$@_$${op}.log || exit 1; \
+		|	UBSAN_OPTIONS=log_path=$(LOGS_RUN_UBSAN)/$@_$${op}_$${rm/-/}.out ./$< $$rm $$op 2>&1 \
+		| tee $(LOGS_RUN_UBSAN)/$@_$${op}_$${rm/-/}.log || exit 1; \
 	done
 
 # TODO: help runner
