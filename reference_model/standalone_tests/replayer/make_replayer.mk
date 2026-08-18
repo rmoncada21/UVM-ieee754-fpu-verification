@@ -27,6 +27,7 @@ replayer_check_fast: $(REPLAYER_EXE) | $(LOGS_REP_C)
 #----------------------------
 # Auditar reference_model contra testfloat mediante un pipe
 # usa tf_gen | tf_ver
+# | $(TF_VER) $$rm -checkNaNs -errors 0 $$op 2>&1  >/dev/null : para ver salidas con solo la cantidad de errores
 replayer_run_matrix: $(REPLAYER_EXE) | $(LOGS_REP_C)
 	for op in $(OPS_ARITH); do \
 	  for par in $(ROUND_MODE_PAIR); do \
