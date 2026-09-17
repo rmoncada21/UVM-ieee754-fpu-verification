@@ -116,19 +116,19 @@ void dpi_fpu_reference(
             softfloat_exceptionFlags = 0;
             // convertir booleano fp_a 1, 0, tipo
             fp_result.v = f32_eq(fp_a, fp_b) ? 1u : 0u;
-            flags    = 0;   /* el DUT fuerza banderas a 0 en comparaciones */
+            flags    = softfloat_exceptionFlags;   /* el DUT fuerza banderas a 0 en comparaciones */
             break;
 
         case OP_FLT:
             softfloat_exceptionFlags = 0;
             fp_result.v = f32_lt(fp_a, fp_b) ? 1u : 0u;
-            flags    = 0;
+            flags    = softfloat_exceptionFlags;
             break;
 
         case OP_FLE:
             softfloat_exceptionFlags = 0;
             fp_result.v = f32_le(fp_a, fp_b) ? 1u : 0u;
-            flags    = 0;
+            flags    = softfloat_exceptionFlags;
             break;
 
         default:

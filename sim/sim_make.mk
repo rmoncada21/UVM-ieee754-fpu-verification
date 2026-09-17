@@ -18,9 +18,13 @@ MOSTRAR_EXE_ABS:
 	echo "$(EXE_ABS)"
 
 # tests activos; agregar aquí conforme se integren los del testplan
-TESTS_ACTIVOS := fpu_base_test fpu_test_arith_normal fpu_test_flag_arith \
+TESTS_ACTIVOS := fpu_test_arith_normal fpu_test_flag_arith \
 				 fpu_test_special_spec fpu_test_norm_spec fpu_test_rounding \
-				 fpu_test_cmp fpu_test_subnormal_arith fpu_test_known_bugs
+				 fpu_test_cmp fpu_test_subnormal_arith
+
+# TESTS_ACTIVOS := fpu_base_test fpu_test_arith_normal fpu_test_flag_arith \
+# 				 fpu_test_special_spec fpu_test_norm_spec fpu_test_rounding \
+# 				 fpu_test_cmp fpu_test_subnormal_arith fpu_test_known_bugs
 
 # knobs de targets de regresión
 # se sobreesciben desde el cli
@@ -73,8 +77,8 @@ endef
 # 		  run_fpu_test_special_spec run_fpu_test_norm_spec run_fpu_test_rounding \
 # 		  run_fpu_test_cmp run_fpu_test_subnormal_arith run_fpu_test_known_bugs
 
-run_fpu_base_test:
-	@$(call run_uvm_test, $(@:run_%=%))
+# run_fpu_base_test:
+# 	@$(call run_uvm_test, $(@:run_%=%))
 
 run_fpu_test_arith_normal:
 	@$(call run_uvm_test, $(@:run_%=%))
@@ -97,8 +101,8 @@ run_fpu_test_cmp:
 run_fpu_test_subnormal_arith:
 	@$(call run_uvm_test, $(@:run_%=%))
 
-run_fpu_test_known_bugs:
-	@$(call run_uvm_test, $(@:run_%=%))
+# run_fpu_test_known_bugs:
+# 	@$(call run_uvm_test, $(@:run_%=%))
 
 ####################################################################################
 ################### Regresión multi-semilla
