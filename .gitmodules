@@ -1,0 +1,9 @@
+[submodule "dut/ALU-FPU-ieee754"]
+	path = dut/ALU-FPU-ieee754
+	url = https://github.com/samuelca12/TFG-ALU-FP.git
+[submodule "third_party/berkeley-softfloat-3"]
+	path = third_party/berkeley-softfloat-3
+	url = https://github.com/ucb-bar/berkeley-softfloat-3.git
+[submodule "third_party/berkeley-testfloat-3"]
+	path = third_party/berkeley-testfloat-3
+	url = https://github.com/ucb-bar/berkeley-testfloat-3.git

@@ -1,0 +1,217 @@
+# target: prerrequisites
+#	command to build target
+
+SHELL := /bin/bash
+
+#############################################################################
+# Identificadores de corrida
+#----------------------------
+# FECHA  : timestamp -> ordenable con ls/sort
+# REG_ID : identificador de la regresión; agrupa corridas bajo reportes/regresiones/<REG_ID>.
+#          Por defecto toma FECHA; se puede etiquetar: make regresion REG_ID=my_regression
+# SEED   : semilla explícita y reproducible; si no se fija se sortea UNA
+#          sola vez por invocación (el guard con origin evita el re-sorteo por expansión)
+FECHA := $(shell date +%Y%m%d_%H%M%S)
+# FECHA := $(shell date +%Y%m%d_%H)
+REG_ID   ?= $(FECHA)
+
+ifeq ($(origin SEED), undefined)
+	SEED := $(shell od -An -N4 -tu4 /dev/urandom | tr -d ' ')
+endif
+
+#############################################################################
+# Folders del ambiente UVM
+# sim/      : artefactos de COMPILACIÓN (ejecutable, .daidir, logs de compile)
+# reportes/ : artefactos de EJECUCIÓN (una carpeta por regresión/test/semilla)
+SIM         := sim
+BIN         := bin
+REPORTES    := reportes
+VERDI_LOGS  := verdi_logs
+REGRESIONES := $(REPORTES)/regresiones
+REG_DIR     := $(REGRESIONES)/$(REG_ID)
+MANIFEST    := $(REG_DIR)/manifest.csv
+ULTIMA_REG  := $(REPORTES)/ultima
+
+# se hace para la regalde cobertura
+# carpeta que analizan cobertura/scripts: la REG= pedida, o 'ultima' por defecto
+DIR_ANALISIS := $(if $(filter command line,$(origin REG_ID)),$(REG_DIR),$(ULTIMA_REG))
+
+DIRS := $(BIN) $(REPORTES) $(VERDI_LOGS)
+
+$(DIRS):
+	mkdir -p $@
+
+#----------------------------
+# variables generales del entorno de simulación
+#----------------------------
+# TIMEOUT: YES -> el timeout dentro del ambiente sobreescribe este plusarg, 5000000=5ms
+TIMEOUT := 5000000,YES
+
+#----------------------------
+# Flags Macros
+#----------------------------
+# make testbench ANSI=1 para mostrar el mensaje con formato ANSI
+# make testbench R=1    para compilación recursiva (-R)
+MSG_FORMAT := $(if $(filter 1,$(ANSI)),+define+MSG_ANSI_FORMAT)
+RECURSIVE  := $(if $(filter 1,$(R)),-R)
+CSV_KNOB   := ON
+#----------------------------
+# vcs - compilador/simulador
+#----------------------------
+VCS       := vcs
+TIMESCALE := 1ns/1ps
+SVFLAGS   := -Mupdate -full64 -sverilog -ntb_opts uvm-1.2
+FILELIST  := scripts/filelist.f
+EXE_SIM   := $(SIM)/testbench_sim
+EXE_VDB   := $(SIM)/testbench_sim.vdb
+LOG_TB    := $(SIM)/testbench_sim_compile.log
+WARNINGS  := $(SIM)/testbench_sim_compile_warnings.log
+MDIR      := $(BIN)
+DFLAGS    := -kdb -debug_acc+all -debug_region+cell+encrypt
+VERBOSITY := UVM_HIGH
+LINT      := TFIPC-L
+COVERAGE  := line+tgl+cond+branch+assert
+CM_LOG    := $(SIM)/testbench_sim_compile_coverage.log
+
+#----------------------------
+# reference model (delegado a reference_model/Makefile)
+#----------------------------
+# Los flags C críticos IEEE 754 viven en reference_model/make_common.mk:
+#   -O2 -frounding-math -fno-unsafe-math-optimizations -ffp-contract=off
+# Aquí solo se referencian los artefactos que VCS enlaza como argumentos
+# posicionales (NO van en filelist.f)
+REF_DIR := reference_model
+REF_OBJ := $(REF_DIR)/build/reference_model.o
+SF_LIB  := third_party/berkeley-softfloat-3/build/Linux-x86_64-GCC/softfloat.a
+
+# TARGET en blanco, útil para forzar de ser necesario la sobreescritura de un archivo
+FORCE:
+
+.PHONY: FORCE
+
+####################################################################################
+#################### Targets: universales
+# make all: modelo de referencia + UVM
+# 		    limpieza de artefactos de compilación y ejecución
+# 			construcción del modelo de referencia
+#			compilación y ejecución UVM (todos los test) 
+# make remake: 
+all: clean_all build_reference_model_obj testbench regresion_mas_reportes_html
+remake: clean build_reference_model_obj testbench
+
+include scripts/.ansi_code.mk
+include sim/sim_make.mk
+
+# alias de compatibilidad; los targets dependen de la regla genérica $(DIRS)
+_mkdir_folders: | $(DIRS)
+
+####################################################################################
+################### Modelo de referencia C (delegado)
+# construye reference_model.o con GCC y los flags IEEE 754 críticos;
+# crea además librera estatica softfloat
+# la lógica completa vive en reference_model/{Makefile, make_common.mk}
+build_reference_model_obj:
+	$(MAKE) -C $(REF_DIR) -f Makefile $@
+
+####################################################################################
+################### Compilación del top testbench (VCS-UVM)
+# enlaza el objeto del modelo y softfloat.a como argumentos posicionales
+testbench: _mkdir_folders build_reference_model_obj
+	$(VCS) $(SVFLAGS) -timescale=$(TIMESCALE) \
+		-f $(FILELIST) \
+		$(REF_OBJ) $(SF_LIB) \
+		-o $(EXE_SIM) -l $(LOG_TB) \
+		-Mdir=$(MDIR) $(MSG_FORMAT) \
+		$(DFLAGS) \
+		+lint=$(LINT) \
+		-cm $(COVERAGE) -cm_dir $(EXE_VDB) -cm_log $(CM_LOG) \
+		$(RECURSIVE)
+		@mv -f vc_hdrs.h .fsm.sch.verilog.xml $(SIM) 2>/dev/null || true
+
+# extrae los warnings del log de compilación a logs/warnings.log
+_grep_warnings:
+	grep -i -C 10 "warning" $(LOG_TB) > $(WARNINGS)
+
+####################################################################################
+################### Targets: de limpieza
+# clean          : artefactos de compilación (sim/ salvo sim_make.mk, bin/, ucli.key)
+# clean_reportes : SOLO el historial de corridas (reportes/)
+# clean_all      : limpieza completa UVM + reference_model
+
+clean_all: clean_local
+	$(MAKE) -C $(REF_DIR) -f Makefile clean_all
+
+clean: clean_sim clean_verdi
+clean_local: clean clean_reportes
+
+clean_sim:
+	rm -f ucli.key
+	rm -rf $(MDIR)
+	find $(SIM) -mindepth 1 ! -name "sim_make.mk" -delete
+
+clean_verdi:
+	rm -rf novas.* vdCovLog
+	rm -rf $(VERDI_LOGS)
+
+clean_reportes:
+	rm -rf $(REPORTES)
+
+####################################################################################
+help:
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)══════════════════════════════════════════════════════════════$(RESET)'
+	@echo -e '$(BLANCO_BRILLANTE) Ambiente UVM — FPU RV32F   ·   make help$(RESET)'
+	@echo -e '$(CIAN_BRILLANTE)══════════════════════════════════════════════════════════════$(RESET)'
+	@echo -e '$(NEGRO_BRILLANTE) Ejecutar desde la raíz del repo. Sustituir los marcadores <...>$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)FLUJO A$(RESET) — ejecución completa'
+	@echo -e '$(NEGRO_BRILLANTE)  Todo con las 3 semillas por defecto + reportes HTML (individual y fusionado)$(RESET)'
+	@echo -e '$(VERDE)    make all$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)FLUJO B$(RESET) — en dos partes'
+	@echo -e '$(NEGRO_BRILLANTE)  Recompila (conserva historial) y corre regresión + reportes$(RESET)'
+	@echo -e '$(VERDE)    make remake$(RESET)'
+	@echo -e '$(VERDE)    make regresion_mas_reportes_html$(RESET)'
+	@echo -e '$(NEGRO_BRILLANTE)  Abrir Verdi:$(RESET)'
+	@echo -e '$(VERDE)    make verdi COV_DIR=./reportes/regresiones/<REG_ID>/<test_name>/s<SEED>/cov.vdb$(RESET)'
+	@echo -e '$(VERDE)    make verdi COV_DIR=./reportes/regresiones/<REG_ID>/cobertura_fusionada.vdb$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)FLUJO C$(RESET) — paso a paso (control de semillas)'
+	@echo -e '$(NEGRO_BRILLANTE)  Recompilar:$(RESET)'
+	@echo -e '$(VERDE)    make remake$(NEGRO_BRILLANTE)                     # = clean + build_reference_model_obj + testbench$(RESET)'
+	@echo -e '$(NEGRO_BRILLANTE)    # equivalente explícito:$(RESET)'
+	@echo -e '$(VERDE)    make clean_all$(RESET)'
+	@echo -e '$(VERDE)    make build_reference_model_obj$(RESET)'
+	@echo -e '$(VERDE)    make testbench$(RESET)'
+	@echo ""
+	@echo -e '$(AMARILLO_BRILLANTE)  Rama 1$(RESET) — regresión por test individual:'
+	@echo -e '$(VERDE)    make regresion TEST=<NAME_TEST> SEEDS= NUM_SEEDS=N$(NEGRO_BRILLANTE)        # N semillas aleatorias$(RESET)'
+	@echo -e '$(VERDE)    make regresion TEST=<NAME_TEST> SEEDS="SEED1 SEED2 SEEDN"$(RESET)'
+	@echo -e '$(VERDE)    make cobertura_urg_individual COV_DIR=./reportes/regresiones/<REG_ID>/<test_name>/s<SEED>/cov.vdb$(RESET)'
+	@echo -e '$(VERDE)    make verdi COV_DIR=./reportes/regresiones/<REG_ID>/<test_name>/s<SEED>/cov.vdb$(RESET)'
+	@echo ""
+	@echo -e '$(AMARILLO_BRILLANTE)  Rama 2$(RESET) — regresión completa (todos los tests):'
+	@echo -e '$(VERDE)    make regresion_all SEEDS="SEED1 SEED2"$(NEGRO_BRILLANTE)    # semillas específicas$(RESET)'
+	@echo -e '$(VERDE)    make regresion_all SEEDS= NUM_SEEDS=5$(NEGRO_BRILLANTE)     # N semillas aleatorias$(RESET)'
+	@echo -e '$(VERDE)    make cobertura_urg_individual_all$(RESET)'
+	@echo -e '$(VERDE)    make cobertura_urg_fusionada$(RESET)'
+	@echo -e '$(VERDE)    make verdi COV_DIR=./reportes/regresiones/<REG_ID>/cobertura_fusionada.vdb$(RESET)'
+	@echo ""
+	@echo -e '$(CIAN_BRILLANTE)Knobs$(RESET)  TEST   SEEDS="s1 s2 ..."   NUM_SEEDS   REG_ID   COV_DIR'
+	@echo -e '$(NEGRO_BRILLANTE)  NUM_SEEDS solo aplica si SEEDS queda vacío  (SEEDS= NUM_SEEDS=N)$(RESET)'
+	@echo ""
+
+# TODO: ACTUALIZAR PHONY
+.PHONY: \
+	all \
+	remake \
+	_mkdir_folders \
+	build_reference_model_obj \
+	testbench \
+	_grep_warnings \
+	run_all \
+	clean_all \
+	clean \
+	clean_local \
+	clean_sim clean_verdi clean_reportes \
+	help

@@ -1,0 +1,19 @@
+# archivos
+*.a
+*.o
+demo_*
+try_*
+ucli.key
+zfile_*
+# folders
+bin/
+images/
+logs/
+sim/**
+!sim/sim_make.mk
+vectores/
+verdi_logs
+zfolder_*/
+
+## quitar al finalizar el ambiente
+reportes*/

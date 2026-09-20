@@ -1,0 +1,59 @@
+# Convención de commits — Proyecto UVM FPU RV32F
+# ─────────────────────────────────────────────────────────────────────────────
+# Formato: <tipo>(<alcance>): <mensaje breve en minúsculas>
+#
+# TIPOS
+# ─────────────────────────────────────────────────────────────────────────────
+#   feat      → nueva funcionalidad o componente
+#   fix       → corrección de bug o comportamiento incorrecto
+#   refactor  → cambio interno sin cambio de comportamiento externo
+#   test      → agregar o modificar casos de prueba / secuencias
+#   docs      → documentación: TFG, comentarios, README, diagramas
+#   chore     → tareas de mantenimiento: Makefile, scripts, .gitignore
+#   style     → formato de código sin cambio semántico
+#   cov       → cambios a covergroups o análisis de cobertura
+#
+# ALCANCES COMUNES
+# ─────────────────────────────────────────────────────────────────────────────
+#   fpu_if       → interfaz
+#   fpu_item     → seq_item
+#   fpu_drv      → driver
+#   fpu_mon      → monitor
+#   fpu_seqr     → sequencer
+#   fpu_agnt     → agente
+#   fpu_scb      → scoreboard
+#   fpu_cov      → covergroup / cobertura
+#   fpu_ref      → modelo de referencia / golden model (DPI-C)
+#   fpu_env      → ambiente
+#   fpu_seq      → secuencia
+#   fpu_test     → test
+#   fpu_pkg      → package
+#   dut          → archivos del DUT
+#   tb           → testbench top / archivos raíz
+#   makefile     → runner / scripts de simulación
+#   docs         → documentos del TFG
+#   conv         → convención de código
+#
+# EJEMPLOS
+# ─────────────────────────────────────────────────────────────────────────────
+#   feat(fpu_if): agregar señales de rounding mode y op_code a la interfaz
+#   feat(fpu_item): definir enums de opcode y rounding mode en seq_item
+#   feat(fpu_scb): implementar modelo de referencia bit-exacto con softfloat
+#   feat(fpu_ref): implementar golden_fmadd con fmaf para semantica fusionada
+#   test(fpu_ref): validar modelo de referencia contra vectores IEEE 754
+#   fix(fpu_drv): corregir manejo de señal combinacional sin clocking block
+#   test(fpu_seq): agregar secuencia de regresión para bug BUG-001 subnormal
+#   docs(docs): redactar sección de arquitectura del ambiente UVM en TFG
+#   chore(makefile): agregar target de simulación para questa
+#   cov(fpu_cov): agregar cross coverage entre opcode y categoría de resultado
+#
+# NOTAS ADICIONALES (opcional)
+# ─────────────────────────────────────────────────────────────────────────────
+# BREAKING CHANGE: describe si hubo un cambio que rompe compatibilidad
+# REF: referencia a sección del testplan o documento de FPU design
+# BUG: referencia a un bug conocido (ej: BUG-001)
+#
+# PREFIJO DEL REPO (para mensajes copiados al TFG o issue tracker)
+# ─────────────────────────────────────────────────────────────────────────────
+# UVM_FPU_RV32F - feat(fpu_if): agregar señales de rounding mode y op_code
+# ─────────────────────────────────────────────────────────────────────────────
